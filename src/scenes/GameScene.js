@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { Player } from '../objects/Player.js';
 import { ObstacleSpawner } from '../objects/ObstacleSpawner.js';
-import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X } from '../config/gameConfig.js';
+import { Enemy } from '../objects/Enemy.js';
+import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X, ENEMY_START_X } from '../config/gameConfig.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -15,6 +16,7 @@ export class GameScene extends Phaser.Scene {
 
     this.player = new Player(this, PLAYER_X, GAME_HEIGHT / 2);
     this.spawner = new ObstacleSpawner(this);
+    this.enemy = new Enemy(this, ENEMY_START_X, GAME_HEIGHT / 2);
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
@@ -34,9 +36,20 @@ export class GameScene extends Phaser.Scene {
 
     this.spawner.update(time, this.player.speed, delta);
 
+    this.enemy.trackY(this.player.y);
+    this.enemy.update(delta / 1000, this.player.speed);
+
     // Collision
+    if (this.player.overlaps(this.enemy)) {
+      this.enemy.destroy();
+      this.spawner.destroyAll();
+      this.scene.start('GameOverScene', { score: Math.floor(time / 1000) });
+      return;
+    }
+
     for (const obs of this.spawner.obstacles) {
       if (this.player.overlaps(obs)) {
+        this.enemy.destroy();
         this.spawner.destroyAll();
         this.scene.start('GameOverScene', { score: Math.floor(time / 1000) });
         return;
