@@ -6,10 +6,26 @@
   <title>Celebration</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+    body { background: #000; width: 100vw; height: 100vh; overflow: hidden; }
+    #rotate-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000;
+      color: #fff;
+      font-family: sans-serif;
+      font-size: 1.2rem;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    @media (orientation: portrait) {
+      #rotate-overlay { display: flex; }
+    }
   </style>
 </head>
 <body>
+  <div id="rotate-overlay">&#8635; Please rotate your device</div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
