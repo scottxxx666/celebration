@@ -16,7 +16,7 @@ export class Enemy {
     this.atBoundary = this.x < -ENEMY_HW;
     if (this.atBoundary) {
       this.x = -ENEMY_HW;
-      this.speed = MAX_SPEED - 50;
+      this.speed = MAX_SPEED - 25;
     }
     this.rect.setPosition(this.x, this.y);
   }

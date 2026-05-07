@@ -1,21 +1,22 @@
 import Phaser from 'phaser';
 import {
-  GAME_HEIGHT,
   MIN_SPEED,
   MAX_SPEED,
   ACCEL_STEP,
   DECEL_PER_SEC,
-  VERTICAL_SPEED,
+  NUM_ROWS,
+  ROW_HEIGHT,
 } from '../config/gameConfig.js';
 
-const HALF_W = 20;
-const HALF_H = 20;
+const HALF_W = 35;
+const HALF_H = 35;
 
 export class Player {
   constructor(scene, x, y) {
     this.scene = scene;
     this.x = x;
-    this.y = y;
+    this.row = Math.floor(NUM_ROWS / 2); // start in middle row
+    this.y = ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
     this.speed = MIN_SPEED; // world scroll speed (px/s)
 
     // Alternating-tap state
@@ -48,14 +49,14 @@ export class Player {
     // Natural deceleration toward MIN_SPEED
     this.speed = Math.max(MIN_SPEED, this.speed - DECEL_PER_SEC * dt);
 
-    // Vertical movement
-    if (cursors.up.isDown) {
-      this.y -= VERTICAL_SPEED * dt;
-    } else if (cursors.down.isDown) {
-      this.y += VERTICAL_SPEED * dt;
+    // Vertical movement — snap to row on each key press
+    if (Phaser.Input.Keyboard.JustDown(cursors.up)) {
+      this.row = Math.max(0, this.row - 1);
+    } else if (Phaser.Input.Keyboard.JustDown(cursors.down)) {
+      this.row = Math.min(NUM_ROWS - 1, this.row + 1);
     }
 
-    this.y = Phaser.Math.Clamp(this.y, HALF_H, GAME_HEIGHT - HALF_H);
+    this.y = ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
     this.rect.setPosition(this.x, this.y);
   }
 
