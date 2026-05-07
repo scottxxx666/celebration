@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, SPAWN_INTERVAL_MS } from '../config/gameConfig.js';
+import { GAME_WIDTH, GAME_HEIGHT, SPAWN_INTERVAL_MS, WALK_ZONE_TOP } from '../config/gameConfig.js';
 
 export class ObstacleSpawner {
   constructor(scene) {
@@ -30,7 +30,7 @@ export class ObstacleSpawner {
   _spawn() {
     const hw = Phaser.Math.Between(15, 35);
     const hh = Phaser.Math.Between(15, 50);
-    const y = Phaser.Math.Between(hh, GAME_HEIGHT - hh);
+    const y = Phaser.Math.Between(WALK_ZONE_TOP + hh, GAME_HEIGHT - hh);
     const x = GAME_WIDTH + hw;
 
     const rect = this.scene.add.rectangle(x, y, hw * 2, hh * 2, 0xff4444);

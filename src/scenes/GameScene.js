@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { Player } from '../objects/Player.js';
 import { ObstacleSpawner } from '../objects/ObstacleSpawner.js';
 import { Enemy } from '../objects/Enemy.js';
-import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X, ENEMY_START_X, MAX_SPEED } from '../config/gameConfig.js';
+import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X, ENEMY_START_X, MAX_SPEED, WALK_ZONE_TOP } from '../config/gameConfig.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -10,13 +10,19 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
-    // Placeholder scrolling background (solid color for now)
-    this.bg = this.add.rectangle(0, 0, GAME_WIDTH * 3, GAME_HEIGHT, 0x1a1a2e).setOrigin(0, 0);
+    // Scrolling background — walk zone only
+    this.bg = this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH * 3, GAME_HEIGHT - WALK_ZONE_TOP, 0x1a1a2e).setOrigin(0, 0);
     this.bgX = 0;
 
-    this.player = new Player(this, PLAYER_X, GAME_HEIGHT / 2);
+    // Static scenery area above the walk zone
+    this.add.rectangle(0, 0, GAME_WIDTH, WALK_ZONE_TOP, 0x2a4a2e).setOrigin(0, 0);
+    // Dividing line
+    this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH, 2, 0x88aa66).setOrigin(0, 0);
+
+    const walkZoneMidY = WALK_ZONE_TOP + (GAME_HEIGHT - WALK_ZONE_TOP) / 2;
+    this.player = new Player(this, PLAYER_X, walkZoneMidY);
     this.spawner = new ObstacleSpawner(this);
-    this.enemy = new Enemy(this, ENEMY_START_X, GAME_HEIGHT / 2);
+    this.enemy = new Enemy(this, ENEMY_START_X, walkZoneMidY);
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);

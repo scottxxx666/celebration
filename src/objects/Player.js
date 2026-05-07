@@ -6,6 +6,7 @@ import {
   DECEL_PER_SEC,
   NUM_ROWS,
   ROW_HEIGHT,
+  WALK_ZONE_TOP,
 } from '../config/gameConfig.js';
 
 const HALF_W = 35;
@@ -16,7 +17,7 @@ export class Player {
     this.scene = scene;
     this.x = x;
     this.row = Math.floor(NUM_ROWS / 2); // start in middle row
-    this.y = ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
+    this.y = WALK_ZONE_TOP + ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
     this.speed = MIN_SPEED; // world scroll speed (px/s)
 
     // Alternating-tap state
@@ -56,7 +57,7 @@ export class Player {
       this.row = Math.min(NUM_ROWS - 1, this.row + 1);
     }
 
-    this.y = ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
+    this.y = WALK_ZONE_TOP + ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
     this.rect.setPosition(this.x, this.y);
   }
 
