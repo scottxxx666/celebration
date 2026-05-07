@@ -10,6 +10,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    this.startTime = null;
+
     // Scrolling background — walk zone only
     this.bg = this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH * 3, GAME_HEIGHT - WALK_ZONE_TOP, 0x1a1a2e).setOrigin(0, 0);
     this.bgX = 0;
@@ -19,9 +21,15 @@ export class GameScene extends Phaser.Scene {
     // Dividing line
     this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH, 2, 0x88aa66).setOrigin(0, 0);
 
+    this.music = this.sound.add('music', { loop: true });
+    this.music.play();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.sound.remove(this.music);
+    });
+
     const walkZoneMidY = WALK_ZONE_TOP + (GAME_HEIGHT - WALK_ZONE_TOP) / 2;
     this.player = new Player(this, PLAYER_X, walkZoneMidY);
-    this.spawner = new ObstacleSpawner(this);
+    this.spawner = new ObstacleSpawner(this, this.music);
     this.enemy = new Enemy(this, ENEMY_START_X, walkZoneMidY);
 
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -33,6 +41,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (this.startTime === null) this.startTime = time;
+    const elapsed = time - this.startTime;
+
     this.player.update(this.cursors, this.leftKey, this.rightKey, delta);
 
     // Scroll background
@@ -49,7 +60,7 @@ export class GameScene extends Phaser.Scene {
     if (this.player.overlaps(this.enemy)) {
       this.enemy.destroy();
       this.spawner.destroyAll();
-      this.scene.start('GameOverScene', { score: Math.floor(time / 1000) });
+      this.scene.start('GameOverScene', { score: Math.floor(elapsed / 1000) });
       return;
     }
 
@@ -57,7 +68,7 @@ export class GameScene extends Phaser.Scene {
       if (this.player.overlaps(obs)) {
         this.enemy.destroy();
         this.spawner.destroyAll();
-        this.scene.start('GameOverScene', { score: Math.floor(time / 1000) });
+        this.scene.start('GameOverScene', { score: Math.floor(elapsed / 1000) });
         return;
       }
     }

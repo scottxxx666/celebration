@@ -1,19 +1,36 @@
-import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, SPAWN_INTERVAL_MS, WALK_ZONE_TOP } from '../config/gameConfig.js';
+import { GAME_WIDTH, PLAYER_X } from '../config/gameConfig.js';
+import { WAVES } from '../config/waves.js';
 
 export class ObstacleSpawner {
-  constructor(scene) {
+  constructor(scene, audio) {
     this.scene = scene;
+    this.audio = audio;
     this.obstacles = []; // { rect, x, y, hw, hh }
-    this.lastSpawn = 0;
+    this.spawned = new Set(); // "waveIdx_obsIdx"
+    this.lastAudioMs = 0;
   }
 
   update(time, speed, delta) {
     const dt = delta / 1000;
+    const audioMs = this.audio.seek * 1000;
 
-    if (time - this.lastSpawn > SPAWN_INTERVAL_MS) {
-      this._spawn();
-      this.lastSpawn = time;
+    if (audioMs < this.lastAudioMs) this.spawned.clear();
+    this.lastAudioMs = audioMs;
+
+    for (let wi = 0; wi < WAVES.length; wi++) {
+      const wave = WAVES[wi];
+      for (let oi = 0; oi < wave.obstacles.length; oi++) {
+        const key = `${wi}_${oi}`;
+        if (this.spawned.has(key)) continue;
+        const obs = wave.obstacles[oi];
+        const arrivalMs = wave.songTime + obs.timeOffset;
+        const distance = GAME_WIDTH + obs.hw - PLAYER_X;
+        const travelMs = (distance / speed) * 1000;
+        if (audioMs >= arrivalMs - travelMs) {
+          this._spawnAt(obs.y, obs.hw, obs.hh);
+          this.spawned.add(key);
+        }
+      }
     }
 
     this.obstacles = this.obstacles.filter(obs => {
@@ -27,12 +44,8 @@ export class ObstacleSpawner {
     });
   }
 
-  _spawn() {
-    const hw = Phaser.Math.Between(15, 35);
-    const hh = Phaser.Math.Between(15, 50);
-    const y = Phaser.Math.Between(WALK_ZONE_TOP + hh, GAME_HEIGHT - hh);
+  _spawnAt(y, hw, hh) {
     const x = GAME_WIDTH + hw;
-
     const rect = this.scene.add.rectangle(x, y, hw * 2, hh * 2, 0xff4444);
     this.obstacles.push({ rect, x, y, hw, hh });
   }

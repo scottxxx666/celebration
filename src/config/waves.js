@@ -4,6 +4,7 @@
 
 export const WAVES = [
   {
+    songTime: 0,
     name: 'intro',
     duration: 5600,
     obstacles: [
@@ -14,6 +15,7 @@ export const WAVES = [
     ],
   },
   {
+    songTime: 5600,
     name: 'high_low_alternation',
     duration: 5600,
     obstacles: [
@@ -27,6 +29,7 @@ export const WAVES = [
     ],
   },
   {
+    songTime: 11200,
     name: 'gap_run',
     duration: 7000,
     obstacles: [
