@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { Player } from '../objects/Player.js';
 import { ObstacleSpawner } from '../objects/ObstacleSpawner.js';
 import { Enemy } from '../objects/Enemy.js';
-import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X, ENEMY_START_X } from '../config/gameConfig.js';
+import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X, ENEMY_START_X, MAX_SPEED } from '../config/gameConfig.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
