@@ -20,8 +20,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
-    this.startTime = null;
-
     // Background layers sit below the fake-3D depth range (shadows start at −0.5)
     // Scrolling background — walk zone only
     this.bg = this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH * 3, GAME_HEIGHT - WALK_ZONE_TOP, 0x1a1a2e).setOrigin(0, 0).setDepth(-10);
@@ -32,7 +30,9 @@ export class GameScene extends Phaser.Scene {
     // Dividing line
     this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH, 2, 0x88aa66).setOrigin(0, 0).setDepth(-10);
 
-    this.music = this.sound.add('music', { loop: true });
+    // Song = level: the track plays once; reaching its end clears the run
+    this.music = this.sound.add('music', { loop: false });
+    this.music.once(Phaser.Sound.Events.COMPLETE, () => this.endRun(true));
     this.music.play();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.sound.remove(this.music);
@@ -49,7 +49,7 @@ export class GameScene extends Phaser.Scene {
 
     const walkZoneMidY = WALK_ZONE_TOP + (GAME_HEIGHT - WALK_ZONE_TOP) / 2;
     this.player = new Player(this, PLAYER_X, walkZoneMidY);
-    this.spawner = new ObstacleSpawner(this, this.music);
+    this.spawner = new ObstacleSpawner(this);
     this.enemy = new Enemy(this, ENEMY_START_X);
 
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -61,11 +61,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    if (this.startTime === null) this.startTime = time;
-    const elapsed = time - this.startTime;
-
     this.conductor.update();
-    const songMs = this.music.seek * 1000;
+    const songMs = this.conductor.songMs;
     // Original intro behavior until the beat-sync layer switches on
     const beatSyncOn = songMs >= BEAT_SYNC_START_MS;
 
@@ -91,17 +88,17 @@ export class GameScene extends Phaser.Scene {
     // band average instead of the instantaneous player speed (docs/speed-design.md)
     const timingSpeed =
       this.enemy.speed >= ENEMY_CRUISE_SPEED ? OBSTACLE_TIMING_SPEED : this.player.speed;
-    this.spawner.update(time, this.player.speed, delta, timingSpeed);
+    this.spawner.update(songMs, this.player.speed, delta, timingSpeed);
 
     // Collision
     if (this.player.overlaps(this.enemy)) {
-      this.endRun(elapsed);
+      this.endRun(false);
       return;
     }
 
     for (const obs of this.spawner.obstacles) {
       if (this.player.overlaps(obs)) {
-        this.endRun(elapsed);
+        this.endRun(false);
         return;
       }
     }
@@ -109,10 +106,14 @@ export class GameScene extends Phaser.Scene {
     this.speedText.setText(`speed: ${Math.floor(this.player.speed)}`);
   }
 
-  endRun(elapsed) {
+  endRun(won) {
+    const durationMs = this.music.duration * 1000;
+    // On COMPLETE the sound's seek has already reset, so take the full duration
+    const songMs = won ? durationMs : this.conductor.songMs;
+    const progress = won ? 1 : Math.min(1, durationMs > 0 ? songMs / durationMs : 0);
     this.music.stop();
     this.enemy.destroy();
     this.spawner.destroyAll();
-    this.scene.start('GameOverScene', { score: Math.floor(elapsed / 1000) });
+    this.scene.start('GameOverScene', { won, score: Math.floor(songMs / 1000), progress });
   }
 }

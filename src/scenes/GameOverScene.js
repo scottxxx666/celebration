@@ -6,20 +6,23 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   init(data) {
+    this.won = data.won ?? false;
     this.score = data.score ?? 0;
+    this.progress = data.progress ?? 0;
   }
 
   create() {
     const cx = this.scale.width / 2;
     const cy = this.scale.height / 2;
 
-    this.add.text(cx, cy - 50, 'GAME OVER', {
+    this.add.text(cx, cy - 50, this.won ? 'CLEAR!' : 'GAME OVER', {
       fontSize: '48px',
-      color: '#ffffff',
+      color: this.won ? '#66ff88' : '#ffffff',
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    this.add.text(cx, cy + 10, `Survived: ${this.score}s`, {
+    const pct = Math.floor(this.progress * 100);
+    this.add.text(cx, cy + 10, `Song progress: ${pct}% · ${this.score}s`, {
       fontSize: '22px',
       color: '#aaaaaa',
     }).setOrigin(0.5);

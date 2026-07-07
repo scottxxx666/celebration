@@ -3,21 +3,16 @@ import { WAVES } from '../config/waves.js';
 import { rowLayout, addShadow } from '../rowLayout.js';
 
 export class ObstacleSpawner {
-  constructor(scene, audio) {
+  constructor(scene) {
     this.scene = scene;
-    this.audio = audio;
     this.obstacles = []; // { rect, x, y, hw, hh }
     this.spawned = new Set(); // "waveIdx_obsIdx"
-    this.lastAudioMs = 0;
   }
 
-  // speed: actual scroll speed; timingSpeed: assumed speed for on-beat spawn timing
-  update(time, speed, delta, timingSpeed) {
+  // songMs: song time from the Conductor; speed: actual scroll speed;
+  // timingSpeed: assumed speed for on-beat spawn timing
+  update(songMs, speed, delta, timingSpeed) {
     const dt = delta / 1000;
-    const audioMs = this.audio.seek * 1000;
-
-    if (audioMs < this.lastAudioMs) this.spawned.clear();
-    this.lastAudioMs = audioMs;
 
     for (let wi = 0; wi < WAVES.length; wi++) {
       const wave = WAVES[wi];
@@ -28,7 +23,7 @@ export class ObstacleSpawner {
         const arrivalMs = wave.songTime + obs.timeOffset;
         const distance = GAME_WIDTH + obs.hw - PLAYER_X;
         const travelMs = (distance / timingSpeed) * 1000;
-        if (audioMs >= arrivalMs - travelMs) {
+        if (songMs >= arrivalMs - travelMs) {
           this._spawnAt(obs.row, obs.hw, obs.visualHh);
           this.spawned.add(key);
         }

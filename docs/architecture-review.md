@@ -42,6 +42,15 @@ line — the same line as the player's shadow — so the shadow always marks the
 tall art extends upward past the walk zone instead of being clamped onto safe rows. A `rows: n`
 multi-row option was tried and reverted (2026-07-08): obstacles block exactly 1 row.
 
+Update 2026-07-08 (single clock / song-as-level), resolved issues removed —
+**A6** (two clocks) via Option A: `Conductor.songMs` is now the single read point for song time;
+`GameScene` (score, beat-sync gate, enemy ramp) and `ObstacleSpawner` all consume it —
+`ObstacleSpawner` no longer holds an audio reference. Design decided: **song = level** — the
+track no longer loops; its COMPLETE event triggers a CLEAR screen, and death shows song
+progress %. `GameOverScene` takes `{ won, score, progress }` and shows progress % + survived
+seconds, which also closes **M7**. The seek-backwards `spawned` reset in the spawner was removed
+(song time never rewinds mid-run without looping).
+
 ---
 
 ## Architecture Improvements (for the dance-game goal)
@@ -50,41 +59,19 @@ multi-row option was tried and reverted (2026-07-08): obstacles block exactly 1 
 
 **Where (current state):** `src/Conductor.js` exists as a minimal polled beat clock
 (`beatMs` from `BPM`, beat/half-beat crossing flags) consumed by `GameScene` for the ambient
-beat-sync layer. But `waves.js` still hardcodes ms (`5600`, `700`, `1400` — 700 ms = one beat
-at 85.7 BPM), `ObstacleSpawner` still reads `music.seek` directly, and there is no latency
-calibration.
+beat-sync layer, and since A6 it is also the single read point for song time (`songMs`). But
+`waves.js` still hardcodes ms (`5600`, `700`, `1400` — 700 ms = one beat at 85.7 BPM), and
+there is no latency calibration.
 
 **Remaining scope:**
 
 - Author waves in **beats** (`{ beat: 8, row: 0, … }`) and convert via the Conductor —
   swapping songs becomes changing `BPM` + `FIRST_BEAT_OFFSET_MS`, not rewriting every number.
   Do this before authoring a full track's waves.
-- Centralize clock reads: `ObstacleSpawner` (and `Enemy`'s ramp) should get song time from the
-  Conductor instead of touching `music.seek` themselves, so an `AUDIO_LATENCY_OFFSET_MS`
-  calibration constant can be added in one place.
+- Add an `AUDIO_LATENCY_OFFSET_MS` calibration constant inside the Conductor (clock reads are
+  already centralized there, so it's a one-place change).
 - Beat/bar *events* (vs. polled flags) only if a consumer outside `GameScene.update` needs
   them — YAGNI so far.
-
-### A6. Two clocks: score/gameplay uses game time, obstacles use audio time
-
-**Where:** `GameScene.update()` scores by `time − startTime` (Phaser clock); spawner runs on
-`music.seek`. The music loops but `WAVES` covers only ~18.2 s, so if the track is longer than
-the waves there is dead air; when the loop restarts, waves replay (the `spawned` reset on
-seek-backwards handles this).
-
-**Problem:** Not a bug today, but pause, tab-blur (Phaser pauses the sound, game clock choices
-differ), and "song position" UI all get confusing with two time bases. Also the song-loop /
-survival-score combination is an undecided design: is a run "one song = one level" or endless?
-
-**Options:**
-
-- **Option A — Recommended:** make the Conductor's song time the *only* gameplay clock (score,
-  waves, enemy pacing). Decide: **song = level** — when the track ends, that's a clear/win
-  screen; death before the end shows progress %. This matches the dance-game framing and makes
-  wave authoring finite and meaningful.
-- **Option B:** endless mode — keep looping, keep survival-seconds score, and make waves cycle
-  with escalating modifiers (denser obstacles per loop). Fine as a mode later; harder to author
-  well.
 
 ---
 
@@ -96,14 +83,11 @@ survival-score combination is an undecided design: is a run "one song = one leve
   do this when authoring a full track (YAGNI until then).
 - **M6. Single audio format:** `music.m4a` only. Fine for modern browsers; optionally provide
   `.ogg` fallback via Phaser's multi-URL audio load if you ever hit a codec complaint.
-- **M7. `GameOverScene` restart replays from song start** — expected, but once "song = level"
-  (A6-A) is chosen, also show progress % reached, not just seconds.
 
 ---
 
 ## Suggested Implementation Order (for the follow-up agent)
 
-1. **A1** remaining scope: beats-authored waves + centralized clock reads (do before authoring
-   a full track)
-2. **A6 Option A** single clock + song-as-level decision
-3. **M2** cleanup
+1. **A1** remaining scope: beats-authored waves (clock reads are centralized now; do before
+   authoring a full track)
+2. **M2** cleanup
