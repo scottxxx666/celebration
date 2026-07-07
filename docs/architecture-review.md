@@ -24,6 +24,11 @@ walk-zone beat flash, all switching on together at `BEAT_SYNC_START_MS` (song ti
 from the enemy speed ramp). This is A1 in its minimal form; A1 stays open below for the
 remaining scope (beats-authored waves, latency offset, centralizing clock reads).
 
+Update 2026-07-07 (cleanups), resolved issues removed —
+**A3** (player dimensions duplicated): `Player.js` now imports `PLAYER_HW`/`PLAYER_HH` from
+`gameConfig.js` (Option A); the local `HALF_W`/`HALF_H` constants and the "must match" comment
+are gone.
+
 ---
 
 ## Architecture Improvements (for the dance-game goal)
@@ -46,18 +51,6 @@ calibration.
   calibration constant can be added in one place.
 - Beat/bar *events* (vs. polled flags) only if a consumer outside `GameScene.update` needs
   them — YAGNI so far.
-
-### A3. Player dimensions duplicated between `gameConfig.js` and `Player.js`
-
-**Where:** `PLAYER_HW`/`PLAYER_HH` in config carry a "must match Player.js HALF_W / HALF_H"
-comment; `Player.js` re-declares 35/35 locally.
-
-- **Option A — Recommended:** `Player.js` imports `PLAYER_HW`/`PLAYER_HH` from config; delete
-  the local constants and the comment. Trivial, removes a real drift risk (the spawner's
-  one-row collision math in `_spawnAt` depends on `PLAYER_HH` being right).
-- **Option B:** move them onto the `Player` class as static fields and have the config/spawner
-  import from Player. Same effect; pick one owner. Config is already the declared "single source
-  of truth," so A.
 
 ### A4. Wave data model: `hh` is visual-only, collision is hardcoded to one row
 
@@ -134,5 +127,5 @@ survival-score combination is an undecided design: is a run "one song = one leve
 1. **A1** remaining scope: beats-authored waves + centralized clock reads (do before authoring
    a full track)
 2. **A6 Option A** single clock + song-as-level decision
-3. **A3, A4, M2** cleanups
+3. **A4, M2** cleanups
 4. **A5** depth/scale/shadow helper (pre-art)

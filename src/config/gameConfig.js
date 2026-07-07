@@ -12,7 +12,7 @@ export const DECEL_PER_SEC = 125; // speed lost per second when not tapping
 // Walking zone — player/obstacles confined to this vertical band
 export const WALK_ZONE_TOP = GAME_HEIGHT * 0.4; // y=180; above is scenery
 
-// Player half-dimensions (must match Player.js HALF_W / HALF_H)
+// Player half-dimensions
 export const PLAYER_HW = 35;
 export const PLAYER_HH = 35;
 
