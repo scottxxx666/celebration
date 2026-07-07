@@ -24,13 +24,16 @@ export class GameOverScene extends Phaser.Scene {
       color: '#aaaaaa',
     }).setOrigin(0.5);
 
-    this.add.text(cx, cy + 55, 'Press SPACE to restart', {
+    this.add.text(cx, cy + 55, 'Press SPACE to restart · ESC for menu', {
       fontSize: '18px',
       color: '#666666',
     }).setOrigin(0.5);
 
     this.input.keyboard.once('keydown-SPACE', () => {
       this.scene.start('GameScene');
+    });
+    this.input.keyboard.once('keydown-ESC', () => {
+      this.scene.start('MenuScene');
     });
   }
 }

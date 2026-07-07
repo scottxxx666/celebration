@@ -58,21 +58,24 @@ export class GameScene extends Phaser.Scene {
 
     // Collision
     if (this.player.overlaps(this.enemy)) {
-      this.enemy.destroy();
-      this.spawner.destroyAll();
-      this.scene.start('GameOverScene', { score: Math.floor(elapsed / 1000) });
+      this.endRun(elapsed);
       return;
     }
 
     for (const obs of this.spawner.obstacles) {
       if (this.player.overlaps(obs)) {
-        this.enemy.destroy();
-        this.spawner.destroyAll();
-        this.scene.start('GameOverScene', { score: Math.floor(elapsed / 1000) });
+        this.endRun(elapsed);
         return;
       }
     }
 
     this.speedText.setText(`speed: ${Math.floor(this.player.speed)}`);
+  }
+
+  endRun(elapsed) {
+    this.music.stop();
+    this.enemy.destroy();
+    this.spawner.destroyAll();
+    this.scene.start('GameOverScene', { score: Math.floor(elapsed / 1000) });
   }
 }
