@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X, WALK_ZONE_TOP, ROW_HEIGHT, PLAYER_HH } from '../config/gameConfig.js';
 import { WAVES } from '../config/waves.js';
 
@@ -10,7 +11,8 @@ export class ObstacleSpawner {
     this.lastAudioMs = 0;
   }
 
-  update(time, speed, delta) {
+  // speed: actual scroll speed; timingSpeed: assumed speed for on-beat spawn timing
+  update(time, speed, delta, timingSpeed) {
     const dt = delta / 1000;
     const audioMs = this.audio.seek * 1000;
 
@@ -25,7 +27,7 @@ export class ObstacleSpawner {
         const obs = wave.obstacles[oi];
         const arrivalMs = wave.songTime + obs.timeOffset;
         const distance = GAME_WIDTH + obs.hw - PLAYER_X;
-        const travelMs = (distance / speed) * 1000;
+        const travelMs = (distance / timingSpeed) * 1000;
         if (audioMs >= arrivalMs - travelMs) {
           const y = WALK_ZONE_TOP + obs.row * ROW_HEIGHT + ROW_HEIGHT / 2;
           this._spawnAt(y, obs.hw, obs.hh);

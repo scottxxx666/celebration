@@ -23,7 +23,10 @@ No test runner is configured.
 4. `GameOverScene` — displays final score; SPACE restarts `GameScene`, ESC returns to `MenuScene`
 
 **Game objects** (`src/objects/`):
-- `Player` — alternating left/right key taps accelerate the player; up/down arrows control vertical position
-- `ObstacleSpawner` — spawns random obstacles from the right on a timer; cleans up off-screen ones
+- `Player` — alternating left/right key taps accelerate the player; up/down arrows snap between 5 rows
+- `ObstacleSpawner` — spawns the authored waves from `src/config/waves.js`, timed off the audio clock (`music.seek`) so obstacles arrive at the player on the beat; scroll speed is the player's actual speed, while spawn timing uses a separate `timingSpeed`
+- `Enemy` — chases from the left; its speed ramps from `ENEMY_SPEED` to `ENEMY_CRUISE_SPEED` anchored to song time, pinning the player into a narrow speed band near max
 
-**Configuration** (`src/config/gameConfig.js`): single source of truth for canvas size, speed bounds, acceleration/deceleration rates, and spawn intervals. Tune gameplay here, not inline.
+**Speed/rhythm design** (`docs/speed-design.md`): once the enemy reaches cruise speed, obstacle spawn timing assumes the band average (`OBSTACLE_TIMING_SPEED`) instead of the instantaneous player speed, keeping on-beat arrival within ~±40ms. Before the ramp completes (sparse intro), timing uses the player's actual speed.
+
+**Configuration** (`src/config/gameConfig.js`): single source of truth for canvas size, speed bounds, acceleration/deceleration rates, enemy ramp, and music constants (`BPM`, `FIRST_BEAT_OFFSET_MS` — TBD until the track is chosen). Tune gameplay here, not inline. Wave/beat maps live in `src/config/waves.js`.
