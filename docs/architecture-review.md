@@ -27,7 +27,12 @@ remaining scope (beats-authored waves, latency offset, centralizing clock reads)
 Update 2026-07-07 (cleanups), resolved issues removed —
 **A3** (player dimensions duplicated): `Player.js` now imports `PLAYER_HW`/`PLAYER_HH` from
 `gameConfig.js` (Option A); the local `HALF_W`/`HALF_H` constants and the "must match" comment
-are gone.
+are gone. **A5** (fake-3D depth): `src/rowLayout.js` (Option A) maps row → `{y, scale, depth}`
+(scale 60%→100% per the art brief, `ROW_SCALE_BACK`/`ROW_SCALE_FRONT` in config) and creates
+drop-shadow ellipses; player, enemy, and obstacles apply `setDepth(row)` (shadows at row − 0.5,
+background layers pushed below) and are scaled visually — collision boxes are unchanged. The
+duplicated row→y math moved into the helper too. The player's beat squash now composes with the
+row scale via a separate squash factor.
 
 ---
 
@@ -69,22 +74,6 @@ one. A future author (or agent) editing waves will get this wrong.
 - **Option B:** make collision honor real `hh` again (pure AABB, no row snapping). More
   flexible, but breaks the clean row-based dodge design you just built and makes near-miss
   authoring harder. Not recommended for this game.
-
-### A5. Fake-3D depth (from art-brief) not implemented — plan for it now
-
-**Where:** `docs/art-brief.md` promises scale-by-row (60%→100%) and engine drop shadows; the
-code renders same-size rectangles with no depth ordering (creation order decides overlap, so an
-obstacle in a back row can draw on top of the player standing in a front row).
-
-**Options:**
-
-- **Option A — Recommended:** introduce a tiny shared helper now (e.g. row → {y, scale, depth}):
-  `depth = row` (or `y`) applied via `setDepth()` to player, enemy, obstacles; scale table per
-  the art brief; a shadow ellipse under each object. Do it while everything is still rectangles
-  so sprites drop in later without touching game logic.
-- **Option B:** wait for real sprites and do depth+scale+shadows in one art pass. Less churn
-  now, but current row overlap rendering is already visibly wrong in `gap_run`-style waves, and
-  collision tuning (hw/hh vs. visual scale) is easier to settle before art lands.
 
 ### A6. Two clocks: score/gameplay uses game time, obstacles use audio time
 
@@ -128,4 +117,3 @@ survival-score combination is an undecided design: is a run "one song = one leve
    a full track)
 2. **A6 Option A** single clock + song-as-level decision
 3. **A4, M2** cleanups
-4. **A5** depth/scale/shadow helper (pre-art)

@@ -22,14 +22,15 @@ export class GameScene extends Phaser.Scene {
   create() {
     this.startTime = null;
 
+    // Background layers sit below the fake-3D depth range (shadows start at −0.5)
     // Scrolling background — walk zone only
-    this.bg = this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH * 3, GAME_HEIGHT - WALK_ZONE_TOP, 0x1a1a2e).setOrigin(0, 0);
+    this.bg = this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH * 3, GAME_HEIGHT - WALK_ZONE_TOP, 0x1a1a2e).setOrigin(0, 0).setDepth(-10);
     this.bgX = 0;
 
     // Static scenery area above the walk zone
-    this.add.rectangle(0, 0, GAME_WIDTH, WALK_ZONE_TOP, 0x2a4a2e).setOrigin(0, 0);
+    this.add.rectangle(0, 0, GAME_WIDTH, WALK_ZONE_TOP, 0x2a4a2e).setOrigin(0, 0).setDepth(-10);
     // Dividing line
-    this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH, 2, 0x88aa66).setOrigin(0, 0);
+    this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH, 2, 0x88aa66).setOrigin(0, 0).setDepth(-10);
 
     this.music = this.sound.add('music', { loop: true });
     this.music.play();
@@ -38,11 +39,13 @@ export class GameScene extends Phaser.Scene {
     });
     this.conductor = new Conductor(this.music);
 
-    // Beat flash — white overlay over the walk zone, pulsed on each beat
+    // Beat flash — white overlay over the walk zone, pulsed on each beat;
+    // above the background but below shadows and game objects
     this.beatOverlay = this.add
       .rectangle(0, WALK_ZONE_TOP, GAME_WIDTH, GAME_HEIGHT - WALK_ZONE_TOP, 0xffffff)
       .setOrigin(0, 0)
-      .setAlpha(0);
+      .setAlpha(0)
+      .setDepth(-5);
 
     const walkZoneMidY = WALK_ZONE_TOP + (GAME_HEIGHT - WALK_ZONE_TOP) / 2;
     this.player = new Player(this, PLAYER_X, walkZoneMidY);
@@ -53,8 +56,8 @@ export class GameScene extends Phaser.Scene {
     this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
     this.rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
 
-    // Speed readout (debug HUD)
-    this.speedText = this.add.text(10, 10, '', { fontSize: '14px', color: '#ffffff' });
+    // Speed readout (debug HUD) — above all gameplay depths
+    this.speedText = this.add.text(10, 10, '', { fontSize: '14px', color: '#ffffff' }).setDepth(10);
   }
 
   update(time, delta) {

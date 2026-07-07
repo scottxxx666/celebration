@@ -5,18 +5,16 @@ import {
   ACCEL_STEP,
   DECEL_PER_SEC,
   NUM_ROWS,
-  ROW_HEIGHT,
-  WALK_ZONE_TOP,
   PLAYER_HW,
   PLAYER_HH,
 } from '../config/gameConfig.js';
+import { rowLayout, addShadow } from '../rowLayout.js';
 
 export class Player {
   constructor(scene, x, y) {
     this.scene = scene;
     this.x = x;
     this.row = Math.floor(NUM_ROWS / 2); // start in middle row
-    this.y = WALK_ZONE_TOP + ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
     this.speed = MIN_SPEED; // world scroll speed (px/s)
 
     // Alternating-tap state
@@ -24,7 +22,10 @@ export class Player {
     this._prevLeft = false;
     this._prevRight = false;
 
+    this._squash = 1; // beat-pulse squash factor on top of the row scale
+    this.shadow = addShadow(scene, PLAYER_HW);
     this.rect = scene.add.rectangle(x, y, PLAYER_HW * 2, PLAYER_HH * 2, 0x00ff88);
+    this._applyLayout(rowLayout(this.row));
   }
 
   update(cursors, leftKey, rightKey, delta) {
@@ -56,16 +57,26 @@ export class Player {
       this.row = Math.min(NUM_ROWS - 1, this.row + 1);
     }
 
-    this.y = WALK_ZONE_TOP + ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
-    this.rect.setPosition(this.x, this.y);
-
     // Recover from the beat squash
-    this.rect.scaleY = Math.min(1, this.rect.scaleY + 1.2 * dt);
+    this._squash = Math.min(1, this._squash + 1.2 * dt);
+    this._applyLayout(rowLayout(this.row));
+  }
+
+  _applyLayout({ y, scale, depth }) {
+    this.y = y;
+    this.rect
+      .setPosition(this.x, y)
+      .setScale(scale, scale * this._squash)
+      .setDepth(depth);
+    this.shadow
+      .setPosition(this.x, y + PLAYER_HH * scale)
+      .setScale(scale)
+      .setDepth(depth - 0.5);
   }
 
   // Squash on 8th notes — placeholder run-cycle bounce synced to the music
   pulse() {
-    this.rect.scaleY = 0.85;
+    this._squash = 0.85;
   }
 
   // AABB overlap check against an obstacle { x, y, hw, hh }

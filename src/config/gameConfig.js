@@ -20,6 +20,10 @@ export const PLAYER_HH = 35;
 export const NUM_ROWS = 5;
 export const ROW_HEIGHT = (GAME_HEIGHT - WALK_ZONE_TOP) / NUM_ROWS; // 54
 
+// Fake-3D depth (docs/art-brief.md): visual scale from back row (0) to front row
+export const ROW_SCALE_BACK = 0.6;
+export const ROW_SCALE_FRONT = 1.0;
+
 // Obstacle spawning
 export const SPAWN_INTERVAL_MS = 1400;
 

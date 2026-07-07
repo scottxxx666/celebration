@@ -6,9 +6,8 @@ import {
   ENEMY_RAMP_START_MS,
   ENEMY_RAMP_END_MS,
   NUM_ROWS,
-  ROW_HEIGHT,
-  WALK_ZONE_TOP,
 } from '../config/gameConfig.js';
+import { rowLayout, addShadow } from '../rowLayout.js';
 
 export class Enemy {
   constructor(scene, x) {
@@ -16,11 +15,12 @@ export class Enemy {
     this.hh = ENEMY_HH;
     this.x = x;
     this.row = Math.floor(NUM_ROWS / 2);
-    this.y = WALK_ZONE_TOP + ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
     this.targetRow = this.row;
     this.atBoundary = false;
     this.speed = ENEMY_SPEED;
-    this.rect = scene.add.rectangle(x, this.y, this.hw * 2, this.hh * 2, 0xff3333);
+    this.shadow = addShadow(scene, ENEMY_HW);
+    this.rect = scene.add.rectangle(x, 0, this.hw * 2, this.hh * 2, 0xff3333);
+    this._applyRow();
   }
 
   update(dt, playerSpeed, songMs) {
@@ -35,6 +35,7 @@ export class Enemy {
       this.x = -ENEMY_HW;
     }
     this.rect.setPosition(this.x, this.y);
+    this.shadow.setPosition(this.x, this.y + ENEMY_HH * this.scale);
   }
 
   // Tracks the player's row instantly while beat sync is off (intro); once it's
@@ -44,11 +45,20 @@ export class Enemy {
     this.targetRow = playerRow;
     if ((beatCrossed || !beatSyncOn) && this.row !== this.targetRow) {
       this.row = this.targetRow;
-      this.y = WALK_ZONE_TOP + ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
+      this._applyRow();
     }
+  }
+
+  _applyRow() {
+    const { y, scale, depth } = rowLayout(this.row);
+    this.y = y;
+    this.scale = scale;
+    this.rect.setPosition(this.x, y).setScale(scale).setDepth(depth);
+    this.shadow.setPosition(this.x, y + ENEMY_HH * scale).setScale(scale).setDepth(depth - 0.5);
   }
 
   destroy() {
     this.rect.destroy();
+    this.shadow.destroy();
   }
 }
