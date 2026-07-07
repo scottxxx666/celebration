@@ -14,59 +14,38 @@ spawn timing with `OBSTACLE_TIMING_SPEED`); **C3** (autoplay desync) via `MenuSc
 for the audio unlock before starting `GameScene`; **M1** (missing Phaser import in spawner),
 **M3** (game-over path extracted to `endRun()`), **M5** (CLAUDE.md refreshed).
 
+Update 2026-07-07 (ambient beat-sync MVP), resolved issues removed —
+**M8** (enemy row-snap): the enemy now steps onto the player's row only on beat crossings
+(`Enemy.trackRow`); instant tracking remains during the intro. **A2** (beat-judged taps):
+closed by design decision — the game stays a running game; taps are never judged against the
+beat. Rhythm is conveyed world-side instead: `src/Conductor.js` (minimal polled beat clock,
+beat/half-beat crossings), enemy row-stepping, the player's 8th-note squash pulse, and a
+walk-zone beat flash, all switching on together at `BEAT_SYNC_START_MS` (song time, decoupled
+from the enemy speed ramp). This is A1 in its minimal form; A1 stays open below for the
+remaining scope (beats-authored waves, latency offset, centralizing clock reads).
+
 ---
 
 ## Architecture Improvements (for the dance-game goal)
 
-### A1. No beat/conductor abstraction — timing is raw milliseconds everywhere
+### A1. Beat abstraction is minimal — wave authoring is still raw milliseconds
 
-**Where:** `waves.js` hardcodes ms (`5600`, `700`, `1400` — clearly 700 ms ≈ one beat at ~85.7
-BPM, or a half-beat at ~171 BPM); `ObstacleSpawner` reads the audio clock directly; nothing else
-can know about beats.
+**Where (current state):** `src/Conductor.js` exists as a minimal polled beat clock
+(`beatMs` from `BPM`, beat/half-beat crossing flags) consumed by `GameScene` for the ambient
+beat-sync layer. But `waves.js` still hardcodes ms (`5600`, `700`, `1400` — 700 ms = one beat
+at 85.7 BPM), `ObstacleSpawner` still reads `music.seek` directly, and there is no latency
+calibration.
 
-**Problem:** For "gameplay follows the song," beat knowledge must be shared: input judgment
-(A2), enemy movement, visual pulses, spawn authoring. Right now every future feature would
-re-derive timing from ms by hand, and re-authoring waves for a different track means recomputing
-every number.
+**Remaining scope:**
 
-**Options:**
-
-- **Option A — Recommended: a small `Conductor` (music clock) service.**
-  One module owning: the music object, `BPM`, `FIRST_BEAT_OFFSET_MS`, and an
-  `AUDIO_LATENCY_OFFSET_MS` calibration constant (all in `gameConfig.js`). It exposes
-  `songTimeMs`, `currentBeat` (float), `beatDurationMs`, helpers like `timeToNearestBeat()`, and
-  emits `beat` / `bar` events. `GameScene`, `ObstacleSpawner`, `Player`, and `Enemy` consume it
-  instead of touching `this.music.seek` directly. Waves get authored in **beats**
-  (`{ beat: 8, row: 0, … }`) and the Conductor converts to ms — swapping songs becomes changing
-  BPM + offset, not rewriting every number.
-- **Option B — minimal:** keep ms authoring but centralize the clock read: one
-  `getSongTimeMs()` helper (music seek + latency offset) used by everyone, plus exported
-  `BEAT_MS` so waves can be written as `beat * BEAT_MS` expressions. Less new structure, but
-  beat events and judgment windows (A2) will force Option A's shape soon anyway.
-
-The Conductor is the single highest-leverage change for your stated goal — most items below
-assume it exists.
-
-### A2. Player input is not connected to the beat (the actual "dance game" mechanic)
-
-**Where:** `Player.update()` — any alternating L/R tap adds 50 speed, any time.
-
-**Problem:** The stated vision is that *playing* feels like a dance game, but currently only the
-obstacles know about music. Taps are rhythm-free mashing; the optimal strategy is to tap as fast
-as possible, which fights the music instead of following it.
-
-**Options:**
-
-- **Option A — Recommended: beat-judged taps.** Compare each tap's song time to the nearest
-  beat via the Conductor: within ±X ms = "on beat" (full accel + combo count), otherwise weak or
-  zero accel. Combos multiply score or acceleration. This single change converts the run
-  mechanic into a rhythm mechanic and naturally caps tap rate at the song tempo. Show judgment
-  feedback (Perfect/Good/Miss text or a pulse on the player).
-- **Option B — Best Practice: full judgment system.** Timing windows per grade
-  (Perfect/Great/Good/Miss), calibration screen for input+audio latency, combo/health meters —
-  the DDR-style stack. The right end state, but a lot at once; build it on top of Option A.
-- Design choice to make either way: is tapping on **every beat** (steady 8th-note running) or on
-  **accented beats** the target? Affects window width and BPM choice.
+- Author waves in **beats** (`{ beat: 8, row: 0, … }`) and convert via the Conductor —
+  swapping songs becomes changing `BPM` + `FIRST_BEAT_OFFSET_MS`, not rewriting every number.
+  Do this before authoring a full track's waves.
+- Centralize clock reads: `ObstacleSpawner` (and `Enemy`'s ramp) should get song time from the
+  Conductor instead of touching `music.seek` themselves, so an `AUDIO_LATENCY_OFFSET_MS`
+  calibration constant can be added in one place.
+- Beat/bar *events* (vs. polled flags) only if a consumer outside `GameScene.update` needs
+  them — YAGNI so far.
 
 ### A3. Player dimensions duplicated between `gameConfig.js` and `Player.js`
 
@@ -147,19 +126,13 @@ survival-score combination is an undecided design: is a run "one song = one leve
   `.ogg` fallback via Phaser's multi-URL audio load if you ever hit a codec complaint.
 - **M7. `GameOverScene` restart replays from song start** — expected, but once "song = level"
   (A6-A) is chosen, also show progress % reached, not just seconds.
-- **M8. Enemy `trackY` snaps to the player's row instantly**, so changing rows never helps
-  against the enemy. Consider a lag — e.g. the enemy changes row on the beat (fits the dance
-  theme; pairs with A1's beat events).
 
 ---
 
 ## Suggested Implementation Order (for the follow-up agent)
 
-1. **A1** Conductor service (consume the `BPM` / `FIRST_BEAT_OFFSET_MS` placeholders already in
-   `gameConfig.js`)
-2. **A2 Option A** beat-judged taps + judgment feedback
-3. **A6 Option A** single clock + song-as-level decision
-4. **A3, A4, M2** cleanups
-5. **A5** depth/scale/shadow helper (pre-art)
-
-Items 1–3 are the minimum set that makes *playing* (not just dodging) feel music-synced.
+1. **A1** remaining scope: beats-authored waves + centralized clock reads (do before authoring
+   a full track)
+2. **A6 Option A** single clock + song-as-level decision
+3. **A3, A4, M2** cleanups
+4. **A5** depth/scale/shadow helper (pre-art)

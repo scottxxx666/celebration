@@ -59,6 +59,14 @@ export class Player {
 
     this.y = WALK_ZONE_TOP + ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
     this.rect.setPosition(this.x, this.y);
+
+    // Recover from the beat squash
+    this.rect.scaleY = Math.min(1, this.rect.scaleY + 1.2 * dt);
+  }
+
+  // Squash on 8th notes — placeholder run-cycle bounce synced to the music
+  pulse() {
+    this.rect.scaleY = 0.85;
   }
 
   // AABB overlap check against an obstacle { x, y, hw, hh }

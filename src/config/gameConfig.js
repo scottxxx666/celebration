@@ -37,6 +37,11 @@ export const ENEMY_RAMP_END_MS = 11200;   // song time when enemy reaches cruise
 // Assumed player speed for obstacle spawn timing once the enemy is at cruise
 export const OBSTACLE_TIMING_SPEED = (MAX_SPEED + ENEMY_CRUISE_SPEED) / 2;
 
+// Song time when the beat-sync presentation switches on (enemy row-stepping on
+// the beat, player squash pulse, walk-zone beat flash); before it, original
+// intro behavior — no pulses, enemy tracks the player's row instantly
+export const BEAT_SYNC_START_MS = 11200;
+
 // Music — TBD, set when the final track is chosen
 export const BPM = 85.7;                 // matches the 700ms beat spacing in waves.js
 export const FIRST_BEAT_OFFSET_MS = 0;

@@ -5,17 +5,22 @@ import {
   ENEMY_CRUISE_SPEED,
   ENEMY_RAMP_START_MS,
   ENEMY_RAMP_END_MS,
+  NUM_ROWS,
+  ROW_HEIGHT,
+  WALK_ZONE_TOP,
 } from '../config/gameConfig.js';
 
 export class Enemy {
-  constructor(scene, x, y) {
+  constructor(scene, x) {
     this.hw = ENEMY_HW;
     this.hh = ENEMY_HH;
     this.x = x;
-    this.y = y;
+    this.row = Math.floor(NUM_ROWS / 2);
+    this.y = WALK_ZONE_TOP + ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
+    this.targetRow = this.row;
     this.atBoundary = false;
     this.speed = ENEMY_SPEED;
-    this.rect = scene.add.rectangle(x, y, this.hw * 2, this.hh * 2, 0xff3333);
+    this.rect = scene.add.rectangle(x, this.y, this.hw * 2, this.hh * 2, 0xff3333);
   }
 
   update(dt, playerSpeed, songMs) {
@@ -32,8 +37,15 @@ export class Enemy {
     this.rect.setPosition(this.x, this.y);
   }
 
-  trackY(playerY) {
-    this.y = playerY;
+  // Tracks the player's row instantly while beat sync is off (intro); once it's
+  // on, steps onto the row only on a beat crossing — row-dodging then buys the
+  // player up to one beat of separation
+  trackRow(playerRow, beatCrossed, beatSyncOn) {
+    this.targetRow = playerRow;
+    if ((beatCrossed || !beatSyncOn) && this.row !== this.targetRow) {
+      this.row = this.targetRow;
+      this.y = WALK_ZONE_TOP + ROW_HEIGHT * this.row + ROW_HEIGHT / 2;
+    }
   }
 
   destroy() {

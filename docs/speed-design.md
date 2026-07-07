@@ -64,8 +64,9 @@ With tap gain `ACCEL_STEP` (50), decay `DECEL_PER_SEC` (125), and cap `MAX_SPEED
 - **Rule of thumb:** pick `ENEMY_CRUISE_SPEED` slightly *below* the sustainable average
   at the intended musical tap cadence (e.g. 8th notes), so on-rhythm play escapes and
   mistakes shrink the gap. The gap becomes a visible skill meter.
-- If beat-judged taps (A2 in `architecture-review.md`) land later, off-beat taps giving
-  reduced accel shifts this equilibrium — retune together.
+- Beat-judged taps were considered and **rejected** (2026-07-07): taps always give full
+  accel — the game stays a running game, and rhythm is conveyed world-side (beat-sync layer
+  from `BEAT_SYNC_START_MS`). The equilibrium math above therefore stands as-is.
 
 ## Config additions (names indicative)
 

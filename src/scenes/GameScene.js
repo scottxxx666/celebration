@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Player } from '../objects/Player.js';
 import { ObstacleSpawner } from '../objects/ObstacleSpawner.js';
 import { Enemy } from '../objects/Enemy.js';
+import { Conductor } from '../Conductor.js';
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
@@ -10,6 +11,7 @@ import {
   WALK_ZONE_TOP,
   ENEMY_CRUISE_SPEED,
   OBSTACLE_TIMING_SPEED,
+  BEAT_SYNC_START_MS,
 } from '../config/gameConfig.js';
 
 export class GameScene extends Phaser.Scene {
@@ -34,11 +36,18 @@ export class GameScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.sound.remove(this.music);
     });
+    this.conductor = new Conductor(this.music);
+
+    // Beat flash — white overlay over the walk zone, pulsed on each beat
+    this.beatOverlay = this.add
+      .rectangle(0, WALK_ZONE_TOP, GAME_WIDTH, GAME_HEIGHT - WALK_ZONE_TOP, 0xffffff)
+      .setOrigin(0, 0)
+      .setAlpha(0);
 
     const walkZoneMidY = WALK_ZONE_TOP + (GAME_HEIGHT - WALK_ZONE_TOP) / 2;
     this.player = new Player(this, PLAYER_X, walkZoneMidY);
     this.spawner = new ObstacleSpawner(this, this.music);
-    this.enemy = new Enemy(this, ENEMY_START_X, walkZoneMidY);
+    this.enemy = new Enemy(this, ENEMY_START_X);
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
@@ -52,16 +61,27 @@ export class GameScene extends Phaser.Scene {
     if (this.startTime === null) this.startTime = time;
     const elapsed = time - this.startTime;
 
+    this.conductor.update();
+    const songMs = this.music.seek * 1000;
+    // Original intro behavior until the beat-sync layer switches on
+    const beatSyncOn = songMs >= BEAT_SYNC_START_MS;
+
     this.player.update(this.cursors, this.leftKey, this.rightKey, delta);
+    if (beatSyncOn && this.conductor.halfBeatCrossed) this.player.pulse();
+
+    // Beat flash: brighter on the downbeat of each bar, then fade out
+    if (beatSyncOn && this.conductor.beatCrossed) {
+      this.beatOverlay.setAlpha(this.conductor.beatIndex % 4 === 0 ? 0.1 : 0.05);
+    } else {
+      this.beatOverlay.setAlpha(Math.max(0, this.beatOverlay.alpha - 0.4 * (delta / 1000)));
+    }
 
     // Scroll background
     this.bgX -= this.player.speed * (delta / 1000);
     if (this.bgX <= -GAME_WIDTH) this.bgX += GAME_WIDTH;
     this.bg.setX(this.bgX);
 
-    const songMs = this.music.seek * 1000;
-
-    this.enemy.trackY(this.player.y);
+    this.enemy.trackRow(this.player.row, this.conductor.beatCrossed, beatSyncOn);
     this.enemy.update(delta / 1000, this.player.speed, songMs);
 
     // Once the enemy pins the player into the speed band, time spawns off the
