@@ -1,7 +1,6 @@
-// row: top-most player row the obstacle occupies, 0 (top/back) – 4 (bottom/front).
-// rows: optional, default 1 — number of consecutive rows blocked (row … row + rows − 1).
+// row: player row index the obstacle occupies, 0 (top/back) – 4 (bottom/front).
 // hw: collision half-width (AABB) — matches ObstacleSpawner collision.
-// visualHh: drawn half-height only; never affects collision (rows decides what's blocked).
+// visualHh: drawn half-height only; never affects collision (always blocks exactly 1 row).
 // timeOffset: ms after wave start; events must be sorted ascending.
 
 export const WAVES = [

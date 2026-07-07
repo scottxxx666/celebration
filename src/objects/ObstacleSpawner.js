@@ -1,4 +1,4 @@
-import { GAME_WIDTH, PLAYER_X, ROW_HEIGHT, PLAYER_HH, NUM_ROWS } from '../config/gameConfig.js';
+import { GAME_WIDTH, PLAYER_X, ROW_HEIGHT, PLAYER_HH } from '../config/gameConfig.js';
 import { WAVES } from '../config/waves.js';
 import { rowLayout, addShadow } from '../rowLayout.js';
 
@@ -29,7 +29,7 @@ export class ObstacleSpawner {
         const distance = GAME_WIDTH + obs.hw - PLAYER_X;
         const travelMs = (distance / timingSpeed) * 1000;
         if (audioMs >= arrivalMs - travelMs) {
-          this._spawnAt(obs.row, obs.hw, obs.visualHh, obs.rows ?? 1);
+          this._spawnAt(obs.row, obs.hw, obs.visualHh);
           this.spawned.add(key);
         }
       }
@@ -48,22 +48,16 @@ export class ObstacleSpawner {
     });
   }
 
-  // Blocks rows row … row + rows − 1 with one collision box; one visual anchored
-  // on the front-most covered row (its scale/depth), so it draws over the rows it
-  // covers and under the rows in front of it.
-  _spawnAt(row, hw, visualHh, rows = 1) {
-    const front = Math.min(row + rows - 1, NUM_ROWS - 1);
-    const { y: frontY, scale, depth } = rowLayout(front);
+  _spawnAt(row, hw, visualHh) {
+    const { y, scale, depth } = rowLayout(row);
     const x = GAME_WIDTH + hw;
-    // Base-anchored: the bottom edge sits on the front row's feet line (same line as
-    // the player's feet/shadow), so shadow position always shows the blocked row(s);
+    // Base-anchored: the bottom edge sits on the row's feet line (same line as
+    // the player's feet/shadow), so shadow position always shows the blocked row;
     // tall art extends upward, even past the walk zone into scenery.
-    const visualY = frontY + (PLAYER_HH - visualHh) * scale;
-    // Collision box spans exactly the covered rows: centered between the first and
-    // last covered row, with the single-row margin (PLAYER_HH + hh < ROW_HEIGHT)
-    // preserved so adjacent rows are never clipped.
-    const collisionY = (rowLayout(row).y + frontY) / 2;
-    const collisionHh = ((rows - 1) * ROW_HEIGHT) / 2 + (ROW_HEIGHT - PLAYER_HH - 1);
+    const visualY = y + (PLAYER_HH - visualHh) * scale;
+    // Collision uses the row-center y and a hh that strictly blocks only one row:
+    // PLAYER_HH + collisionHh < ROW_HEIGHT → collisionHh < ROW_HEIGHT - PLAYER_HH = 19
+    const collisionHh = ROW_HEIGHT - PLAYER_HH - 1;
     // Obstacles get a darker shadow than the player so the ground contact —
     // which marks the blocked row — reads at a glance despite tall art.
     const shadow = addShadow(this.scene, hw, 0.5)
@@ -74,7 +68,7 @@ export class ObstacleSpawner {
       .rectangle(x, visualY, hw * 2, visualHh * 2, 0xff4444)
       .setScale(scale)
       .setDepth(depth);
-    this.obstacles.push({ rect, shadow, x, y: collisionY, hw, hh: collisionHh });
+    this.obstacles.push({ rect, shadow, x, y, hw, hh: collisionHh });
   }
 
   destroyAll() {
