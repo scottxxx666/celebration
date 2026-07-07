@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X, WALK_ZONE_TOP, ROW_HEIGHT, PLAYER_HH } from '../config/gameConfig.js';
+import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X, WALK_ZONE_TOP, ROW_HEIGHT, PLAYER_HH, NUM_ROWS } from '../config/gameConfig.js';
 import { WAVES } from '../config/waves.js';
 import { rowLayout, addShadow } from '../rowLayout.js';
 
@@ -30,7 +30,7 @@ export class ObstacleSpawner {
         const distance = GAME_WIDTH + obs.hw - PLAYER_X;
         const travelMs = (distance / timingSpeed) * 1000;
         if (audioMs >= arrivalMs - travelMs) {
-          this._spawnAt(obs.row, obs.hw, obs.hh);
+          this._spawnAt(obs.row, obs.hw, obs.visualHh, obs.rows ?? 1);
           this.spawned.add(key);
         }
       }
@@ -49,14 +49,20 @@ export class ObstacleSpawner {
     });
   }
 
-  _spawnAt(row, hw, visualHh) {
-    const { y, scale, depth } = rowLayout(row);
+  // Blocks rows row … row + rows − 1 with one collision box; one visual anchored
+  // on the front-most covered row (its scale/depth), so it draws over the rows it
+  // covers and under the rows in front of it.
+  _spawnAt(row, hw, visualHh, rows = 1) {
+    const front = Math.min(row + rows - 1, NUM_ROWS - 1);
+    const { y: frontY, scale, depth } = rowLayout(front);
     const x = GAME_WIDTH + hw;
     // Clamp visual center so the drawn (scaled) rectangle stays within the walking zone
-    const visualY = Phaser.Math.Clamp(y, WALK_ZONE_TOP + visualHh * scale, GAME_HEIGHT - visualHh * scale);
-    // Collision uses the row-center y and a hh that strictly blocks only one row:
-    // PLAYER_HH + collisionHh < ROW_HEIGHT → collisionHh < ROW_HEIGHT - PLAYER_HH = 19
-    const collisionHh = ROW_HEIGHT - PLAYER_HH - 1;
+    const visualY = Phaser.Math.Clamp(frontY, WALK_ZONE_TOP + visualHh * scale, GAME_HEIGHT - visualHh * scale);
+    // Collision box spans exactly the covered rows: centered between the first and
+    // last covered row, with the single-row margin (PLAYER_HH + hh < ROW_HEIGHT)
+    // preserved so adjacent rows are never clipped.
+    const collisionY = (rowLayout(row).y + frontY) / 2;
+    const collisionHh = ((rows - 1) * ROW_HEIGHT) / 2 + (ROW_HEIGHT - PLAYER_HH - 1);
     const shadow = addShadow(this.scene, hw)
       .setPosition(x, visualY + visualHh * scale)
       .setScale(scale)
@@ -65,7 +71,7 @@ export class ObstacleSpawner {
       .rectangle(x, visualY, hw * 2, visualHh * 2, 0xff4444)
       .setScale(scale)
       .setDepth(depth);
-    this.obstacles.push({ rect, shadow, x, y, hw, hh: collisionHh });
+    this.obstacles.push({ rect, shadow, x, y: collisionY, hw, hh: collisionHh });
   }
 
   destroyAll() {

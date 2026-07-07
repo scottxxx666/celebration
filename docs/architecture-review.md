@@ -34,6 +34,14 @@ background layers pushed below) and are scaled visually — collision boxes are 
 duplicated row→y math moved into the helper too. The player's beat squash now composes with the
 row scale via a separate squash factor.
 
+Update 2026-07-07 (wave data model), resolved issues removed —
+**A4** (visual-only `hh`): wave obstacles now use `visualHh` (drawn size only) plus an optional
+`rows: n` (default 1) that expands collision to n consecutive rows — one visual + one collision
+box (rows stay uniformly spaced in y, so a single unscaled AABB spanning n rows is exact; the
+visual anchors on the front-most covered row for correct fake-3D occlusion). Row-quantized
+collision was kept deliberately: rows are the collision model, `visualHh` is the art. The
+`gap_run` walls stay 1-row blockers by design decision — no gameplay change.
+
 ---
 
 ## Architecture Improvements (for the dance-game goal)
@@ -56,24 +64,6 @@ calibration.
   calibration constant can be added in one place.
 - Beat/bar *events* (vs. polled flags) only if a consumer outside `GameScene.update` needs
   them — YAGNI so far.
-
-### A4. Wave data model: `hh` is visual-only, collision is hardcoded to one row
-
-**Where:** `waves.js` comment "hh is visual only; collision is always 1 row regardless";
-`_spawnAt` derives `collisionHh = ROW_HEIGHT − PLAYER_HH − 1` and clamps a separate visual Y.
-
-**Problem:** The field named like a collision half-height silently isn't one; the top/bottom
-"walls" in `gap_run` (row 0 + row 4, hh 54) *look* like they block multiple rows but only block
-one. A future author (or agent) editing waves will get this wrong.
-
-**Options:**
-
-- **Option A — Recommended:** rename the field to `visualHh` in wave data and spawner, and add
-  an optional `rows: n` (default 1) that expands collision to n rows when a wall really should
-  block several. Keeps the "collision = whole rows" simplification, makes the data honest.
-- **Option B:** make collision honor real `hh` again (pure AABB, no row snapping). More
-  flexible, but breaks the clean row-based dodge design you just built and makes near-miss
-  authoring harder. Not recommended for this game.
 
 ### A6. Two clocks: score/gameplay uses game time, obstacles use audio time
 
@@ -116,4 +106,4 @@ survival-score combination is an undecided design: is a run "one song = one leve
 1. **A1** remaining scope: beats-authored waves + centralized clock reads (do before authoring
    a full track)
 2. **A6 Option A** single clock + song-as-level decision
-3. **A4, M2** cleanups
+3. **M2** cleanup
