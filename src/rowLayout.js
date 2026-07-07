@@ -20,6 +20,6 @@ export function rowLayout(row) {
 // Drop-shadow ellipse for an object of half-width hw. Caller positions it at
 // the object's base each frame and gives it depth row − 0.5, so it draws under
 // everything standing on its own row but over anything in the row behind.
-export function addShadow(scene, hw) {
-  return scene.add.ellipse(0, 0, hw * 2.2, 14, 0x000000, 0.3);
+export function addShadow(scene, hw, alpha = 0.3) {
+  return scene.add.ellipse(0, 0, hw * 2.2, 14, 0x000000, alpha);
 }

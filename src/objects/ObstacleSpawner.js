@@ -64,7 +64,9 @@ export class ObstacleSpawner {
     // preserved so adjacent rows are never clipped.
     const collisionY = (rowLayout(row).y + frontY) / 2;
     const collisionHh = ((rows - 1) * ROW_HEIGHT) / 2 + (ROW_HEIGHT - PLAYER_HH - 1);
-    const shadow = addShadow(this.scene, hw)
+    // Obstacles get a darker shadow than the player so the ground contact —
+    // which marks the blocked row — reads at a glance despite tall art.
+    const shadow = addShadow(this.scene, hw, 0.5)
       .setPosition(x, visualY + visualHh * scale)
       .setScale(scale)
       .setDepth(depth - 0.5);
