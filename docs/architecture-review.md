@@ -7,94 +7,12 @@ Implementation order suggestion is at the bottom.
 Context: the game's goal is that gameplay tempo follows the song ("dance game" feel). The
 audio-clock wave spawning from `docs/music-sync.md` is implemented in `ObstacleSpawner`.
 
----
-
-## Critical Issues
-
-### C1. Variable player speed breaks on-beat arrival (core rhythm-game conflict)
-
-**Where:** `ObstacleSpawner.update()` computes `travelMs = distance / speed` using the player's
-speed **at spawn time**, then moves obstacles each frame by the player's **current** speed.
-
-**Problem:** Player speed changes constantly (tap accel 50 px/tap, decel 125 px/s, range 200–600).
-An obstacle spawned while the player is fast but crossed while the player slows down arrives far
-off the beat — up to ~1–2 seconds of error over a 500 px flight. For a rhythm game this destroys
-the whole premise: obstacles will almost never actually arrive on the beat.
-
-**Options:**
-
-- **Option A — Recommended: derive obstacle X directly from the audio clock.**
-  Each obstacle's position is a pure function of song time:
-  `x = PLAYER_X + (arrivalMs − audioMs) × approachSpeed`, where `approachSpeed` is a fixed
-  constant (px per ms) independent of the player. The obstacle *always* crosses the player
-  exactly at `arrivalMs`, regardless of frame drops, pauses, or player speed. This is exactly how
-  note highways in dance/rhythm games work (notes are positioned from song time, not integrated
-  velocity). Player speed then no longer scrolls obstacles — it only affects the background
-  parallax and the chasing enemy (see C2/D1).
-  - Trade-off: player speed and world scroll visually decouple (obstacles approach at constant
-    speed while background scroll speed varies). In practice players don't notice; it also makes
-    the game *feel* more rhythmic because obstacle cadence becomes perfectly regular.
-  - Bonus: seeking/looping the song "just works" — obstacle positions are recomputed from
-    `audioMs` every frame, no spawn bookkeeping needed for correctness (a spawn Set is still
-    handy for creating/destroying the rect objects).
-
-- **Option B — Best Practice for pure runners: fix the world scroll speed entirely.**
-  Make world speed constant (e.g. locked to the song's BPM) and repurpose alternating taps:
-  instead of speeding the world up, taps push the chasing enemy back / build a stamina meter.
-  This is the industry-standard rhythm-runner design (constant note speed) and simplifies
-  everything (one speed, exact travel time, background and obstacles stay coherent).
-  - Trade-off: bigger design change; the "run faster by tapping" fantasy becomes indirect.
-
-- **Option C — keep current behavior, re-time in flight.** Every frame, re-solve each in-flight
-  obstacle's velocity so it still arrives at `arrivalMs`. Works, but it makes obstacle speed
-  visibly rubber-band as the player taps, and it's more math for a worse feel than A. Not
-  recommended.
-
----
-
-### C2. Enemy speed is permanently boosted after touching the left boundary
-
-**Where:** `Enemy.update()` — when `x < −ENEMY_HW`, it clamps position **and sets
-`this.speed = MAX_SPEED − 20` (580) forever**. It never resets to `ENEMY_SPEED` (400).
-
-**Problem:** After the first time the enemy falls off-screen (which happens quickly whenever the
-player taps fast), the enemy chases at 580 px/s for the rest of the run. The player can only
-reach 600 max and decays at 125/s, so escape becomes nearly impossible and the difficulty curve
-is a hidden one-way ratchet. Looks like a leftover experiment rather than intent.
-
-**Options:**
-
-- **Option A — Recommended:** reset `speed = ENEMY_SPEED` once the enemy is back on screen
-  (i.e., when not at the boundary). Boundary boost becomes a temporary "catch-up" rubber-band —
-  a standard chase-cam trick.
-- **Option B — Best Practice:** replace the boolean boost with a distance-based rubber-band:
-  enemy speed = f(distance behind player), clamped to `[ENEMY_MIN, MAX_SPEED − margin]`.
-  Smoother, tunable, no branching state. Slightly more tuning work.
-- Related design note: `trackY` snaps the enemy to the player's row instantly, so rows never help
-  against the enemy. Consider a lag (enemy changes row on the beat — fits the dance theme) —
-  see D1.
-
----
-
-### C3. Music autoplay lock desyncs the first run
-
-**Where:** `GameScene.create()` calls `music.play()` immediately; `BootScene` auto-starts
-`GameScene` with no user interaction.
-
-**Problem:** Browsers block audio until a user gesture. Phaser queues the sound and unlocks on
-first input, but until then `audio.seek` stays 0 while `update()` runs — the spawner treats the
-song as frozen at 0 ms and holds/spawns wave-0 obstacles against a clock that isn't advancing.
-The first seconds of the first run are undefined behavior; on a fresh page load the game and
-music start out of sync.
-
-**Options:**
-
-- **Option A — Recommended:** add a "Press any key / click to start" step (in `BootScene` or a
-  tiny `TitleScene`) and only start `GameScene` + music after that gesture. One screen, solves
-  autoplay everywhere, and gives you a natural home for instructions later.
-- **Option B:** listen for Phaser's sound-unlocked event and freeze gameplay (don't run spawner /
-  score / enemy) until the music is actually playing. Less UI work but more conditional state in
-  `GameScene`; you'll want a start screen eventually anyway.
+Update 2026-07-07: resolved issues removed from this doc —
+**C1/C2** (variable speed vs. on-beat arrival; enemy boundary-boost ratchet) via the speed-band
+design in `docs/speed-design.md` (song-anchored enemy ramp to `ENEMY_CRUISE_SPEED`, two-phase
+spawn timing with `OBSTACLE_TIMING_SPEED`); **C3** (autoplay desync) via `MenuScene`, which waits
+for the audio unlock before starting `GameScene`; **M1** (missing Phaser import in spawner),
+**M3** (game-over path extracted to `endRun()`), **M5** (CLAUDE.md refreshed).
 
 ---
 
@@ -221,35 +139,27 @@ survival-score combination is an undecided design: is a run "one song = one leve
 
 ## Minor / Cleanup
 
-- **M1. Missing `Phaser` import in `ObstacleSpawner.js`** — `Phaser.Math.Clamp` relies on the
-  UMD global leaking from another module's import. Works today, breaks under stricter bundling.
-  Fix: add the import (or use a plain `Math.min/max` clamp).
 - **M2. Dead config:** `SPAWN_INTERVAL_MS` is unused since wave-driven spawning landed. Delete.
-- **M3. Duplicated game-over sequence** in `GameScene.update()` (enemy hit vs. obstacle hit) —
-  extract one `endRun()` path; it will grow (stop music? hit sound? freeze frame).
 - **M4. Spawner scans all waves × obstacles every frame.** Harmless at this size; if waves grow
   to a full song, keep a cursor index per wave (events are already required to be sorted). Only
   do this when authoring a full track (YAGNI until then).
-- **M5. CLAUDE.md is stale:** it still describes `ObstacleSpawner` as "spawns random obstacles
-  on a timer" and doesn't mention `Enemy`, `waves.js`, rows, or the music clock. Update after
-  the next structural change.
 - **M6. Single audio format:** `music.m4a` only. Fine for modern browsers; optionally provide
   `.ogg` fallback via Phaser's multi-URL audio load if you ever hit a codec complaint.
 - **M7. `GameOverScene` restart replays from song start** — expected, but once "song = level"
   (A6-A) is chosen, also show progress % reached, not just seconds.
+- **M8. Enemy `trackY` snaps to the player's row instantly**, so changing rows never helps
+  against the enemy. Consider a lag — e.g. the enemy changes row on the beat (fits the dance
+  theme; pairs with A1's beat events).
 
 ---
 
 ## Suggested Implementation Order (for the follow-up agent)
 
-1. **C3** start-gesture screen (unblocks reliable audio clock for everything else)
-2. **A1** Conductor service + move latency/BPM/offset into `gameConfig.js`
-3. **C1 Option A** obstacle X derived from audio clock (uses Conductor)
-4. **C2** enemy speed reset / rubber-band
-5. **A2 Option A** beat-judged taps + judgment feedback
-6. **A6 Option A** single clock + song-as-level decision
-7. **A3, A4, M1–M3** cleanups
-8. **A5** depth/scale/shadow helper (pre-art)
-9. **M5** update CLAUDE.md to reflect the above
+1. **A1** Conductor service (consume the `BPM` / `FIRST_BEAT_OFFSET_MS` placeholders already in
+   `gameConfig.js`)
+2. **A2 Option A** beat-judged taps + judgment feedback
+3. **A6 Option A** single clock + song-as-level decision
+4. **A3, A4, M2** cleanups
+5. **A5** depth/scale/shadow helper (pre-art)
 
-Items 1–5 are the minimum set that makes the game actually *feel* music-synced.
+Items 1–3 are the minimum set that makes *playing* (not just dodging) feel music-synced.
