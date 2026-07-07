@@ -38,7 +38,9 @@ Update 2026-07-07 (wave data model), resolved issues removed —
 **A4** (visual-only `hh`): wave obstacles now use `visualHh` (drawn size only) plus an optional
 `rows: n` (default 1) that expands collision to n consecutive rows — one visual + one collision
 box (rows stay uniformly spaced in y, so a single unscaled AABB spanning n rows is exact; the
-visual anchors on the front-most covered row for correct fake-3D occlusion). Row-quantized
+visual is base-anchored on the front-most covered row's feet line — the same line as the
+player's shadow — so the shadow always marks the blocked row, and tall art extends upward past
+the walk zone instead of being clamped onto safe rows). Row-quantized
 collision was kept deliberately: rows are the collision model, `visualHh` is the art. The
 `gap_run` walls stay 1-row blockers by design decision — no gameplay change.
 

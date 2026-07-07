@@ -1,5 +1,4 @@
-import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X, WALK_ZONE_TOP, ROW_HEIGHT, PLAYER_HH, NUM_ROWS } from '../config/gameConfig.js';
+import { GAME_WIDTH, PLAYER_X, ROW_HEIGHT, PLAYER_HH, NUM_ROWS } from '../config/gameConfig.js';
 import { WAVES } from '../config/waves.js';
 import { rowLayout, addShadow } from '../rowLayout.js';
 
@@ -56,8 +55,10 @@ export class ObstacleSpawner {
     const front = Math.min(row + rows - 1, NUM_ROWS - 1);
     const { y: frontY, scale, depth } = rowLayout(front);
     const x = GAME_WIDTH + hw;
-    // Clamp visual center so the drawn (scaled) rectangle stays within the walking zone
-    const visualY = Phaser.Math.Clamp(frontY, WALK_ZONE_TOP + visualHh * scale, GAME_HEIGHT - visualHh * scale);
+    // Base-anchored: the bottom edge sits on the front row's feet line (same line as
+    // the player's feet/shadow), so shadow position always shows the blocked row(s);
+    // tall art extends upward, even past the walk zone into scenery.
+    const visualY = frontY + (PLAYER_HH - visualHh) * scale;
     // Collision box spans exactly the covered rows: centered between the first and
     // last covered row, with the single-row margin (PLAYER_HH + hh < ROW_HEIGHT)
     // preserved so adjacent rows are never clipped.
