@@ -6,6 +6,8 @@ import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
 // Each beam is a triangle cone: apex at the top edge (y=0) widening to a base where the
 // light lands on the road — a random spot per beat, not pinned to the bottom edge, so pools
 // scatter across (and sometimes past) the field. Geometry/colour teleport on every beat.
+// A third layer — thin concert-style laser beams — draws straight lines from scattered
+// random points along the top edge down through the field, also snapping on every beat.
 const BEAM_COUNT = 3;
 const BEAM_HALF_BASE = 60; // half-width of the light pool where the beam lands
 const BEAM_SLANT_MAX = 60; // max horizontal offset of the base center from the apex (± px)
@@ -16,6 +18,14 @@ const BASE_Y_MAX = 1.15 * GAME_HEIGHT;
 const BASE_X_MARGIN = 100; // extra horizontal room past the screen edges for the apex
 const POOL_WIDTH = BEAM_HALF_BASE * 2; // flattened glow where the beam hits the road
 const POOL_HEIGHT = 60; // squashed vertically to read as a top-down hot spot
+
+const LASER_COUNT = 6;
+const LASER_CORE_WIDTH = 2;
+const LASER_GLOW_WIDTH = 7;
+const LASER_LEN = GAME_WIDTH + GAME_HEIGHT; // long enough any beam crosses the field
+// Downward-raking fan; angle measured from +x axis, so ~90° points straight down.
+const LASER_ANGLE_MIN = Phaser.Math.DegToRad(70);
+const LASER_ANGLE_MAX = Phaser.Math.DegToRad(110);
 
 export class DiscoLights {
   constructor(scene) {
@@ -40,19 +50,25 @@ export class DiscoLights {
         .setDepth(-4)
         .setVisible(false)
     );
+    // Single graphics object holding all laser lines; redrawn from scratch each jump.
+    this.lasers = scene.add.graphics().setBlendMode(Phaser.BlendModes.ADD).setDepth(-4).setVisible(false);
     this.wasActive = false;
   }
 
   update(songMs, beatCrossed, beatIndex, active) {
     this.beams.forEach(beam => beam.setVisible(active));
     this.pools.forEach(pool => pool.setVisible(active));
+    this.lasers.setVisible(active);
     if (!active) {
       this.wasActive = false;
       return;
     }
     // Jump on each beat, plus one immediate jump when disco first turns on so beams
     // don't linger at stale positions until the next beat.
-    if (beatCrossed || !this.wasActive) this.jump();
+    if (beatCrossed || !this.wasActive) {
+      this.jump();
+      this.jumpLasers();
+    }
     this.wasActive = true;
   }
 
@@ -76,8 +92,27 @@ export class DiscoLights {
     });
   }
 
+  // Redraws all laser lines from scattered random origins along the top edge, each with
+  // a glow pass (wide, faint) and a core pass (thin, bright) sharing the same random hue.
+  jumpLasers() {
+    this.lasers.clear();
+    for (let i = 0; i < LASER_COUNT; i++) {
+      const x0 = Math.random() * GAME_WIDTH;
+      const y0 = 0;
+      const angle = LASER_ANGLE_MIN + Math.random() * (LASER_ANGLE_MAX - LASER_ANGLE_MIN);
+      const x1 = x0 + Math.cos(angle) * LASER_LEN;
+      const y1 = y0 + Math.sin(angle) * LASER_LEN;
+      const color = Phaser.Display.Color.HSVToRGB(Math.random(), 1, 1).color;
+      this.lasers.lineStyle(LASER_GLOW_WIDTH, color, 0.25);
+      this.lasers.lineBetween(x0, y0, x1, y1);
+      this.lasers.lineStyle(LASER_CORE_WIDTH, color, 0.9);
+      this.lasers.lineBetween(x0, y0, x1, y1);
+    }
+  }
+
   destroy() {
     this.beams.forEach(beam => beam.destroy());
     this.pools.forEach(pool => pool.destroy());
+    this.lasers.destroy();
   }
 }
