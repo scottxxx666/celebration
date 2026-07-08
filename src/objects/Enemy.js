@@ -23,13 +23,15 @@ export class Enemy {
     this._applyRow();
   }
 
-  update(dt, playerSpeed, songMs) {
+  // speedMult scales motion only (from the section layer); the ramp itself
+  // (and the ENEMY_CRUISE_SPEED check GameScene runs against this.speed) stays untouched
+  update(dt, playerSpeed, songMs, speedMult = 1) {
     const progress = Math.min(
       1,
       Math.max(0, (songMs - ENEMY_RAMP_START_MS) / (ENEMY_RAMP_END_MS - ENEMY_RAMP_START_MS))
     );
     this.speed = ENEMY_SPEED + (ENEMY_CRUISE_SPEED - ENEMY_SPEED) * progress;
-    this.x += (this.speed - playerSpeed) * dt;
+    this.x += (this.speed - playerSpeed) * speedMult * dt;
     this.atBoundary = this.x < -ENEMY_HW;
     if (this.atBoundary) {
       this.x = -ENEMY_HW;

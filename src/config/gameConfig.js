@@ -49,3 +49,9 @@ export const BEAT_SYNC_START_MS = 11200;
 // Music — TBD, set when the final track is chosen
 export const BPM = 85.7;                 // matches the 700ms beat spacing in waves.js
 export const FIRST_BEAT_OFFSET_MS = 0;
+
+// Section effects (src/config/sections.js holds the section times)
+export const DISCO_FLASH_ALPHA = 0.18;        // beat-flash alpha during disco (downbeat; others slightly lower)
+export const ROTATE_MAX_DEG = 5;              // camera sway amplitude in final highlight
+export const ROTATE_ZOOM = 0.92;              // camera zoom while rotating ("screen smaller")
+export const ROTATE_SWAY_BEATS = 2;           // one full left-right sway cycle per N beats

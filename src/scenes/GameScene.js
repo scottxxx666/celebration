@@ -2,7 +2,9 @@ import Phaser from 'phaser';
 import { Player } from '../objects/Player.js';
 import { ObstacleSpawner } from '../objects/ObstacleSpawner.js';
 import { Enemy } from '../objects/Enemy.js';
+import { DiscoLights } from '../objects/DiscoLights.js';
 import { Conductor } from '../Conductor.js';
+import { sectionAt } from '../config/sections.js';
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
@@ -12,7 +14,14 @@ import {
   ENEMY_CRUISE_SPEED,
   OBSTACLE_TIMING_SPEED,
   BEAT_SYNC_START_MS,
+  DISCO_FLASH_ALPHA,
+  ROTATE_MAX_DEG,
+  ROTATE_ZOOM,
+  ROTATE_SWAY_BEATS,
 } from '../config/gameConfig.js';
+
+// Saturated palette the beat flash cycles through during disco sections, by beatIndex
+const DISCO_COLORS = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff00, 0xff8800];
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -51,6 +60,7 @@ export class GameScene extends Phaser.Scene {
     this.player = new Player(this, PLAYER_X, walkZoneMidY);
     this.spawner = new ObstacleSpawner(this);
     this.enemy = new Enemy(this, ENEMY_START_X);
+    this.disco = new DiscoLights(this);
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
@@ -65,30 +75,55 @@ export class GameScene extends Phaser.Scene {
     const songMs = this.conductor.songMs;
     // Original intro behavior until the beat-sync layer switches on
     const beatSyncOn = songMs >= BEAT_SYNC_START_MS;
+    // Song-section effects (src/config/sections.js) — gated purely on song time,
+    // independent of the enemy ramp / beat-sync gate above
+    const section = sectionAt(songMs);
 
     this.player.update(this.cursors, this.leftKey, this.rightKey, delta);
     if (beatSyncOn && this.conductor.halfBeatCrossed) this.player.pulse();
 
-    // Beat flash: brighter on the downbeat of each bar, then fade out
+    // Beat flash: brighter on the downbeat of each bar, then fade out; during
+    // disco sections it cycles a saturated palette instead of white
+    this.beatOverlay.setFillStyle(
+      section.disco ? DISCO_COLORS[this.conductor.beatIndex % DISCO_COLORS.length] : 0xffffff
+    );
     if (beatSyncOn && this.conductor.beatCrossed) {
-      this.beatOverlay.setAlpha(this.conductor.beatIndex % 4 === 0 ? 0.1 : 0.05);
+      const onBeat = this.conductor.beatIndex % 4 === 0;
+      const peakAlpha = section.disco ? DISCO_FLASH_ALPHA : 0.1;
+      const offAlpha = section.disco ? DISCO_FLASH_ALPHA * 0.6 : 0.05;
+      this.beatOverlay.setAlpha(onBeat ? peakAlpha : offAlpha);
     } else {
       this.beatOverlay.setAlpha(Math.max(0, this.beatOverlay.alpha - 0.4 * (delta / 1000)));
     }
+    this.disco.update(songMs, this.conductor.beatCrossed, this.conductor.beatIndex, section.disco);
 
-    // Scroll background
-    this.bgX -= this.player.speed * (delta / 1000);
+    // Scroll background — global world multiplier from the current section
+    this.bgX -= this.player.speed * section.speedMult * (delta / 1000);
     if (this.bgX <= -GAME_WIDTH) this.bgX += GAME_WIDTH;
     this.bg.setX(this.bgX);
 
     this.enemy.trackRow(this.player.row, this.conductor.beatCrossed, beatSyncOn);
-    this.enemy.update(delta / 1000, this.player.speed, songMs);
+    // this.enemy.speed stays the base ramp value; the multiplier only scales motion
+    this.enemy.update(delta / 1000, this.player.speed, songMs, section.speedMult);
 
     // Once the enemy pins the player into the speed band, time spawns off the
     // band average instead of the instantaneous player speed (docs/speed-design.md)
     const timingSpeed =
-      this.enemy.speed >= ENEMY_CRUISE_SPEED ? OBSTACLE_TIMING_SPEED : this.player.speed;
-    this.spawner.update(songMs, this.player.speed, delta, timingSpeed);
+      (this.enemy.speed >= ENEMY_CRUISE_SPEED ? OBSTACLE_TIMING_SPEED : this.player.speed) *
+      section.speedMult;
+    this.spawner.update(songMs, this.player.speed * section.speedMult, delta, timingSpeed);
+
+    // Camera sway during the final highlight — visual only, collision/rows untouched
+    const cam = this.cameras.main;
+    if (section.rotate) {
+      const phase =
+        ((songMs - section.startMs) / (this.conductor.beatMs * ROTATE_SWAY_BEATS)) * Math.PI * 2;
+      cam.setRotation(Math.sin(phase) * Phaser.Math.DegToRad(ROTATE_MAX_DEG));
+      cam.setZoom(ROTATE_ZOOM);
+    } else {
+      cam.setRotation(0);
+      cam.setZoom(1);
+    }
 
     // Collision
     if (this.player.overlaps(this.enemy)) {
@@ -114,6 +149,7 @@ export class GameScene extends Phaser.Scene {
     this.music.stop();
     this.enemy.destroy();
     this.spawner.destroyAll();
+    this.disco.destroy();
     this.scene.start('GameOverScene', { won, score: Math.floor(songMs / 1000), progress });
   }
 }
