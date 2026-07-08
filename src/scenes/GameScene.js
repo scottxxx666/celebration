@@ -15,9 +15,8 @@ import {
   OBSTACLE_TIMING_SPEED,
   BEAT_SYNC_START_MS,
   DISCO_FLASH_ALPHA,
-  ROTATE_MAX_DEG,
+  ROTATE_BEATS_PER_TURN,
   ROTATE_ZOOM,
-  ROTATE_SWAY_BEATS,
 } from '../config/gameConfig.js';
 
 // Saturated palette the beat flash cycles through during disco sections, by beatIndex
@@ -113,12 +112,13 @@ export class GameScene extends Phaser.Scene {
       section.speedMult;
     this.spawner.update(songMs, this.player.speed * section.speedMult, delta, timingSpeed);
 
-    // Camera sway during the final highlight — visual only, collision/rows untouched
+    // Continuous camera spin during the final highlight — visual only, collision/rows untouched.
+    // Negative camera.rotation makes the world spin counterclockwise on screen — the direction
+    // we want (confirmed by play-testing).
     const cam = this.cameras.main;
     if (section.rotate) {
-      const phase =
-        ((songMs - section.startMs) / (this.conductor.beatMs * ROTATE_SWAY_BEATS)) * Math.PI * 2;
-      cam.setRotation(Math.sin(phase) * Phaser.Math.DegToRad(ROTATE_MAX_DEG));
+      const turnMs = this.conductor.beatMs * ROTATE_BEATS_PER_TURN;
+      cam.setRotation(-((songMs - section.startMs) / turnMs) * Math.PI * 2);
       cam.setZoom(ROTATE_ZOOM);
     } else {
       cam.setRotation(0);

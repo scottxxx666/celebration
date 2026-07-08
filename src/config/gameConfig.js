@@ -52,6 +52,8 @@ export const FIRST_BEAT_OFFSET_MS = 0;
 
 // Section effects (src/config/sections.js holds the section times)
 export const DISCO_FLASH_ALPHA = 0.18;        // beat-flash alpha during disco (downbeat; others slightly lower)
-export const ROTATE_MAX_DEG = 5;              // camera sway amplitude in final highlight
-export const ROTATE_ZOOM = 0.92;              // camera zoom while rotating ("screen smaller")
-export const ROTATE_SWAY_BEATS = 2;           // one full left-right sway cycle per N beats
+export const ROTATE_BEATS_PER_TURN = 16;      // one full camera revolution per N beats (spin-speed tuning knob)
+// Worst-case fit: GAME_HEIGHT / √(GAME_WIDTH² + GAME_HEIGHT²) ≈ 0.49 — the constant zoom
+// at which the whole 800×450 field stays inside the viewport at every angle of a full turn
+// (no per-angle breathing)
+export const ROTATE_ZOOM = 0.49;
