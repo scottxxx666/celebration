@@ -74,9 +74,9 @@ export const ZOOM_PUNCH_AMOUNT = 0.02;    // peak extra zoom (1.02 = +2%) at the
 export const ZOOM_PUNCH_BEATS = 4;        // beats between punches (4 = per-bar downbeat, 1 = per beat)
 export const ZOOM_PUNCH_DECAY_MS = 350;   // linear decay time from peak back to base (~half a beat)
 
-// Confetti cannon — one-shot pop fired on the disco section-start edge (Confetti.js).
+// Confetti cannon — one-shot pop fired on a clear/win to celebrate (GameOverScene).
 // Pooled rectangles launched up-and-inward from the bottom corners, falling under
-// gravity/drag; purely visual, gated on section song-time.
+// gravity/drag; purely visual.
 export const CONFETTI_COUNT = 150;             // pool size / pieces fired per burst
 export const CONFETTI_COLORS = [0xff2d95, 0x00e5ff, 0xffe600, 0x39ff14, 0xff8800, 0xffffff]; // festive palette, distinct from DISCO_COLORS
 export const CONFETTI_LIFESPAN_MS = 3200;      // total time a piece stays alive after launch

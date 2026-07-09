@@ -18,8 +18,8 @@ import {
   CONFETTI_SIZE_MAX,
 } from '../config/gameConfig.js';
 
-// One-shot concert confetti-cannon pop, fired on the disco section-start edge
-// (see GameScene.update). Two cannons at the bottom corners fire a dense fan of
+// One-shot concert confetti-cannon pop, fired on a clear/win to celebrate
+// success (see GameOverScene). Two cannons at the bottom corners fire a dense fan of
 // strips up-and-inward; pieces fall under gravity with horizontal air drag,
 // tumble (spin + scaleX flip to fake edge-on paper), and flutter (sinusoidal
 // sway), fading out near end of life. Purely visual — pooled add.rectangle

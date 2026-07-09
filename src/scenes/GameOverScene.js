@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { Confetti } from '../objects/Confetti.js';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -9,6 +10,8 @@ export class GameOverScene extends Phaser.Scene {
     this.won = data.won ?? false;
     this.score = data.score ?? 0;
     this.progress = data.progress ?? 0;
+    // Scene instances are reused across restarts — clear any stale burst from a prior win
+    this.confetti = null;
   }
 
   create() {
@@ -32,11 +35,22 @@ export class GameOverScene extends Phaser.Scene {
       color: '#666666',
     }).setOrigin(0.5);
 
+    // Celebrate a clear with a one-shot confetti-cannon pop
+    if (this.won) {
+      this.confetti = new Confetti(this);
+      this.confetti.burst();
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.confetti.destroy());
+    }
+
     this.input.keyboard.once('keydown-SPACE', () => {
       this.scene.start('GameScene');
     });
     this.input.keyboard.once('keydown-ESC', () => {
       this.scene.start('MenuScene');
     });
+  }
+
+  update(time, delta) {
+    if (this.confetti) this.confetti.update(delta);
   }
 }
