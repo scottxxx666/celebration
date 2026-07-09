@@ -66,3 +66,11 @@ export const DISCO_COLORS = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff00, 0xff8800];
 // Strobe — full-screen white flash on beats; frequency is authored per-section (strobe = flashes/beat in sections.js)
 export const STROBE_ALPHA = 0.4;  // peak white alpha of the strobe
 export const STROBE_DECAY = 12;    // alpha units/sec fade after the flash (~100ms tail)
+
+// Fake haze (docs/disco-upgrade.md P4) — nested brighter cones + apex glow layered inside
+// each DiscoLights beam to fake volumetric fog, no shader needed
+export const HAZE_INNER_WIDTH_RATIOS = [0.55, 0.28]; // each inner layer's base half-width as a ratio of BEAM_HALF_BASE (same apex/axis/base-center as the parent beam)
+export const HAZE_INNER_ALPHA = 0.35;        // additive alpha per inner layer; stacking reads as a brighter core near the apex
+export const HAZE_APEX_GLOW_WIDTH = 90;      // width of the soft glow blob pooled at the beam's apex (top edge)
+export const HAZE_APEX_GLOW_HEIGHT = 50;     // height of the apex glow blob
+export const HAZE_APEX_GLOW_ALPHA = 0.35;    // alpha of the apex glow blob
