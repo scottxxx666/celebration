@@ -73,3 +73,23 @@ export const STROBE_DECAY = 12;    // alpha units/sec fade after the flash (~100
 export const ZOOM_PUNCH_AMOUNT = 0.02;    // peak extra zoom (1.02 = +2%) at the punch instant
 export const ZOOM_PUNCH_BEATS = 4;        // beats between punches (4 = per-bar downbeat, 1 = per beat)
 export const ZOOM_PUNCH_DECAY_MS = 350;   // linear decay time from peak back to base (~half a beat)
+
+// Confetti cannon — one-shot pop fired on the disco section-start edge (Confetti.js).
+// Pooled rectangles launched up-and-inward from the bottom corners, falling under
+// gravity/drag; purely visual, gated on section song-time.
+export const CONFETTI_COUNT = 150;             // pool size / pieces fired per burst
+export const CONFETTI_COLORS = [0xff2d95, 0x00e5ff, 0xffe600, 0x39ff14, 0xff8800, 0xffffff]; // festive palette, distinct from DISCO_COLORS
+export const CONFETTI_LIFESPAN_MS = 3200;      // total time a piece stays alive after launch
+export const CONFETTI_FADE_MS = 700;           // alpha fades to 0 over this final stretch of life
+export const CONFETTI_GRAVITY = 520;           // px/s² downward acceleration
+export const CONFETTI_SPEED_MIN = 380;         // min launch speed (px/s)
+export const CONFETTI_SPEED_MAX = 700;         // max launch speed (px/s)
+export const CONFETTI_SPREAD_DEG = 28;         // ± spread around the up-and-inward aim angle
+// Horizontal air drag, applied as vx *= CONFETTI_DRAG ** dt each frame (per-second
+// velocity retention factor, <1 — NOT the linear vx -= vx*DRAG*dt form).
+export const CONFETTI_DRAG = 0.4;
+export const CONFETTI_SPIN_MAX = 12;           // max angular velocity magnitude (rad/s)
+export const CONFETTI_FLUTTER_AMP = 40;        // px horizontal sway amplitude
+export const CONFETTI_FLUTTER_FREQ = 8;        // sway/tumble oscillation speed (rad/s)
+export const CONFETTI_SIZE_MIN = 6;            // min strip width (px)
+export const CONFETTI_SIZE_MAX = 12;           // max strip width (px)

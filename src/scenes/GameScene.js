@@ -3,6 +3,7 @@ import { Player } from '../objects/Player.js';
 import { ObstacleSpawner } from '../objects/ObstacleSpawner.js';
 import { Enemy } from '../objects/Enemy.js';
 import { DiscoLights } from '../objects/DiscoLights.js';
+import { Confetti } from '../objects/Confetti.js';
 import { Conductor } from '../Conductor.js';
 import { sectionAt } from '../config/sections.js';
 import {
@@ -84,6 +85,8 @@ export class GameScene extends Phaser.Scene {
     this.spawner = new ObstacleSpawner(this);
     this.enemy = new Enemy(this, ENEMY_START_X);
     this.disco = new DiscoLights(this);
+    this.confetti = new Confetti(this);
+    this.wasDisco = false;
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
@@ -123,6 +126,12 @@ export class GameScene extends Phaser.Scene {
       this.beatOverlay.setAlpha(Math.max(0, this.beatOverlay.alpha - 0.4 * (delta / 1000)));
     }
     this.disco.update(songMs, this.conductor.beatCrossed, this.conductor.beatIndex, section.disco, discoColorIndex);
+
+    // Confetti cannon — one-shot pop on the disco false→true edge, then tick the
+    // fall animation every frame; gated on section song-time only.
+    if (section.disco && !this.wasDisco) this.confetti.burst();
+    this.wasDisco = section.disco;
+    this.confetti.update(delta);
 
     // Disco dim — beat-aligned fade in/out at section start/end, gated purely on song time
     let dimAlpha = 0;
@@ -212,6 +221,7 @@ export class GameScene extends Phaser.Scene {
     this.enemy.destroy();
     this.spawner.destroyAll();
     this.disco.destroy();
+    this.confetti.destroy();
     this.scene.start('GameOverScene', { won, score: Math.floor(songMs / 1000), progress });
   }
 }
