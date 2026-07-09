@@ -66,3 +66,10 @@ export const DISCO_COLORS = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff00, 0xff8800];
 // Strobe — full-screen white flash on beats; frequency is authored per-section (strobe = flashes/beat in sections.js)
 export const STROBE_ALPHA = 0.4;  // peak white alpha of the strobe
 export const STROBE_DECAY = 12;    // alpha units/sec fade after the flash (~100ms tail)
+
+// Camera zoom punch — subtle zoom pulse during disco, decaying over the beat.
+// Multiplies the base zoom (1, or ROTATE_ZOOM when rotate is on), so it composes
+// with the rotate section. Purely visual, gated on section.disco / song time.
+export const ZOOM_PUNCH_AMOUNT = 0.02;    // peak extra zoom (1.02 = +2%) at the punch instant
+export const ZOOM_PUNCH_BEATS = 4;        // beats between punches (4 = per-bar downbeat, 1 = per beat)
+export const ZOOM_PUNCH_DECAY_MS = 350;   // linear decay time from peak back to base (~half a beat)

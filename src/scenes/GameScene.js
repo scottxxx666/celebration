@@ -24,6 +24,9 @@ import {
   STROBE_ALPHA,
   STROBE_DECAY,
   FIRST_BEAT_OFFSET_MS,
+  ZOOM_PUNCH_AMOUNT,
+  ZOOM_PUNCH_BEATS,
+  ZOOM_PUNCH_DECAY_MS,
 } from '../config/gameConfig.js';
 
 export class GameScene extends Phaser.Scene {
@@ -168,11 +171,21 @@ export class GameScene extends Phaser.Scene {
     if (section.rotate) {
       const turnMs = this.conductor.beatMs * ROTATE_BEATS_PER_TURN;
       cam.setRotation(-((songMs - section.startMs) / turnMs) * Math.PI * 2);
-      cam.setZoom(ROTATE_ZOOM);
     } else {
       cam.setRotation(0);
-      cam.setZoom(1);
     }
+
+    // Zoom punch — subtle pulse on the (down)beat that decays, multiplied onto the
+    // base zoom so it composes with ROTATE_ZOOM. Stateless: derived from beat phase.
+    const baseZoom = section.rotate ? ROTATE_ZOOM : 1;
+    let zoomPunch = 1;
+    if (section.disco) {
+      const periodMs = this.conductor.beatMs * ZOOM_PUNCH_BEATS;
+      const phase = (((songMs - FIRST_BEAT_OFFSET_MS) % periodMs) + periodMs) % periodMs;
+      const decay = Math.max(0, 1 - phase / ZOOM_PUNCH_DECAY_MS);
+      zoomPunch = 1 + ZOOM_PUNCH_AMOUNT * decay;
+    }
+    cam.setZoom(baseZoom * zoomPunch);
 
     // Collision
     if (this.player.overlaps(this.enemy)) {
