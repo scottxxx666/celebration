@@ -1,14 +1,5 @@
 import Phaser from 'phaser';
-import {
-  GAME_WIDTH,
-  GAME_HEIGHT,
-  DISCO_COLORS,
-  HAZE_INNER_WIDTH_RATIOS,
-  HAZE_INNER_ALPHA,
-  HAZE_APEX_GLOW_WIDTH,
-  HAZE_APEX_GLOW_HEIGHT,
-  HAZE_APEX_GLOW_ALPHA,
-} from '../config/gameConfig.js';
+import { GAME_WIDTH, GAME_HEIGHT, DISCO_COLORS } from '../config/gameConfig.js';
 
 // Top-down light beams shown only during disco sections (src/config/sections.js).
 // Purely decorative — sits above the background/beat overlay (−10/−5) and below shadows.
@@ -22,11 +13,6 @@ import {
 // random points along the top edge down through the field; origins/angles still snap on
 // every beat, with their colours spread across the palette the same way. The beat-flash
 // overlay (in GameScene) uses the base hue.
-// Fake haze (docs/disco-upgrade.md P4): each beam also carries nested, narrower/brighter
-// "inner cone" triangles sharing its apex/axis/base-center (HAZE_INNER_WIDTH_RATIOS), plus a
-// soft glow blob pooled at its apex on the top edge — stacked additive to read as a bright
-// light source cutting through fog, no shader needed. Both re-jump in lockstep with the
-// parent beam and share its colour.
 const BEAM_COUNT = 3;
 const BEAM_HALF_BASE = 60; // half-width of the light pool where the beam lands
 const BEAM_SLANT_MAX = 60; // max horizontal offset of the base center from the apex (± px)
@@ -71,37 +57,12 @@ export class DiscoLights {
     );
     // Single graphics object holding all laser lines; redrawn from scratch each jump.
     this.lasers = scene.add.graphics().setBlendMode(Phaser.BlendModes.ADD).setDepth(-4).setVisible(false);
-    // Fake haze: per-beam nested brighter cones (narrower triangles, same apex/axis) stacked
-    // on top of the parent beam to fake a bright core near the source.
-    this.hazeLayers = Array.from({ length: BEAM_COUNT }, () =>
-      HAZE_INNER_WIDTH_RATIOS.map(() =>
-        scene.add
-          .triangle(0, 0, 0, 0, 0, GAME_HEIGHT, 0, GAME_HEIGHT, 0xffffff)
-          .setOrigin(0, 0)
-          .setBlendMode(Phaser.BlendModes.ADD)
-          .setAlpha(HAZE_INNER_ALPHA)
-          .setDepth(-4)
-          .setVisible(false)
-      )
-    );
-    // Fake haze: soft glow blob pooled at each beam's apex on the top edge ("fog catching
-    // the lamp"), tinted the same colour as the beam it belongs to.
-    this.apexGlows = Array.from({ length: BEAM_COUNT }, () =>
-      scene.add
-        .ellipse(0, 0, HAZE_APEX_GLOW_WIDTH, HAZE_APEX_GLOW_HEIGHT, 0xffffff)
-        .setBlendMode(Phaser.BlendModes.ADD)
-        .setAlpha(HAZE_APEX_GLOW_ALPHA)
-        .setDepth(-4)
-        .setVisible(false)
-    );
     this.wasActive = false;
   }
 
   update(songMs, beatCrossed, beatIndex, active, colorIndex) {
     this.beams.forEach(beam => beam.setVisible(active));
     this.pools.forEach(pool => pool.setVisible(active));
-    this.hazeLayers.forEach(layers => layers.forEach(layer => layer.setVisible(active)));
-    this.apexGlows.forEach(glow => glow.setVisible(active));
     this.lasers.setVisible(active);
     if (!active) {
       this.wasActive = false;
@@ -134,20 +95,6 @@ export class DiscoLights {
       const pool = this.pools[i];
       pool.setPosition(baseCenter, baseY);
       pool.setFillStyle(color);
-      // Fake haze: inner cones share this beam's exact apex/axis/base-center, just
-      // narrower and brighter, so they sweep and retarget together with the parent.
-      this.hazeLayers[i].forEach((layer, j) => {
-        const halfBase = BEAM_HALF_BASE * HAZE_INNER_WIDTH_RATIOS[j];
-        layer.setTo(
-          apexX, 0,
-          baseCenter - halfBase, baseY,
-          baseCenter + halfBase, baseY
-        );
-        layer.setFillStyle(color);
-      });
-      // Apex glow pools at the same apex point, sharing the beam's colour
-      this.apexGlows[i].setPosition(apexX, 0);
-      this.apexGlows[i].setFillStyle(color);
     });
   }
 
@@ -173,8 +120,6 @@ export class DiscoLights {
   destroy() {
     this.beams.forEach(beam => beam.destroy());
     this.pools.forEach(pool => pool.destroy());
-    this.hazeLayers.forEach(layers => layers.forEach(layer => layer.destroy()));
-    this.apexGlows.forEach(glow => glow.destroy());
     this.lasers.destroy();
   }
 }
