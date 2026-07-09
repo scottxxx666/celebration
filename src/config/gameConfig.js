@@ -63,3 +63,6 @@ export const DISCO_HUE_BEATS = 4; // beats the shared disco hue is held before a
 // Saturated palette for disco: beat flash uses the base index; DiscoLights spread
 // beams/pools/lasers across it by element index. The whole set advances per bar.
 export const DISCO_COLORS = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff00, 0xff8800];
+// Strobe — full-screen white flash on beats; frequency is authored per-section (strobe = flashes/beat in sections.js)
+export const STROBE_ALPHA = 0.4;  // peak white alpha of the strobe
+export const STROBE_DECAY = 12;    // alpha units/sec fade after the flash (~100ms tail)

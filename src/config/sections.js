@@ -6,7 +6,7 @@ export const SECTIONS = [
   { name: 'final_highlight', startMs: 67200, endMs: 78400, speedMult: 1.5, disco: true, rotate: true },
 ];
 
-const NORMAL = { speedMult: 1, disco: false, rotate: false };
+const NORMAL = { speedMult: 1, disco: false, rotate: false, strobe: 0 };
 
 export function sectionAt(songMs) {
   for (const section of SECTIONS) {

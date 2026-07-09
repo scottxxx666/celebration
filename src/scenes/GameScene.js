@@ -21,6 +21,9 @@ import {
   DISCO_DIM_FADE_MS,
   DISCO_HUE_BEATS,
   DISCO_COLORS,
+  STROBE_ALPHA,
+  STROBE_DECAY,
+  FIRST_BEAT_OFFSET_MS,
 } from '../config/gameConfig.js';
 
 export class GameScene extends Phaser.Scene {
@@ -63,6 +66,15 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0, 0)
       .setAlpha(0)
       .setDepth(-6);
+
+    // Strobe — full-screen white flash on the beat (frequency per section), above
+    // gameplay (depth 8), below the HUD (10)
+    this.strobeOverlay = this.add
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0xffffff)
+      .setOrigin(0, 0)
+      .setAlpha(0)
+      .setDepth(8);
+    this.strobeIndex = -1;
 
     const walkZoneMidY = WALK_ZONE_TOP + (GAME_HEIGHT - WALK_ZONE_TOP) / 2;
     this.player = new Player(this, PLAYER_X, walkZoneMidY);
@@ -116,6 +128,22 @@ export class GameScene extends Phaser.Scene {
       dimAlpha = DISCO_DIM_ALPHA * Phaser.Math.Clamp(edgeMs / DISCO_DIM_FADE_MS, 0, 1);
     }
     this.discoDim.setAlpha(dimAlpha);
+
+    // Strobe — flash white section.strobe times per beat during the section (may be
+    // sub-beat), aligned to the beat grid, then a fast fade tail; gated on song time
+    let strobeFlash = false;
+    if (section.strobe) {
+      const idx = Math.floor((songMs - FIRST_BEAT_OFFSET_MS) * section.strobe / this.conductor.beatMs);
+      strobeFlash = idx !== this.strobeIndex;
+      this.strobeIndex = idx;
+    } else {
+      this.strobeIndex = -1;
+    }
+    if (strobeFlash) {
+      this.strobeOverlay.setAlpha(STROBE_ALPHA);
+    } else {
+      this.strobeOverlay.setAlpha(Math.max(0, this.strobeOverlay.alpha - STROBE_DECAY * (delta / 1000)));
+    }
 
     // Scroll background — global world multiplier from the current section
     this.bgX -= this.player.speed * section.speedMult * (delta / 1000);
