@@ -1,5 +1,6 @@
 // Song sections with per-section effects. Times are PLACEHOLDERS (track TBD),
 // beat-aligned to the 700ms beat like waves.js. Gaps between sections = normal play.
+// strobe = flashes per beat (0.25 = per bar, 1 = per beat, 2 = per half-beat; 0/absent = off).
 export const SECTIONS = [
   { name: 'highlight1', startMs: 22400, endMs: 33600, speedMult: 1.5, disco: false, rotate: false },
   { name: 'dance_break', startMs: 44800, endMs: 56000, speedMult: 1.5, disco: true, rotate: false },
