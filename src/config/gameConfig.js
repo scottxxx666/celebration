@@ -59,3 +59,7 @@ export const ROTATE_BEATS_PER_TURN = 16;      // one full camera revolution per 
 export const ROTATE_ZOOM = 0.49;
 export const DISCO_DIM_ALPHA = 0.55;    // black overlay alpha during disco — darkens world so beams/lasers pop
 export const DISCO_DIM_FADE_MS = 700;  // beat-aligned fade in/out ramp (~1 beats) at disco section start/end
+export const DISCO_HUE_BEATS = 4; // beats the shared disco hue is held before advancing (4 = per bar)
+// Saturated palette for disco: beat flash uses the base index; DiscoLights spread
+// beams/pools/lasers across it by element index. The whole set advances per bar.
+export const DISCO_COLORS = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff00, 0xff8800];

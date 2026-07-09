@@ -1,13 +1,18 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
+import { GAME_WIDTH, GAME_HEIGHT, DISCO_COLORS } from '../config/gameConfig.js';
 
 // Top-down light beams shown only during disco sections (src/config/sections.js).
 // Purely decorative — sits above the background/beat overlay (−10/−5) and below shadows.
 // Each beam is a triangle cone: apex at the top edge (y=0) widening to a base where the
 // light lands on the road — a random spot per beat, not pinned to the bottom edge, so pools
-// scatter across (and sometimes past) the field. Geometry/colour teleport on every beat.
+// scatter across (and sometimes past) the field. Geometry teleports on every beat; colour is
+// coordinated instead — each beam/pool/laser takes a DISTINCT DISCO_COLORS entry offset by its
+// element index (from a base index passed in by GameScene), so the set spreads across the
+// palette and the whole set advances together per bar (DISCO_HUE_BEATS) — never random.
 // A third layer — thin concert-style laser beams — draws straight lines from scattered
-// random points along the top edge down through the field, also snapping on every beat.
+// random points along the top edge down through the field; origins/angles still snap on
+// every beat, with their colours spread across the palette the same way. The beat-flash
+// overlay (in GameScene) uses the base hue.
 const BEAM_COUNT = 3;
 const BEAM_HALF_BASE = 60; // half-width of the light pool where the beam lands
 const BEAM_SLANT_MAX = 60; // max horizontal offset of the base center from the apex (± px)
@@ -55,7 +60,7 @@ export class DiscoLights {
     this.wasActive = false;
   }
 
-  update(songMs, beatCrossed, beatIndex, active) {
+  update(songMs, beatCrossed, beatIndex, active, colorIndex) {
     this.beams.forEach(beam => beam.setVisible(active));
     this.pools.forEach(pool => pool.setVisible(active));
     this.lasers.setVisible(active);
@@ -63,6 +68,7 @@ export class DiscoLights {
       this.wasActive = false;
       return;
     }
+    this.colorIndex = colorIndex;
     // Jump on each beat, plus one immediate jump when disco first turns on so beams
     // don't linger at stale positions until the next beat.
     if (beatCrossed || !this.wasActive) {
@@ -77,23 +83,24 @@ export class DiscoLights {
       const apexX = -BASE_X_MARGIN + Math.random() * (GAME_WIDTH + 2 * BASE_X_MARGIN);
       const baseCenter = apexX + (Math.random() * 2 - 1) * BEAM_SLANT_MAX;
       const baseY = BASE_Y_MIN + Math.random() * (BASE_Y_MAX - BASE_Y_MIN);
-      const hue = Math.random();
-      const color = Phaser.Display.Color.HSVToRGB(hue, 1, 1);
+      // Distinct palette colour per beam, offset from the shared base index
+      const color = DISCO_COLORS[(this.colorIndex + i) % DISCO_COLORS.length];
       beam.setTo(
         apexX, 0,
         baseCenter - BEAM_HALF_BASE, baseY,
         baseCenter + BEAM_HALF_BASE, baseY
       );
-      beam.setFillStyle(color.color);
-      // Light pool sits where the beam lands, sharing its hue
+      beam.setFillStyle(color);
+      // Light pool sits where the beam lands, sharing that beam's colour
       const pool = this.pools[i];
       pool.setPosition(baseCenter, baseY);
-      pool.setFillStyle(color.color);
+      pool.setFillStyle(color);
     });
   }
 
   // Redraws all laser lines from scattered random origins along the top edge, each with
-  // a glow pass (wide, faint) and a core pass (thin, bright) sharing the same random hue.
+  // a glow pass (wide, faint) and a core pass (thin, bright); colours spread across the
+  // palette by laser index, offset from the shared base index (wrapping).
   jumpLasers() {
     this.lasers.clear();
     for (let i = 0; i < LASER_COUNT; i++) {
@@ -102,7 +109,7 @@ export class DiscoLights {
       const angle = LASER_ANGLE_MIN + Math.random() * (LASER_ANGLE_MAX - LASER_ANGLE_MIN);
       const x1 = x0 + Math.cos(angle) * LASER_LEN;
       const y1 = y0 + Math.sin(angle) * LASER_LEN;
-      const color = Phaser.Display.Color.HSVToRGB(Math.random(), 1, 1).color;
+      const color = DISCO_COLORS[(this.colorIndex + i) % DISCO_COLORS.length];
       this.lasers.lineStyle(LASER_GLOW_WIDTH, color, 0.25);
       this.lasers.lineBetween(x0, y0, x1, y1);
       this.lasers.lineStyle(LASER_CORE_WIDTH, color, 0.9);

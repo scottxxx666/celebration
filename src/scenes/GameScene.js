@@ -19,10 +19,9 @@ import {
   ROTATE_ZOOM,
   DISCO_DIM_ALPHA,
   DISCO_DIM_FADE_MS,
+  DISCO_HUE_BEATS,
+  DISCO_COLORS,
 } from '../config/gameConfig.js';
-
-// Saturated palette the beat flash cycles through during disco sections, by beatIndex
-const DISCO_COLORS = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff00, 0xff8800];
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -91,11 +90,15 @@ export class GameScene extends Phaser.Scene {
     this.player.update(this.cursors, this.leftKey, this.rightKey, delta);
     if (beatSyncOn && this.conductor.halfBeatCrossed) this.player.pulse();
 
+    // Coordinated disco palette base index, advancing per bar (DISCO_HUE_BEATS):
+    // the beat flash uses this base hue; DiscoLights spreads beams/pools/lasers
+    // across the palette offset from it, so the whole set shifts together per bar
+    const discoColorIndex = Math.floor(this.conductor.beatIndex / DISCO_HUE_BEATS) % DISCO_COLORS.length;
+    const discoColor = DISCO_COLORS[discoColorIndex];
+
     // Beat flash: brighter on the downbeat of each bar, then fade out; during
-    // disco sections it cycles a saturated palette instead of white
-    this.beatOverlay.setFillStyle(
-      section.disco ? DISCO_COLORS[this.conductor.beatIndex % DISCO_COLORS.length] : 0xffffff
-    );
+    // disco sections it uses the base disco hue instead of white
+    this.beatOverlay.setFillStyle(section.disco ? discoColor : 0xffffff);
     if (beatSyncOn && this.conductor.beatCrossed) {
       const onBeat = this.conductor.beatIndex % 4 === 0;
       const peakAlpha = section.disco ? DISCO_FLASH_ALPHA : 0.1;
@@ -104,7 +107,7 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.beatOverlay.setAlpha(Math.max(0, this.beatOverlay.alpha - 0.4 * (delta / 1000)));
     }
-    this.disco.update(songMs, this.conductor.beatCrossed, this.conductor.beatIndex, section.disco);
+    this.disco.update(songMs, this.conductor.beatCrossed, this.conductor.beatIndex, section.disco, discoColorIndex);
 
     // Disco dim — beat-aligned fade in/out at section start/end, gated purely on song time
     let dimAlpha = 0;
