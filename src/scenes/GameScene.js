@@ -17,6 +17,8 @@ import {
   DISCO_FLASH_ALPHA,
   ROTATE_BEATS_PER_TURN,
   ROTATE_ZOOM,
+  DISCO_DIM_ALPHA,
+  DISCO_DIM_FADE_MS,
 } from '../config/gameConfig.js';
 
 // Saturated palette the beat flash cycles through during disco sections, by beatIndex
@@ -54,6 +56,14 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0, 0)
       .setAlpha(0)
       .setDepth(-5);
+
+    // Disco dim — black overlay darkening the world so beams/lasers pop;
+    // below the lights (-4) and beat overlay (-5), above the background (-10)
+    this.discoDim = this.add
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000)
+      .setOrigin(0, 0)
+      .setAlpha(0)
+      .setDepth(-6);
 
     const walkZoneMidY = WALK_ZONE_TOP + (GAME_HEIGHT - WALK_ZONE_TOP) / 2;
     this.player = new Player(this, PLAYER_X, walkZoneMidY);
@@ -95,6 +105,14 @@ export class GameScene extends Phaser.Scene {
       this.beatOverlay.setAlpha(Math.max(0, this.beatOverlay.alpha - 0.4 * (delta / 1000)));
     }
     this.disco.update(songMs, this.conductor.beatCrossed, this.conductor.beatIndex, section.disco);
+
+    // Disco dim — beat-aligned fade in/out at section start/end, gated purely on song time
+    let dimAlpha = 0;
+    if (section.disco) {
+      const edgeMs = Math.min(songMs - section.startMs, section.endMs - songMs);
+      dimAlpha = DISCO_DIM_ALPHA * Phaser.Math.Clamp(edgeMs / DISCO_DIM_FADE_MS, 0, 1);
+    }
+    this.discoDim.setAlpha(dimAlpha);
 
     // Scroll background — global world multiplier from the current section
     this.bgX -= this.player.speed * section.speedMult * (delta / 1000);

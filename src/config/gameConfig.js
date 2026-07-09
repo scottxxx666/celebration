@@ -57,3 +57,5 @@ export const ROTATE_BEATS_PER_TURN = 16;      // one full camera revolution per 
 // at which the whole 800×450 field stays inside the viewport at every angle of a full turn
 // (no per-angle breathing)
 export const ROTATE_ZOOM = 0.49;
+export const DISCO_DIM_ALPHA = 0.55;    // black overlay alpha during disco — darkens world so beams/lasers pop
+export const DISCO_DIM_FADE_MS = 700;  // beat-aligned fade in/out ramp (~1 beats) at disco section start/end
