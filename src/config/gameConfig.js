@@ -27,6 +27,10 @@ export const ROW_SCALE_FRONT = 1.0;
 // Obstacle spawning
 export const SPAWN_INTERVAL_MS = 1400;
 
+// Touch controls — vertical drag distance (game px) from the pointer's down
+// position before a swipe fires a row change (see GameScene pointer handlers)
+export const SWIPE_THRESHOLD = 40;
+
 // Chasing enemy
 export const ENEMY_SPEED = 400;      // world px/s; keep player.speed above this to stay safe
 export const ENEMY_START_X = 0;   // initial off-screen x position

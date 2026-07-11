@@ -35,14 +35,8 @@ export class Player {
     const currRight = rightKey.isDown;
 
     // Fresh press that alternates from lastKey → accelerate
-    if (currLeft && !this._prevLeft && this.lastKey !== 'left') {
-      this.speed = Math.min(this.speed + ACCEL_STEP, MAX_SPEED);
-      this.lastKey = 'left';
-    }
-    if (currRight && !this._prevRight && this.lastKey !== 'right') {
-      this.speed = Math.min(this.speed + ACCEL_STEP, MAX_SPEED);
-      this.lastKey = 'right';
-    }
+    if (currLeft && !this._prevLeft) this.tap('left');
+    if (currRight && !this._prevRight) this.tap('right');
 
     this._prevLeft = currLeft;
     this._prevRight = currRight;
@@ -52,14 +46,28 @@ export class Player {
 
     // Vertical movement — snap to row on each key press
     if (Phaser.Input.Keyboard.JustDown(cursors.up)) {
-      this.row = Math.max(0, this.row - 1);
+      this.moveRow(-1);
     } else if (Phaser.Input.Keyboard.JustDown(cursors.down)) {
-      this.row = Math.min(NUM_ROWS - 1, this.row + 1);
+      this.moveRow(1);
     }
 
     // Recover from the beat squash
     this._squash = Math.min(1, this._squash + 1.2 * dt);
     this._applyLayout(rowLayout(this.row));
+  }
+
+  // Alternating tap: a press that differs from the last accelerates; a repeat
+  // of the same side does nothing. Shared by keyboard (update()) and touch
+  // (GameScene pointerdown) input paths.
+  tap(side) {
+    if (this.lastKey === side) return;
+    this.speed = Math.min(this.speed + ACCEL_STEP, MAX_SPEED);
+    this.lastKey = side;
+  }
+
+  // Row snap, clamped to the walk zone. dir = -1 (up) or +1 (down).
+  moveRow(dir) {
+    this.row = Phaser.Math.Clamp(this.row + dir, 0, NUM_ROWS - 1);
   }
 
   _applyLayout({ y, scale, depth }) {

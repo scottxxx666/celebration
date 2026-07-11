@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
+import { HowToPlayScene } from './scenes/HowToPlayScene.js';
 import { IntroScene } from './scenes/IntroScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
@@ -25,5 +26,5 @@ new Phaser.Game({
     default: 'arcade',
     arcade: { gravity: { y: 0 }, debug: false },
   },
-  scene: [BootScene, MenuScene, IntroScene, GameScene, GameOverScene],
+  scene: [BootScene, MenuScene, HowToPlayScene, IntroScene, GameScene, GameOverScene],
 });

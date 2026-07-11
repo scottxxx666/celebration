@@ -27,6 +27,7 @@ import {
   ZOOM_PUNCH_AMOUNT,
   ZOOM_PUNCH_BEATS,
   ZOOM_PUNCH_DECAY_MS,
+  SWIPE_THRESHOLD,
 } from '../config/gameConfig.js';
 
 export class GameScene extends Phaser.Scene {
@@ -88,6 +89,44 @@ export class GameScene extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
     this.rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+
+    // Touch controls — split tap zones (left/right half = alternating accel,
+    // same as the LEFT/RIGHT arrow path) + vertical swipe (row change). Two
+    // simultaneous pointers needed for two-thumb tapping alongside a swipe.
+    this.input.addPointer(2);
+    this._touchGestures = new Map(); // pointer.id -> { startX, startY, rowChanged }
+    this._onPointerDown = (pointer) => {
+      this.player.tap(pointer.x < GAME_WIDTH / 2 ? 'left' : 'right');
+      this._touchGestures.set(pointer.id, {
+        startX: pointer.x,
+        startY: pointer.y,
+        rowChanged: false,
+      });
+    };
+    this._onPointerMove = (pointer) => {
+      const gesture = this._touchGestures.get(pointer.id);
+      if (!gesture || gesture.rowChanged) return;
+      const dx = pointer.x - gesture.startX;
+      const dy = pointer.y - gesture.startY;
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > SWIPE_THRESHOLD) {
+        this.player.moveRow(dy < 0 ? -1 : 1);
+        gesture.rowChanged = true;
+      }
+    };
+    this._onPointerUp = (pointer) => {
+      this._touchGestures.delete(pointer.id);
+    };
+    this.input.on(Phaser.Input.Events.POINTER_DOWN, this._onPointerDown);
+    this.input.on(Phaser.Input.Events.POINTER_MOVE, this._onPointerMove);
+    this.input.on(Phaser.Input.Events.POINTER_UP, this._onPointerUp);
+    this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, this._onPointerUp);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.input.off(Phaser.Input.Events.POINTER_DOWN, this._onPointerDown);
+      this.input.off(Phaser.Input.Events.POINTER_MOVE, this._onPointerMove);
+      this.input.off(Phaser.Input.Events.POINTER_UP, this._onPointerUp);
+      this.input.off(Phaser.Input.Events.POINTER_UP_OUTSIDE, this._onPointerUp);
+      this._touchGestures.clear();
+    });
 
     // Speed readout (debug HUD) — above all gameplay depths
     this.speedText = this.add.text(10, 10, '', { fontSize: '14px', color: '#ffffff' }).setDepth(10);

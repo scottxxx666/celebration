@@ -30,7 +30,7 @@ export class GameOverScene extends Phaser.Scene {
       color: '#aaaaaa',
     }).setOrigin(0.5);
 
-    this.add.text(cx, cy + 55, 'Press SPACE to restart · ESC for menu', {
+    this.add.text(cx, cy + 55, 'SPACE / tap to restart · ESC for menu', {
       fontSize: '18px',
       color: '#666666',
     }).setOrigin(0.5);
@@ -47,6 +47,13 @@ export class GameOverScene extends Phaser.Scene {
     });
     this.input.keyboard.once('keydown-ESC', () => {
       this.scene.start('MenuScene');
+    });
+    // Require a fresh press: a finger still held from the death tap would
+    // otherwise fire pointerup here and restart before the score is seen
+    this.input.once('pointerdown', () => {
+      this.input.once('pointerup', () => {
+        this.scene.start('GameScene');
+      });
     });
   }
 
