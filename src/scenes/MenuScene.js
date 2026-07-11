@@ -37,15 +37,24 @@ export class MenuScene extends Phaser.Scene {
 
     this.isDesktop = this.sys.game.device.os.desktop;
 
-    this.add.text(cx, GAME_HEIGHT - 30, this.isDesktop ? '↑/↓ select · ENTER confirm' : 'Tap an option', {
-      fontSize: '14px',
-      color: '#555555',
-    }).setOrigin(0.5);
+    this.add.text(
+      cx,
+      GAME_HEIGHT - 30,
+      this.isDesktop ? '↑/↓ select · ENTER confirm · F fullscreen' : 'Tap an option',
+      { fontSize: '14px', color: '#555555' }
+    ).setOrigin(0.5);
 
     this.input.keyboard.on('keydown-UP', () => this.move(-1));
     this.input.keyboard.on('keydown-DOWN', () => this.move(1));
     this.input.keyboard.on('keydown-ENTER', () => this.confirm());
     this.input.keyboard.on('keydown-SPACE', () => this.confirm());
+
+    if (!this.isDesktop) {
+      // Orientation lock only works while fullscreen (Android/Chromium); iOS rejects it, so swallow failures.
+      this.scale.once('enterfullscreen', () => {
+        screen.orientation?.lock?.('landscape').catch(() => {});
+      });
+    }
   }
 
   highlight() {
@@ -72,6 +81,11 @@ export class MenuScene extends Phaser.Scene {
     // The confirming gesture unlocks the browser audio context; the intro plays
     // before gameplay, giving audio ample time to unlock (the actual unlock-wait
     // now guards the IntroScene -> GameScene hop).
+    // Mobile: request fullscreen from this same gesture. iPhone has no Fullscreen API,
+    // so `available` is false there and Start behaves exactly as before.
+    if (!this.isDesktop && this.scale.fullscreen.available && !this.scale.isFullscreen) {
+      this.scale.startFullscreen();
+    }
     this.scene.start('IntroScene');
   }
 }

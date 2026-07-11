@@ -30,7 +30,11 @@ export class GameOverScene extends Phaser.Scene {
       color: '#aaaaaa',
     }).setOrigin(0.5);
 
-    this.add.text(cx, cy + 55, 'SPACE / tap to restart · ESC for menu', {
+    const isDesktop = this.sys.game.device.os.desktop;
+    const hint = isDesktop
+      ? 'SPACE to restart · ESC for menu · F fullscreen'
+      : 'Tap to restart';
+    this.add.text(cx, cy + 55, hint, {
       fontSize: '18px',
       color: '#666666',
     }).setOrigin(0.5);

@@ -32,7 +32,7 @@ export class HowToPlayScene extends Phaser.Scene {
       this.createMobile();
     }
 
-    const backHint = this.isDesktop ? 'ESC / ENTER / tap to go back' : 'Tap anywhere to go back';
+    const backHint = this.isDesktop ? 'ESC / ENTER / tap to go back · F fullscreen' : 'Tap anywhere to go back';
     this.add.text(cx, GAME_HEIGHT - 30, backHint, { fontSize: '14px', color: '#666666' }).setOrigin(0.5);
 
     const goBack = () => this.scene.start('MenuScene');

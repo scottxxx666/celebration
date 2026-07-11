@@ -25,7 +25,9 @@ export class IntroScene extends Phaser.Scene {
     video.once(Phaser.GameObjects.Events.VIDEO_COMPLETE, () => this.startGame());
     video.play();
 
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 24, 'Press SPACE to skip', {
+    const isDesktop = this.sys.game.device.os.desktop;
+    const skipHint = isDesktop ? 'Press SPACE to skip · F fullscreen' : 'Tap to skip';
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 24, skipHint, {
       fontSize: '14px',
       color: '#888888',
     }).setOrigin(0.5).setDepth(10);

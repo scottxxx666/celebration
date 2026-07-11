@@ -7,7 +7,7 @@ import { GameScene } from './scenes/GameScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig.js';
 
-new Phaser.Game({
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
@@ -17,14 +17,18 @@ new Phaser.Game({
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
-    max: {
-      width: GAME_WIDTH,
-      height: GAME_HEIGHT,
-    },
   },
   physics: {
     default: 'arcade',
     arcade: { gravity: { y: 0 }, debug: false },
   },
   scene: [BootScene, MenuScene, HowToPlayScene, IntroScene, GameScene, GameOverScene],
+});
+
+// F toggles fullscreen in any scene on desktop; Phaser keyboard input is
+// per-scene, so a single DOM listener avoids re-binding in every scene.
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyF' && game.device.os.desktop) {
+    game.scale.toggleFullscreen();
+  }
 });
