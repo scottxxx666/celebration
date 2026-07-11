@@ -59,7 +59,7 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(
       cx,
       GAME_HEIGHT - 30,
-      this.isDesktop ? '↑/↓ select · ENTER confirm' : 'Tap an option',
+      this.isDesktop ? '↑/↓ select · SPACE confirm' : 'Tap an option',
       { fontSize: '14px', color: '#555555' }
     ).setOrigin(0.5);
 
