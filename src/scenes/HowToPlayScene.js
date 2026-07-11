@@ -77,6 +77,8 @@ export class HowToPlayScene extends Phaser.Scene {
     this.caption(cx, 320, 'Dodge the obstacles');
     this.caption(cx, 345, "Don't let the chaser catch you");
 
+    this.add.text(cx, 385, 'F — fullscreen', { fontSize: '14px', color: '#666666' }).setOrigin(0.5);
+
     // Half-beat tap cadence (~350ms); rows keys press once per beat (~700ms)
     this.runSide = 1; // first tick flips it, so the demo leads with ←
     this.time.addEvent({ delay: 350, loop: true, callback: () => {
