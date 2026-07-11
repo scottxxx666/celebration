@@ -103,12 +103,9 @@ export class MenuScene extends Phaser.Scene {
   }
 
   startGame() {
-    // The confirming gesture unlocks the browser audio context; wait for the
-    // unlock so GameScene's music clock is valid from its first frame (C3).
-    if (this.sound.locked) {
-      this.sound.once(Phaser.Sound.Events.UNLOCKED, () => this.scene.start('GameScene'));
-    } else {
-      this.scene.start('GameScene');
-    }
+    // The confirming gesture unlocks the browser audio context; the intro plays
+    // before gameplay, giving audio ample time to unlock (the actual unlock-wait
+    // now guards the IntroScene -> GameScene hop).
+    this.scene.start('IntroScene');
   }
 }

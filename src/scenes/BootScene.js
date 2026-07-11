@@ -7,6 +7,7 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     this.load.audio('music', 'assets/music.m4a');
+    this.load.video('intro', 'assets/intro.mp4');
   }
 
   create() {
