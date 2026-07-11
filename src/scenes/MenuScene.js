@@ -15,28 +15,46 @@ export class MenuScene extends Phaser.Scene {
 
     this.selected = 0;
 
+    this.isDesktop = this.sys.game.device.os.desktop;
+
     this.add.text(cx, cy - 110, 'CELEBRATION', {
       fontSize: '56px',
       color: '#ffffff',
       fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    this.optionTexts = OPTIONS.map((label, i) =>
-      this.add.text(cx, cy + i * 45, label, { fontSize: '26px', color: '#666666' })
+    this.optionTexts = OPTIONS.map((label, i) => {
+      const text = this.add.text(cx, cy + i * 45, label, {
+        fontSize: '26px',
+        color: this.isDesktop ? '#666666' : '#ffffff',
+      })
         .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true })
-        .on('pointerover', () => {
+        .setInteractive({ useHandCursor: true });
+
+      if (this.isDesktop) {
+        text.on('pointerover', () => {
           this.selected = i;
           this.highlight();
-        })
-        .on('pointerup', () => {
-          this.selected = i;
-          this.confirm();
-        })
-    );
-    this.highlight();
+        });
+      } else {
+        text
+          .on('pointerdown', () => text.setAlpha(0.6))
+          .on('pointerout', () => text.setAlpha(1));
+      }
 
-    this.isDesktop = this.sys.game.device.os.desktop;
+      text.on('pointerup', () => {
+        text.setAlpha(1);
+        this.selected = i;
+        this.confirm();
+      });
+
+      return text;
+    });
+
+    if (this.isDesktop) {
+      this.cursor = this.add.text(0, 0, '▶', { fontSize: '26px', color: '#ffffff' }).setOrigin(1, 0.5);
+    }
+    this.highlight();
 
     this.add.text(
       cx,
@@ -61,10 +79,14 @@ export class MenuScene extends Phaser.Scene {
   }
 
   highlight() {
+    if (!this.isDesktop) return;
+
     this.optionTexts.forEach((text, i) => {
       text.setColor(i === this.selected ? '#ffffff' : '#666666');
-      text.setText(i === this.selected ? `▶ ${OPTIONS[i]}` : OPTIONS[i]);
     });
+
+    const label = this.optionTexts[this.selected];
+    this.cursor.setPosition(label.getLeftCenter().x - 12, label.y);
   }
 
   move(dir) {
