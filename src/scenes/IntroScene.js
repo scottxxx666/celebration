@@ -12,12 +12,16 @@ export class IntroScene extends Phaser.Scene {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000);
 
     const video = this.add.video(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'intro');
-    // Fill the canvas. The video's real dimensions may not exist until its
-    // texture is ready, so (re)apply the fit once the texture arrives too —
-    // sizing against a 0-width frame would blow the scale up to Infinity.
-    const fit = () => video.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
-    video.on(Phaser.GameObjects.Events.VIDEO_TEXTURE, fit);
-    fit();
+    // Fill the canvas. The object starts as a 256x256 placeholder, and
+    // VIDEO_TEXTURE fires *before* Phaser adopts the real frame size — so
+    // setDisplaySize here would bake in a 256-based scale that zoom-crops the
+    // video once the real frame lands. Set scale from the texture's own
+    // dimensions instead; Phaser preserves scale (not display size) through
+    // the frame swap.
+    video.once(Phaser.GameObjects.Events.VIDEO_TEXTURE, (_vid, texture) => {
+      const frame = texture.get();
+      video.setScale(GAME_WIDTH / frame.realWidth, GAME_HEIGHT / frame.realHeight);
+    });
     video.once(Phaser.GameObjects.Events.VIDEO_COMPLETE, () => this.startGame());
     video.play();
 
