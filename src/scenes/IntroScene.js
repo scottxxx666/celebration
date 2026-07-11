@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
+import { addFullscreenButton } from '../objects/FullscreenButton.js';
 
 export class IntroScene extends Phaser.Scene {
   constructor() {
@@ -26,7 +27,7 @@ export class IntroScene extends Phaser.Scene {
     video.play();
 
     const isDesktop = this.sys.game.device.os.desktop;
-    const skipHint = isDesktop ? 'Press SPACE to skip · F fullscreen' : 'Tap to skip';
+    const skipHint = isDesktop ? 'Press SPACE to skip' : 'Tap to skip';
     this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 24, skipHint, {
       fontSize: '14px',
       color: '#888888',
@@ -35,6 +36,8 @@ export class IntroScene extends Phaser.Scene {
     this.input.keyboard.once('keydown-SPACE', () => this.startGame());
     this.input.keyboard.once('keydown-ESC', () => this.startGame());
     this.input.once('pointerup', () => this.startGame());
+
+    addFullscreenButton(this);
   }
 
   startGame() {

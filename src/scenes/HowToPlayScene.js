@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
+import { addFullscreenButton } from '../objects/FullscreenButton.js';
 
 // Desktop layout: two keycap demo columns side by side
 const LEFT_X = 250;   // run-demo column center
@@ -32,7 +33,7 @@ export class HowToPlayScene extends Phaser.Scene {
       this.createMobile();
     }
 
-    const backHint = this.isDesktop ? 'ESC / ENTER / tap to go back · F fullscreen' : 'Tap anywhere to go back';
+    const backHint = this.isDesktop ? 'ESC / ENTER / tap to go back' : 'Tap anywhere to go back';
     this.add.text(cx, GAME_HEIGHT - 30, backHint, { fontSize: '14px', color: '#666666' }).setOrigin(0.5);
 
     const goBack = () => this.scene.start('MenuScene');
@@ -40,6 +41,8 @@ export class HowToPlayScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ENTER', goBack);
     this.input.keyboard.on('keydown-SPACE', goBack);
     this.input.on('pointerdown', goBack);
+
+    addFullscreenButton(this);
   }
 
   caption(x, y, text) {

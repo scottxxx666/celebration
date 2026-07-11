@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
+import { addFullscreenButton } from '../objects/FullscreenButton.js';
 
 const OPTIONS = ['Start', 'How to Play'];
 
@@ -40,7 +41,7 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(
       cx,
       GAME_HEIGHT - 30,
-      this.isDesktop ? '↑/↓ select · ENTER confirm · F fullscreen' : 'Tap an option',
+      this.isDesktop ? '↑/↓ select · ENTER confirm' : 'Tap an option',
       { fontSize: '14px', color: '#555555' }
     ).setOrigin(0.5);
 
@@ -55,6 +56,8 @@ export class MenuScene extends Phaser.Scene {
         screen.orientation?.lock?.('landscape').catch(() => {});
       });
     }
+
+    addFullscreenButton(this);
   }
 
   highlight() {

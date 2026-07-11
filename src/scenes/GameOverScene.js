@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { Confetti } from '../objects/Confetti.js';
+import { addFullscreenButton } from '../objects/FullscreenButton.js';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -32,7 +33,7 @@ export class GameOverScene extends Phaser.Scene {
 
     const isDesktop = this.sys.game.device.os.desktop;
     const hint = isDesktop
-      ? 'SPACE to restart · ESC for menu · F fullscreen'
+      ? 'SPACE to restart · ESC for menu'
       : 'Tap to restart';
     this.add.text(cx, cy + 55, hint, {
       fontSize: '18px',
@@ -59,6 +60,8 @@ export class GameOverScene extends Phaser.Scene {
         this.scene.start('GameScene');
       });
     });
+
+    addFullscreenButton(this);
   }
 
   update(time, delta) {
