@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH } from '../config/gameConfig.js';
-import { saveUserVolume } from '../userVolume.js';
+import { getUserVolume, setUserVolume, saveUserVolume } from '../userVolume.js';
 
 const SLIDER_Y = 70;       // second row, under the fullscreen button (its zone spans y 10-50);
                             // this slider's 40px-tall zone spans 50-90 so the two never overlap
@@ -40,7 +40,9 @@ export function addVolumeSlider(scene) {
   const coneMouthX = trackLeft - ARC_GAP - ARC_RADII[ARC_RADII.length - 1];
   const iconLeft = coneMouthX - ICON_W;
 
-  let value = scene.sound.volume;
+  // Read the cache, not scene.sound.volume — the manager read is stale while
+  // the audio context is still locked (pre-gesture)
+  let value = getUserVolume();
   let dragId = null;   // pointer.id currently dragging the knob, or null
   let hovering = false;
 
@@ -98,6 +100,7 @@ export function addVolumeSlider(scene) {
 
   const apply = () => {
     scene.sound.setVolume(value); // also emits GLOBAL_VOLUME, which IntroScene uses for the video
+    setUserVolume(value);         // keep the cache in step — it's the read source of truth
     knob.setX(trackLeft + value * TRACK_W);
     drawTrack();
     drawArcs();
@@ -132,7 +135,7 @@ export function addVolumeSlider(scene) {
   const endDrag = (pointer) => {
     if (pointer.id !== dragId) return;
     dragId = null;
-    saveUserVolume(scene.sound.volume);
+    saveUserVolume();
     if (!hovering) parts.forEach((part) => part.setAlpha(ALPHA_DIM));
   };
 
@@ -179,6 +182,6 @@ export function addVolumeSlider(scene) {
     scene.input.off(Phaser.Input.Events.POINTER_UP, endDrag);
     scene.input.off(Phaser.Input.Events.POINTER_UP_OUTSIDE, endDrag);
     // Scene torn down mid-drag (e.g. the song COMPLETE fires while dragging) — save anyway
-    if (dragId !== null) saveUserVolume(scene.sound.volume);
+    if (dragId !== null) saveUserVolume();
   });
 }

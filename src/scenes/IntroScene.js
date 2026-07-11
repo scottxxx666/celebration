@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
+import { getUserVolume } from '../userVolume.js';
 
 export class IntroScene extends Phaser.Scene {
   constructor() {
@@ -29,11 +30,12 @@ export class IntroScene extends Phaser.Scene {
 
     // Phaser Video audio doesn't go through the sound manager, so the user volume
     // has to be applied directly, re-applied on every slider drag via
-    // GLOBAL_VOLUME. this.sound is game-global (shared across scenes), so the
-    // listener must be removed on shutdown or it keeps a closure over this run's
-    // dead video object.
+    // GLOBAL_VOLUME. The initial value comes from the userVolume cache — the
+    // manager read is stale while the audio context is still locked (pre-gesture).
+    // this.sound is game-global (shared across scenes), so the listener must be
+    // removed on shutdown or it keeps a closure over this run's dead video object.
     const applyVideoVolume = (_mgr, v) => video.setVolume(v);
-    applyVideoVolume(this.sound, this.sound.volume);
+    applyVideoVolume(this.sound, getUserVolume());
     this.sound.on(Phaser.Sound.Events.GLOBAL_VOLUME, applyVideoVolume);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.sound.off(Phaser.Sound.Events.GLOBAL_VOLUME, applyVideoVolume);

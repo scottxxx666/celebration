@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
-import { addVolumeSlider } from '../objects/VolumeSlider.js';
 
 const OPTIONS = ['Start', 'How to Play'];
 
@@ -77,7 +76,6 @@ export class MenuScene extends Phaser.Scene {
     }
 
     addFullscreenButton(this);
-    addVolumeSlider(this);
   }
 
   highlight() {

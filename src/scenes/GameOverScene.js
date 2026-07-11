@@ -1,7 +1,6 @@
 import Phaser from 'phaser';
 import { Confetti } from '../objects/Confetti.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
-import { addVolumeSlider } from '../objects/VolumeSlider.js';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -63,7 +62,6 @@ export class GameOverScene extends Phaser.Scene {
     });
 
     addFullscreenButton(this);
-    addVolumeSlider(this);
   }
 
   update(time, delta) {
