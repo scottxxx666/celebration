@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
+import { addVolumeSlider } from '../objects/VolumeSlider.js';
 
 // Desktop layout: two keycap demo columns side by side
 const LEFT_X = 250;   // run-demo column center
@@ -43,6 +44,7 @@ export class HowToPlayScene extends Phaser.Scene {
     this.input.on('pointerdown', goBack);
 
     addFullscreenButton(this);
+    addVolumeSlider(this);
   }
 
   caption(x, y, text) {

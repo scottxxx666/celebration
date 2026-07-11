@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { loadUserVolume } from '../userVolume.js';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -11,6 +12,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
+    this.sound.setVolume(loadUserVolume());
     this.scene.start('MenuScene');
   }
 }

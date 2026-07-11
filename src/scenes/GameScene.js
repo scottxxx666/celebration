@@ -4,6 +4,7 @@ import { ObstacleSpawner } from '../objects/ObstacleSpawner.js';
 import { Enemy } from '../objects/Enemy.js';
 import { DiscoLights } from '../objects/DiscoLights.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
+import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
 import { sectionAt } from '../config/sections.js';
 import {
@@ -133,6 +134,7 @@ export class GameScene extends Phaser.Scene {
     this.speedText = this.add.text(10, 10, '', { fontSize: '14px', color: '#ffffff' }).setDepth(10);
 
     addFullscreenButton(this);
+    addVolumeSlider(this);
   }
 
   update(time, delta) {

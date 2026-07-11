@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
+import { addVolumeSlider } from '../objects/VolumeSlider.js';
 
 export class IntroScene extends Phaser.Scene {
   constructor() {
@@ -26,6 +27,18 @@ export class IntroScene extends Phaser.Scene {
     video.once(Phaser.GameObjects.Events.VIDEO_COMPLETE, () => this.startGame());
     video.play();
 
+    // Phaser Video audio doesn't go through the sound manager, so the user volume
+    // has to be applied directly, re-applied on every slider drag via
+    // GLOBAL_VOLUME. this.sound is game-global (shared across scenes), so the
+    // listener must be removed on shutdown or it keeps a closure over this run's
+    // dead video object.
+    const applyVideoVolume = (_mgr, v) => video.setVolume(v);
+    applyVideoVolume(this.sound, this.sound.volume);
+    this.sound.on(Phaser.Sound.Events.GLOBAL_VOLUME, applyVideoVolume);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.sound.off(Phaser.Sound.Events.GLOBAL_VOLUME, applyVideoVolume);
+    });
+
     const isDesktop = this.sys.game.device.os.desktop;
     const skipHint = isDesktop ? 'Press SPACE to skip' : 'Tap to skip';
     this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 24, skipHint, {
@@ -35,9 +48,15 @@ export class IntroScene extends Phaser.Scene {
 
     this.input.keyboard.once('keydown-SPACE', () => this.startGame());
     this.input.keyboard.once('keydown-ESC', () => this.startGame());
-    this.input.once('pointerup', () => this.startGame());
+    // Arm on pointerdown rather than a bare once('pointerup'): the volume slider
+    // stopPropagates its own pointerdown, so a drag that starts on the slider and
+    // is released outside it never arms this and can't skip the intro.
+    this.input.on('pointerdown', () => {
+      this.input.once('pointerup', () => this.startGame());
+    });
 
     addFullscreenButton(this);
+    addVolumeSlider(this);
   }
 
   startGame() {

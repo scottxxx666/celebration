@@ -54,6 +54,10 @@ export const BEAT_SYNC_START_MS = 11200;
 export const BPM = 85.7;                 // matches the 700ms beat spacing in waves.js
 export const FIRST_BEAT_OFFSET_MS = 0;
 
+// Default user volume when nothing is saved — sources play at full loudness,
+// so the slider's max (1.0) is louder than this default
+export const DEFAULT_VOLUME = 0.7;
+
 // Section effects (src/config/sections.js holds the section times)
 export const DISCO_FLASH_ALPHA = 0.18;        // beat-flash alpha during disco (downbeat; others slightly lower)
 export const ROTATE_BEATS_PER_TURN = 16;      // one full camera revolution per N beats (spin-speed tuning knob)
