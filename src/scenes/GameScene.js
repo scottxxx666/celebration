@@ -32,6 +32,15 @@ import {
   SWIPE_THRESHOLD,
 } from '../config/gameConfig.js';
 
+// Song time as m:ss.mmm — the format section/wave boundaries get read off in
+function formatSongTime(ms) {
+  const total = Math.max(0, ms || 0);
+  const min = Math.floor(total / 60000);
+  const sec = Math.floor((total % 60000) / 1000);
+  const msec = Math.floor(total % 1000);
+  return `${min}:${String(sec).padStart(2, '0')}.${String(msec).padStart(3, '0')}`;
+}
+
 export class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
@@ -130,7 +139,7 @@ export class GameScene extends Phaser.Scene {
       this._touchGestures.clear();
     });
 
-    // Speed readout (debug HUD) — above all gameplay depths
+    // Speed + song-time readout (debug HUD) — above all gameplay depths
     this.speedText = this.add.text(10, 10, '', { fontSize: '14px', color: '#ffffff' }).setDepth(10);
 
     // Fullscreen button first: it returns where the slider's right edge goes.
@@ -244,7 +253,9 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    this.speedText.setText(`speed: ${Math.floor(this.player.speed)}`);
+    this.speedText.setText(
+      `speed: ${Math.floor(this.player.speed)}   time: ${formatSongTime(songMs)}`
+    );
   }
 
   endRun(won) {
