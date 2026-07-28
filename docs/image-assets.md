@@ -164,8 +164,138 @@ Models often ignore the size/transparency lines, so check and fix:
 4. Check readability: zoom the result down to 70px (and 60% of that for the
    back row) — the silhouette and face should still read.
 
+## Road & background (the two scenery layers)
+
+`GameScene` currently draws these as flat rectangles (`GameScene.js` create):
+
+| Layer | Rect today | Logical box | Scrolls? |
+|---|---|---|---|
+| **Road** (walk zone) | `0x1a1a2e`, `y = WALK_ZONE_TOP` → bottom | **800 × 270** | yes, left, wraps every 800px |
+| **Background** (scenery strip) | `0x2a4a2e`, `y = 0` → `WALK_ZONE_TOP` | **800 × 180** | no (static) |
+| Horizon line | `0x88aa66`, 2px at `y = WALK_ZONE_TOP` | 800 × 2 | no |
+
+Both sit at depth −10, under everything. Export at **2×** like the sprites:
+road **1600 × 540**, background **1600 × 360**. Opaque PNG (no alpha needed).
+
+Constraints that come from the engine, not taste:
+
+- **The road must tile seamlessly left↔right.** It scrolls by
+  `player.speed × section.speedMult` and wraps at exactly `GAME_WIDTH`, so the
+  left and right edges have to match pixel-for-pixel. No baked vignette or
+  one-off landmark that would pop at the seam.
+- **The road must NOT tile vertically** — its top edge is the far end of the
+  fake-3D ground plane, its bottom edge is nearest the camera.
+- **Rows are equal height, not perspective-compressed.** 5 rows × 54 logical px
+  (108px at 2×). A true converging perspective grid fights the layout; equal
+  horizontal bands at those offsets do not, and they help players read which
+  row an obstacle is in.
+- **Keep the road mid-dark and low-contrast.** The engine drops a black ellipse
+  shadow at alpha 0.3 under every object, flashes the whole walk zone white on
+  the beat, and fades a black dim overlay in during `disco` sections — a road
+  that is already near-black kills the shadows, and a busy one buries the 70px
+  sprites.
+- **Nothing on the road that looks like an obstacle.** Every solid, chunky shape
+  on the ground reads as something to dodge.
+- **Tall obstacles overhang the background.** A wall sprite in the back row
+  crosses above `y = 180`, so keep the scenery strip silhouette-y and
+  low-contrast enough that a wall still reads against it.
+- The background's bottom edge is where it meets the road; design the last few
+  pixels as the horizon seam (then the code's 2px line is optional). Making it
+  seamlessly tileable too is cheap insurance if it ever gets parallax.
+
+### Prompt template — road
+
+Paste as-is, replacing `[SCENE]` with one block from the table below.
+
+```
+Draw a seamless side-scrolling game ground texture: a top-down-ish
+ground plane seen from a low camera looking slightly down, for a 2D
+runner game.
+
+Scene: [SCENE]
+
+Requirements:
+- Seamlessly tileable LEFT to RIGHT: the left and right edges must match
+  exactly so the image can repeat horizontally forever. Not tileable
+  vertically.
+- The top edge is the far distance, the bottom edge is closest to the
+  camera. Suggest depth by making surface detail finer and slightly
+  darker toward the top, coarser and slightly brighter toward the bottom.
+- Divide the surface into 5 equal horizontal lanes with very subtle
+  boundaries (a faint seam, tone shift or scuff line every 108 pixels) —
+  subtle, not bold painted lines.
+- Smooth cartoon style, clean flat cel shading, light source from the
+  top-left, matching a cartoon character sprite that will run on top.
+- Medium-dark overall value with LOW contrast: bright enough that a soft
+  black drop shadow reads on it, flat enough that small 70px character
+  sprites stay readable above it.
+- No characters, no vehicles, no props, no obstacles, no text, no
+  watermark, no vignette, no border, no lighting hotspot.
+- Fill the entire canvas, edge to edge. No margins, no frame.
+- Output: 1600 x 540 pixels, PNG.
+```
+
+### Prompt template — background
+
+```
+Draw a background scenery strip for a 2D side-scrolling runner game: a
+wide, distant backdrop seen from ground level, sitting above the
+horizon.
+
+Scene: [SCENE]
+
+Requirements:
+- Very wide, short letterbox composition. The bottom edge of the image
+  is the horizon line where the ground begins — the scenery sits on it,
+  nothing hangs below it.
+- Distant and atmospheric: mostly silhouettes and simple flat shapes with
+  soft haze, LOW contrast and low detail, as if far away. It must never
+  compete with the characters running in front of it.
+- Smooth cartoon style, clean flat cel shading, light source from the
+  top-left.
+- Seamlessly tileable left to right (left and right edges match exactly).
+- No characters in focus, no foreground props, no text, no watermark, no
+  vignette, no border.
+- Fill the entire canvas, edge to edge. No margins, no frame.
+- Output: 1600 x 360 pixels, PNG.
+```
+
+### The four `[SCENE]` blocks
+
+| Variant | Road `[SCENE]` | Background `[SCENE]` |
+|---|---|---|
+| **Night city** | Wet night asphalt street, dark blue-grey, faint puddles reflecting pink and cyan neon, painted lane scuffs, manhole covers and cracks worn flat | Night city skyline: dark building silhouettes with lit windows, glowing pink/cyan neon signs and street lamps, deep blue sky fading to purple at the horizon |
+| **Day city** | Sunlit grey asphalt street, warm mid-grey, faded white lane markings, light cracks and tar seams, occasional drain grate | Daytime city skyline: pale buildings and rooftops in soft haze, a few trees and street lamps, bright blue sky with flat cartoon clouds |
+| **Gym** | Indoor gym floor: pale honey-coloured wooden boards running left to right, faint painted court lines in red and blue, subtle polished sheen | Gym interior wall: racks of dumbbells and weight plates, a wall mirror, hanging championship banners and a scoreboard, all flat and muted |
+| **Disco / party** | Glossy black-and-white checkered dance floor with a wet mirror-like sheen, faint coloured light pools smeared across it | Nightclub interior: dark wall with stacked speakers, a DJ booth, a mirror ball, strings of party lights and confetti, silhouetted dancing crowd along the bottom |
+
+### After generation
+
+1. **Check the seam**: duplicate the road side by side and look at the join.
+   Most models fake tileability — expect to fix it (Photoshop offset filter,
+   or `imagemagick -roll +800+0` then paint out the seam).
+2. **Resize** to exactly 1600×540 / 1600×360, no crop that shifts the horizon.
+3. **Sanity check at real size**: view the road at 800×270 with a 70px sprite
+   and a 30% black ellipse on it — if the shadow vanishes, the road is too dark;
+   if the sprite gets lost, the road is too busy.
+4. Keep one road + one background per variant so a theme can be swapped as a
+   pair.
+
+**Handling the rotate section**: the `rotate` section zooms the camera out to
+0.49 and spins it, which would otherwise reveal area outside the 800×450
+world. `Scenery` (`src/objects/Scenery.js`) handles this in code, not art: both
+tileSprites are widened in x to cover the circle the zoomed-out, spinning
+camera sweeps, with flat sky/ground fill rectangles (`theme.sky`/`theme.ground`)
+extending beyond them so no black ever shows.
+
 ## File locations
 
 Place under `public/assets/` alongside `intro.mp4` / `music.m4a`, e.g.
-`public/assets/sprites/runner.png`, `public/assets/sprites/obstacle-wall.png`;
-load them in `BootScene` with the other assets.
+`public/assets/sprites/runner.png`, `public/assets/sprites/obstacle-wall.png`,
+`public/assets/bg/road-night.png`, `public/assets/bg/scenery-night.png`;
+`BootScene` loads the active theme's pair via the `SCENERY_THEMES` table in
+`src/objects/Scenery.js`, which owns both layers. The road and the background
+are **both** `add.tileSprite` (not `add.image`) — the background needs one too
+because of the rotate-section oversizing above, even though it never scrolls;
+the road's `tilePositionX` replaces the old manual `bgX` wrap in
+`GameScene.update`.

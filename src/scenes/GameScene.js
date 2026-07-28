@@ -3,6 +3,7 @@ import { Player } from '../objects/Player.js';
 import { ObstacleSpawner } from '../objects/ObstacleSpawner.js';
 import { Enemy } from '../objects/Enemy.js';
 import { DiscoLights } from '../objects/DiscoLights.js';
+import { Scenery } from '../objects/Scenery.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
@@ -47,15 +48,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
-    // Background layers sit below the fake-3D depth range (shadows start at −0.5)
-    // Scrolling background — walk zone only
-    this.bg = this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH * 3, GAME_HEIGHT - WALK_ZONE_TOP, 0x1a1a2e).setOrigin(0, 0).setDepth(-10);
-    this.bgX = 0;
-
-    // Static scenery area above the walk zone
-    this.add.rectangle(0, 0, GAME_WIDTH, WALK_ZONE_TOP, 0x2a4a2e).setOrigin(0, 0).setDepth(-10);
-    // Dividing line
-    this.add.rectangle(0, WALK_ZONE_TOP, GAME_WIDTH, 2, 0x88aa66).setOrigin(0, 0).setDepth(-10);
+    // Background layers sit below the fake-3D depth range (shadows start at −0.5).
+    // Road + scenery strip (themed pair, oversized for the rotate section's
+    // zoom-out) — see src/objects/Scenery.js. No horizon divider needed: the
+    // scenery PNG's bottom row and the road PNG's top row are the same colour
+    // by construction (docs/image-assets.md).
+    this.scenery = new Scenery(this);
 
     // Song = level: the track plays once; reaching its end clears the run
     this.music = this.sound.add('music', { loop: false });
@@ -202,9 +200,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Scroll background — global world multiplier from the current section
-    this.bgX -= this.player.speed * section.speedMult * (delta / 1000);
-    if (this.bgX <= -GAME_WIDTH) this.bgX += GAME_WIDTH;
-    this.bg.setX(this.bgX);
+    this.scenery.scroll(this.player.speed * section.speedMult * (delta / 1000));
 
     this.enemy.trackRow(this.player.row, this.conductor.beatCrossed, beatSyncOn);
     // this.enemy.speed stays the base ramp value; the multiplier only scales motion
