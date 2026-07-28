@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
+import { markHowToPlaySeen } from '../seenHowToPlay.js';
 
 // Desktop layout: two keycap demo columns side by side
 const LEFT_X = 250;   // run-demo column center
@@ -17,9 +18,24 @@ export class HowToPlayScene extends Phaser.Scene {
     super('HowToPlayScene');
   }
 
+  // Reached two ways: from the menu (back to the menu), or as the one-time
+  // first-run gate IntroScene inserts before gameplay (on to GameScene).
+  // Both callers must pass `next` explicitly — Phaser keeps the previous
+  // settings.data when scene.start is called without any, so an omitted `next`
+  // reads as the last one used, not as undefined. The default is only a
+  // fallback for a first entry that never set it.
+  init(data) {
+    this.next = data?.next ?? 'MenuScene';
+  }
+
   create() {
     const cx = GAME_WIDTH / 2;
     this.isDesktop = this.sys.game.device.os.desktop;
+    const isGate = this.next === 'GameScene';
+
+    // Seeing the screen at all counts, however it was reached: a player who
+    // reads the controls from the menu isn't shown the gate on their first run.
+    markHowToPlaySeen();
 
     this.add.text(cx, 40, 'HOW TO PLAY', {
       fontSize: '28px',
@@ -33,14 +49,30 @@ export class HowToPlayScene extends Phaser.Scene {
       this.createMobile();
     }
 
-    const backHint = this.isDesktop ? 'ESC / SPACE / tap to go back' : 'Tap anywhere to go back';
-    this.add.text(cx, GAME_HEIGHT - 30, backHint, { fontSize: '14px', color: '#666666' }).setOrigin(0.5);
+    let hint;
+    if (isGate) {
+      hint = this.isDesktop ? 'SPACE / tap to play' : 'Tap to play';
+    } else {
+      hint = this.isDesktop ? 'ESC / SPACE / tap to go back' : 'Tap anywhere to go back';
+    }
+    this.add.text(cx, GAME_HEIGHT - 30, hint, { fontSize: '14px', color: '#666666' }).setOrigin(0.5);
 
-    const goBack = () => this.scene.start('MenuScene');
-    this.input.keyboard.on('keydown-ESC', goBack);
-    this.input.keyboard.on('keydown-ENTER', goBack);
-    this.input.keyboard.on('keydown-SPACE', goBack);
-    this.input.on('pointerdown', goBack);
+    // Every exit goes to the same target, so ESC needs no special-casing: it
+    // means "back" from the menu and "skip ahead" in the gate, matching IntroScene.
+    const leave = () => this.scene.start(this.next);
+    // Both guards exist because the gate is only ever shown once: an input aimed
+    // at the intro video must not spend it. Keys ignore auto-repeat (SPACE held
+    // through the video skip), and the pointer needs a fresh press — the same
+    // held-finger hazard GameOverScene guards against.
+    const onKey = (event) => {
+      if (!event.repeat) leave();
+    };
+    this.input.keyboard.on('keydown-ESC', onKey);
+    this.input.keyboard.on('keydown-ENTER', onKey);
+    this.input.keyboard.on('keydown-SPACE', onKey);
+    this.input.once('pointerdown', () => {
+      this.input.once('pointerup', leave);
+    });
 
     addFullscreenButton(this);
   }

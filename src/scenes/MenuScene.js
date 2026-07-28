@@ -98,7 +98,10 @@ export class MenuScene extends Phaser.Scene {
     if (this.selected === 0) {
       this.startGame();
     } else {
-      this.scene.start('HowToPlayScene');
+      // `next` must be passed explicitly: Phaser keeps the previous settings.data
+      // when scene.start is called without any, so omitting it here would leave a
+      // stale 'GameScene' from the first-run gate and send the player into the game.
+      this.scene.start('HowToPlayScene', { next: 'MenuScene' });
     }
   }
 

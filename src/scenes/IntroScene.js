@@ -3,6 +3,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { getUserVolume } from '../userVolume.js';
+import { hasSeenHowToPlay } from '../seenHowToPlay.js';
 
 export class IntroScene extends Phaser.Scene {
   constructor() {
@@ -64,7 +65,13 @@ export class IntroScene extends Phaser.Scene {
   startGame() {
     if (this.started) return;
     this.started = true;
-    const go = () => this.scene.start('GameScene');
+    // First run only: teach the controls here, right before they're needed,
+    // rather than behind an optional menu item the player never opens.
+    const go = hasSeenHowToPlay()
+      ? () => this.scene.start('GameScene')
+      : () => this.scene.start('HowToPlayScene', { next: 'GameScene' });
+    // The unlock wait stays here either way: it gates *leaving* this scene, so
+    // GameScene still never starts its music against a locked audio context.
     if (this.sound.locked) {
       this.sound.once(Phaser.Sound.Events.UNLOCKED, go);
     } else {
