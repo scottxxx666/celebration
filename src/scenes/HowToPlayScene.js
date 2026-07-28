@@ -19,7 +19,8 @@ export class HowToPlayScene extends Phaser.Scene {
   }
 
   // Reached two ways: from the menu (back to the menu), or as the one-time
-  // first-run gate IntroScene inserts before gameplay (on to GameScene).
+  // first-run gate MenuScene inserts between Start and the intro video
+  // (on to IntroScene).
   // Both callers must pass `next` explicitly — Phaser keeps the previous
   // settings.data when scene.start is called without any, so an omitted `next`
   // reads as the last one used, not as undefined. The default is only a
@@ -31,7 +32,9 @@ export class HowToPlayScene extends Phaser.Scene {
   create() {
     const cx = GAME_WIDTH / 2;
     this.isDesktop = this.sys.game.device.os.desktop;
-    const isGate = this.next === 'GameScene';
+    // Derived from "not the menu" rather than naming the gate's target, so it
+    // survives the gate being moved around the boot flow.
+    const isGate = this.next !== 'MenuScene';
 
     // Seeing the screen at all counts, however it was reached: a player who
     // reads the controls from the menu isn't shown the gate on their first run.
@@ -51,7 +54,8 @@ export class HowToPlayScene extends Phaser.Scene {
 
     let hint;
     if (isGate) {
-      hint = this.isDesktop ? 'SPACE / tap to play' : 'Tap to play';
+      // "continue", not "play": the press leads to the intro video, not gameplay
+      hint = this.isDesktop ? 'SPACE / tap to continue' : 'Tap to continue';
     } else {
       hint = this.isDesktop ? 'ESC / SPACE / tap to go back' : 'Tap anywhere to go back';
     }
@@ -60,10 +64,11 @@ export class HowToPlayScene extends Phaser.Scene {
     // Every exit goes to the same target, so ESC needs no special-casing: it
     // means "back" from the menu and "skip ahead" in the gate, matching IntroScene.
     const leave = () => this.scene.start(this.next);
-    // Both guards exist because the gate is only ever shown once: an input aimed
-    // at the intro video must not spend it. Keys ignore auto-repeat (SPACE held
-    // through the video skip), and the pointer needs a fresh press — the same
-    // held-finger hazard GameOverScene guards against.
+    // Both guards exist because the gate is only ever shown once: the input that
+    // confirmed Start must not also spend it. MenuScene confirms on keydown-SPACE
+    // /ENTER and on a pointerup, so keys ignore auto-repeat (SPACE held down) and
+    // the pointer needs a fresh press — the same held-finger hazard GameOverScene
+    // guards against.
     const onKey = (event) => {
       if (!event.repeat) leave();
     };

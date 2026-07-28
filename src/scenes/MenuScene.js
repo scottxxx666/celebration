@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
+import { hasSeenHowToPlay } from '../seenHowToPlay.js';
 
 const OPTIONS = ['Start', 'How to Play'];
 
@@ -114,6 +115,12 @@ export class MenuScene extends Phaser.Scene {
     if (!this.isDesktop && this.scale.fullscreen.available && !this.scale.isFullscreen) {
       this.scale.startFullscreen();
     }
-    this.scene.start('IntroScene');
+    // First run only: teach the controls before anything else, so Start leads
+    // straight to them rather than into the video.
+    if (hasSeenHowToPlay()) {
+      this.scene.start('IntroScene');
+    } else {
+      this.scene.start('HowToPlayScene', { next: 'IntroScene' });
+    }
   }
 }
