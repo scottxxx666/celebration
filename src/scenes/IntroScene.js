@@ -57,8 +57,8 @@ export class IntroScene extends Phaser.Scene {
       this.input.once('pointerup', () => this.startGame());
     });
 
-    addFullscreenButton(this);
-    addVolumeSlider(this);
+    // Fullscreen button first: it returns where the slider's right edge goes.
+    addVolumeSlider(this, addFullscreenButton(this));
   }
 
   startGame() {

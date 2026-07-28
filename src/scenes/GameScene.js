@@ -133,8 +133,8 @@ export class GameScene extends Phaser.Scene {
     // Speed readout (debug HUD) — above all gameplay depths
     this.speedText = this.add.text(10, 10, '', { fontSize: '14px', color: '#ffffff' }).setDepth(10);
 
-    addFullscreenButton(this);
-    addVolumeSlider(this);
+    // Fullscreen button first: it returns where the slider's right edge goes.
+    addVolumeSlider(this, addFullscreenButton(this));
   }
 
   update(time, delta) {

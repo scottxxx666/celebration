@@ -8,15 +8,22 @@ const ALPHA_DIM = 0.45;
 const ALPHA_BRIGHT = 1;
 const KEYCAP_SIZE = 18;  // mini "F" keycap square (desktop only)
 const KEYCAP_GAP = 4;    // gap between the keycap and the word
+export const UI_GAP = 14; // gap to the next top-right widget on the same row
 
 // Fullscreen toggle, top-right in every scene except the transient BootScene.
 // Desktop is keyboard-first, so the whole button is a "[F] fullscreen" text label
 // (colours match HowToPlayScene's keycaps) — no icon. Mobile gets a static expand
 // icon instead (four corner L-brackets, no unicode glyph — font support for ⛶ is
 // unreliable) — no expand/compress swap, no ScaleManager listeners (YAGNI).
+//
+// Returns the x where the *next* top-right widget's right edge belongs, so the row
+// packs right-to-left (see addVolumeSlider) — the button's own left edge minus a gap,
+// or the bare corner anchor when no button was added. Callers that add another widget
+// on this row must therefore call this one first.
 export function addFullscreenButton(scene) {
   // No Fullscreen API (e.g. iPhone Safari) — add nothing rather than a dead button.
-  if (!scene.scale.fullscreen.available) return;
+  // The corner is then free, so the next widget gets the full anchor.
+  if (!scene.scale.fullscreen.available) return GAME_WIDTH - MARGIN;
 
   const cx = GAME_WIDTH - MARGIN;
   const cy = MARGIN;
@@ -78,4 +85,6 @@ export function addFullscreenButton(scene) {
     event.stopPropagation();
     scene.scale.toggleFullscreen();
   });
+
+  return zoneX - zoneWidth / 2 - UI_GAP;
 }

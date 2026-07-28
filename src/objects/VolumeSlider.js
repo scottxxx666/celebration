@@ -2,8 +2,7 @@ import Phaser from 'phaser';
 import { GAME_WIDTH } from '../config/gameConfig.js';
 import { getUserVolume, setUserVolume, saveUserVolume } from '../userVolume.js';
 
-const SLIDER_Y = 70;       // second row, under the fullscreen button (its zone spans y 10-50);
-                            // this slider's 40px-tall zone spans 50-90 so the two never overlap
+const SLIDER_Y = 30;       // same top row as the fullscreen button (MARGIN there)
 const MARGIN = 30;         // right edge offset from GAME_WIDTH — same anchor as the fullscreen button
 const TRACK_W = 80;
 const TRACK_H = 6;
@@ -26,16 +25,20 @@ const COLOR_MID = 0x777788;
 const COLOR_LIGHT = 0xdddddd;
 
 // Horizontal volume slider, top-right in every scene except the transient BootScene,
-// second row under the fullscreen button (addFullscreenButton). Drives the game-global
-// sound manager volume directly (scene.sound.volume) — the same instance every scene
-// sees, and the one BootScene seeds from localStorage on launch. Visuals: a speaker
-// icon whose wave arcs light up with the level (drawn, no unicode 🔊 — font support
-// unreliable, same reasoning as FullscreenButton.js:15), a rounded track, and a
+// on the same row as and immediately left of the fullscreen button. Drives the
+// game-global sound manager volume directly (scene.sound.volume) — the same instance
+// every scene sees, and the one BootScene seeds from localStorage on launch. Visuals:
+// a speaker icon whose wave arcs light up with the level (drawn, no unicode 🔊 — font
+// support unreliable, same reasoning as FullscreenButton.js:15), a rounded track, and a
 // ring-stroked knob. Mirrors FullscreenButton.js's pattern: module-local layout
 // constants, depth 100, setScrollFactor(0), dim/bright hover alpha swap.
-export function addVolumeSlider(scene) {
-  // Layout, right-aligned at GAME_WIDTH - MARGIN: icon, arcs, gap, track
-  const trackRight = GAME_WIDTH - MARGIN;
+//
+// `rightEdge` is the right boundary of the whole widget *including* the knob's
+// overhang at value 1 — pass what addFullscreenButton returned so the row packs
+// right-to-left; the default is the bare corner anchor.
+export function addVolumeSlider(scene, rightEdge = GAME_WIDTH - MARGIN) {
+  // Layout, right-aligned at rightEdge: icon, arcs, gap, track, knob overhang
+  const trackRight = rightEdge - KNOB_RADIUS;
   const trackLeft = trackRight - TRACK_W;
   const coneMouthX = trackLeft - ARC_GAP - ARC_RADII[ARC_RADII.length - 1];
   const iconLeft = coneMouthX - ICON_W;
