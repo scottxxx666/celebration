@@ -41,9 +41,9 @@ export const ENEMY_HW = 20;          // half-width
 export const ENEMY_HH = 30;          // half-height
 
 // Enemy speed ramp, anchored to song time (see docs/speed-design.md)
-export const ENEMY_CRUISE_SPEED = 575;    // after ramp; keep just below the sustainable tap average so perfect play slowly escapes
-export const ENEMY_RAMP_START_MS = 5600;  // song time when enemy speed starts rising
-export const ENEMY_RAMP_END_MS = 11200;   // song time when enemy reaches cruise speed
+export const ENEMY_CRUISE_SPEED = 565;    // after ramp; quarter-note tapping at 150.55 BPM (2.51 taps/s) sustains ~575, so 565 leaves an escape margin for on-rhythm play
+export const ENEMY_RAMP_START_MS = 5331;  // song time when enemy speed starts rising (real beat 12, mid-intro)
+export const ENEMY_RAMP_END_MS = 14896;   // song time when enemy reaches cruise speed (real beat 36, chorus 1 hits at cruise)
 
 // Assumed player speed for obstacle spawn timing once the enemy is at cruise
 export const OBSTACLE_TIMING_SPEED = (MAX_SPEED + ENEMY_CRUISE_SPEED) / 2;
@@ -51,11 +51,18 @@ export const OBSTACLE_TIMING_SPEED = (MAX_SPEED + ENEMY_CRUISE_SPEED) / 2;
 // Song time when the beat-sync presentation switches on (enemy row-stepping on
 // the beat, player squash pulse, walk-zone beat flash); before it, original
 // intro behavior — no pulses, enemy tracks the player's row instantly
-export const BEAT_SYNC_START_MS = 11200;
+// (real beat 36, chorus 1)
+export const BEAT_SYNC_START_MS = 14896;
 
-// Music — TBD, set when the final track is chosen
-export const BPM = 85.7;                 // matches the 700ms beat spacing in waves.js
-export const FIRST_BEAT_OFFSET_MS = 0;
+// Music — public/assets/music.m4a, measured 2026-09-18 (see tools/gen-waves.py):
+// 150.55 BPM constant, real beat 0 (first downbeat) at 549 ms. Every phrase
+// boundary falls on a multiple of 8 real beats counted from real beat 4, so the
+// game's beat 0 is anchored there and downbeats (beatIndex % 4 === 0) land on
+// phrase starts on either grid below.
+export const TRACK_BPM = 150.55;
+export const BPM = TRACK_BPM / 2;   // half-time game beat (~797 ms) — obstacles land on beats and half-beats
+// export const BPM = TRACK_BPM;    // true-tempo game beat (~398 ms) — swap in to compare
+export const FIRST_BEAT_OFFSET_MS = 2143;
 
 // Default user volume when nothing is saved — sources play at full loudness,
 // so the slider's max (1.0) is louder than this default

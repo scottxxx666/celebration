@@ -80,7 +80,7 @@ With tap gain `ACCEL_STEP` (50), decay `DECEL_PER_SEC` (125), and cap `MAX_SPEED
 
 ## Open items
 
-1. Choose the track → set `BPM`, `FIRST_BEAT_OFFSET_MS`.
+1. ~~Choose the track~~ — done 2026-09-18: 150.55 BPM, first downbeat 549 ms, game beat anchored at real beat 4 (2143 ms), see `tools/gen-waves.py`.
 2. Decide the ramp anchor points (which section/bar reaches cruise).
 3. Author the intro waves sparse (ramp phase tolerates off-tempo arrivals).
 4. Tune `ENEMY_CRUISE_SPEED` by feel; keep it just below the sustainable average.
