@@ -43,6 +43,20 @@ export class ObstacleSpawner {
     });
   }
 
+  // Dev deep-link (?t=): mark every obstacle whose arrival is at or before
+  // songMs as already spawned, so jumping forward doesn't dump a pile of
+  // obstacles on the first frame. Obstacles arriving shortly after songMs still
+  // spawn normally next frame (they're spawned ahead of arrival by travel time).
+  skipTo(songMs) {
+    for (let wi = 0; wi < WAVES.length; wi++) {
+      const wave = WAVES[wi];
+      for (let oi = 0; oi < wave.obstacles.length; oi++) {
+        const arrivalMs = wave.songTime + wave.obstacles[oi].timeOffset;
+        if (arrivalMs <= songMs) this.spawned.add(`${wi}_${oi}`);
+      }
+    }
+  }
+
   _spawnAt(row, hw, visualHh) {
     const { y, scale, depth } = rowLayout(row);
     const x = GAME_WIDTH + hw;

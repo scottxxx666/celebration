@@ -8,6 +8,7 @@ import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
 import { sectionAt } from '../config/sections.js';
+import { getStartMs } from '../startTime.js';
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
@@ -58,7 +59,14 @@ export class GameScene extends Phaser.Scene {
     // Song = level: the track plays once; reaching its end clears the run
     this.music = this.sound.add('music', { loop: false });
     this.music.once(Phaser.Sound.Events.COMPLETE, () => this.endRun(true));
-    this.music.play();
+    // Dev/testing deep-link (?t=): seek the music and skip past already-passed
+    // obstacles so a jump forward doesn't dump a pile of them on the first frame.
+    const startMs = getStartMs();
+    if (startMs > 0) {
+      this.music.play({ seek: startMs / 1000 });
+    } else {
+      this.music.play();
+    }
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.sound.remove(this.music);
     });
@@ -92,6 +100,7 @@ export class GameScene extends Phaser.Scene {
     const walkZoneMidY = WALK_ZONE_TOP + (GAME_HEIGHT - WALK_ZONE_TOP) / 2;
     this.player = new Player(this, PLAYER_X, walkZoneMidY);
     this.spawner = new ObstacleSpawner(this);
+    if (startMs > 0) this.spawner.skipTo(startMs);
     this.enemy = new Enemy(this, ENEMY_START_X);
     this.disco = new DiscoLights(this);
 
