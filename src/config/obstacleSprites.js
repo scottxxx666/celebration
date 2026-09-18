@@ -22,7 +22,7 @@ export const OBSTACLE_SPRITES = [
   {
     key: 'obs-kazuha-zombie',
     file: 'assets/sprites/obstacles/kazuha-zombie.png',
-    hh: 58,
+    hh: 70,
     hw: 61,
   },
   {
