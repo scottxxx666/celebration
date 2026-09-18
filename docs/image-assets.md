@@ -15,7 +15,7 @@ guidance lives in `docs/art-brief.md`; this doc is the sizing spec.
   by the fake-3D row scale (0.6 back row → 1.0 front row, `rowLayout.js`).
 - The only scale-ups ever applied are trivial: the disco zoom punch (×1.02)
   and the CSS stretch above. The rotate section zooms **out** (×0.49).
-- Collision boxes never change with art — the player is always a 70×70 AABB,
+- Collision boxes never change with art — the player is always a 90×90 AABB,
   obstacles always block exactly one row (`collisionHh` in
   `ObstacleSpawner.js`). Art only needs to *read* correctly, not collide.
 
@@ -26,14 +26,14 @@ h = `visualHh × 2`, from `gameConfig.js` / `waves.js`):
 
 | Use | Logical box (px) | Notes |
 |---|---|---|
-| **Runner (player)** | **70 × 70** | `PLAYER_HW/HH = 35`; beat pulse squashes height to 85% |
+| **Runner (player)** | **90 × 90** | `PLAYER_HW/HH = 45`; beat pulse squashes height to 85% |
 | Obstacle — small block | 50 × 50 | intro |
 | Obstacle — low/wide | 60 × 40 and 50 × 40 | most common (high/low alternation) |
 | Obstacle — tall/narrow | 40 × 100 | intro |
 | Obstacle — big block | 80 × 100 | wave enders |
-| Obstacle — wall | 60 × 108 | gap-run pairs; tall art may extend above the walk zone (by design) |
+| Obstacle — wall | 60 × 140 | gap-run pairs; tall art may extend above the walk zone (by design) |
 | Obstacle — character sprites | varies (`hw × 2` × `hh × 2`, `OBSTACLE_SPRITES`) | replaces the red rectangle; see below |
-| (Enemy, if also swapped later) | 40 × 60 | `ENEMY_HW/HH = 20/30` |
+| (Enemy, if also swapped later) | 52 × 78 | `ENEMY_HW/HH = 26/39` |
 
 Obstacles with similar aspect ratios can share one sprite (the engine scales
 by width) — a minimal set is **4 obstacle sprites**: square-ish (~1:1),
@@ -42,15 +42,15 @@ low/wide (~3:2), tall/narrow (~2:5), and big wall (~4:5).
 ## Recommended source resolution
 
 **Option A — Recommended: smooth/cartoon art at 2× logical size.**
-Export each sprite at exactly **2× its logical box** (runner **140×140**,
-low/wide obstacle 120×80, wall 120×216, …). 2× keeps back rows (drawn at
+Export each sprite at exactly **2× its logical box** (runner **180×180**,
+low/wide obstacle 120×80, wall 120×280, …). 2× keeps back rows (drawn at
 0.6× logical = 1.2× minification from a 2× source) crisp under linear
 filtering, and is the ceiling of useful resolution given the 800×450
 framebuffer. Anything larger (e.g. the 256×256 in the original art brief) is
 wasted texture memory and can look *worse* when minified ~4× without mipmaps.
 
 **Option B — Pixel art at exact 1× logical size.**
-Author at the logical box itself (runner 70×70) and set `pixelArt: true` in
+Author at the logical box itself (runner 90×90) and set `pixelArt: true` in
 the Phaser game config so nearest-neighbor filtering keeps pixels crisp
 through the CSS upscale. Best retro look and smallest files, but the art must
 be authored pixel-perfect at these small sizes (a big pixel-art canvas scaled
@@ -82,21 +82,21 @@ Pick per the final art style; don't mix (filtering mode is global).
 The beat squash is done in code via `setScale`, so a single static frame
 works day one. If a run cycle is wanted later, export a **horizontal
 spritesheet** of uniform frames at the same per-frame size as above
-(e.g. 6–8 frames × 140×140 → 840–1120 × 140) and step frames on the
+(e.g. 6–8 frames × 180×180 → 1080–1440 × 180) and step frames on the
 Conductor's 8th-note grid so the run cycle stays on the music like
 everything else.
 
 ## AI-generation prompts for the runner (from a real photo)
 
 Two ways to get the runner sprite from a photo of the person. Both target
-**Option A** (smooth cartoon at 2× = 140×140) — pixel art from a photo
-doesn't survive at 70px.
+**Option A** (smooth cartoon at 2× = 180×180) — pixel art from a photo
+doesn't survive at 90px.
 
-**Why chibi proportions**: the runner's box is **square** (70×70). A
+**Why chibi proportions**: the runner's box is **square** (90×90). A
 realistically proportioned person is ~1:3 wide:tall, so they'd either be
 squashed to fit or fill only a third of the canvas width. Both prompts ask
 for a chibi (2–2.5 heads tall) build so the character fills the square and
-stays readable at 70px.
+stays readable at 90px.
 
 **Facing right**: obstacles scroll in from the right and the enemy chases
 from the left, so the runner must face right.
@@ -121,7 +121,7 @@ Requirements:
   horizontally, cropped tight with no empty margins
 - Fully transparent background (PNG), no ground, no floor, NO drop
   shadow (the game engine adds the shadow)
-- Output: 140 x 140 pixels, PNG with alpha
+- Output: 180 x 180 pixels, PNG with alpha
 ```
 
 ### Prompt 2 — only the face is real, AI draws the body
@@ -149,7 +149,7 @@ Requirements:
   horizontally, cropped tight with no empty margins
 - Fully transparent background (PNG), no ground, no floor, NO drop
   shadow (the game engine adds the shadow)
-- Output: 140 x 140 pixels, PNG with alpha
+- Output: 180 x 180 pixels, PNG with alpha
 ```
 
 ### After generation (both prompts)
@@ -159,10 +159,10 @@ Models often ignore the size/transparency lines, so check and fix:
 1. **Background**: if it isn't truly transparent, remove it (e.g.
    Preview.app → Instant Alpha, or any background-removal tool).
 2. **Crop** to the tight bounding box — no padding, feet on the bottom edge.
-3. **Resize** to 140×140. If the tight crop isn't square, pad **width only**
+3. **Resize** to 180×180. If the tight crop isn't square, pad **width only**
    (transparent, centered) to make it square — never pad the bottom, and
    don't stretch.
-4. Check readability: zoom the result down to 70px (and 60% of that for the
+4. Check readability: zoom the result down to 90px (and 60% of that for the
    back row) — the silhouette and face should still read.
 
 ## Obstacle character sprites
@@ -172,12 +172,12 @@ sprites via `tools/prep-obstacle-image.py`:
 
 ```
 python3 tools/prep-obstacle-image.py original_images/kazuha_zombie.png \
-    --out public/assets/sprites/obstacles/kazuha-zombie.png --height 216
+    --out public/assets/sprites/obstacles/kazuha-zombie.png --height 280
 ```
 
 It crops to the alpha bounding box (`Image.getbbox()`, no padding) and
-resizes so the output height matches `--height` (default 216 = 2x the
-tallest logical obstacle height, 108) — width follows the source aspect, so
+resizes so the output height matches `--height` (default 280 = 2x the
+tallest logical obstacle height, 140) — width follows the source aspect, so
 sprites of different builds don't get distorted to a common box.
 
 Each prepped PNG is registered in `src/config/obstacleSprites.js`
@@ -201,8 +201,8 @@ Things to be aware of:
 - The wave `visualHh` values in `waves.js` are unused once a sprite is
   drawn — heights come only from the manifest `hh`. `visualHh` still sizes
   the placeholder rectangle when `OBSTACLE_SPRITES` is empty.
-- Wall sections spawn four obstacles per beat, so a wide sprite (e.g. the
-  zombie at `hw: 47`) makes those walls block a row noticeably longer than
+- Wall sections spawn two obstacles per beat, so a wide sprite (e.g. the
+  zombie at `hw: 61`) makes those walls block a row noticeably longer than
   the authored `hw: 25`. If walls feel unfair, lower the wide sprites' `hw`
   toward 30 and accept some art trailing past the hitbox — the left
   (dangerous) edge stays aligned regardless.
@@ -228,14 +228,14 @@ Constraints that come from the engine, not taste:
   one-off landmark that would pop at the seam.
 - **The road must NOT tile vertically** — its top edge is the far end of the
   fake-3D ground plane, its bottom edge is nearest the camera.
-- **Rows are equal height, not perspective-compressed.** 5 rows × 54 logical px
-  (108px at 2×). A true converging perspective grid fights the layout; equal
+- **Rows are equal height, not perspective-compressed.** 3 rows × 90 logical px
+  (180px at 2×). A true converging perspective grid fights the layout; equal
   horizontal bands at those offsets do not, and they help players read which
   row an obstacle is in.
 - **Keep the road mid-dark and low-contrast.** The engine drops a black ellipse
   shadow at alpha 0.3 under every object, flashes the whole walk zone white on
   the beat, and fades a black dim overlay in during `disco` sections — a road
-  that is already near-black kills the shadows, and a busy one buries the 70px
+  that is already near-black kills the shadows, and a busy one buries the 90px
   sprites.
 - **Nothing on the road that looks like an obstacle.** Every solid, chunky shape
   on the ground reads as something to dodge.
@@ -264,13 +264,13 @@ Requirements:
 - The top edge is the far distance, the bottom edge is closest to the
   camera. Suggest depth by making surface detail finer and slightly
   darker toward the top, coarser and slightly brighter toward the bottom.
-- Divide the surface into 5 equal horizontal lanes with very subtle
-  boundaries (a faint seam, tone shift or scuff line every 108 pixels) —
+- Divide the surface into 3 equal horizontal lanes with very subtle
+  boundaries (a faint seam, tone shift or scuff line every 180 pixels) —
   subtle, not bold painted lines.
 - Smooth cartoon style, clean flat cel shading, light source from the
   top-left, matching a cartoon character sprite that will run on top.
 - Medium-dark overall value with LOW contrast: bright enough that a soft
-  black drop shadow reads on it, flat enough that small 70px character
+  black drop shadow reads on it, flat enough that small 90px character
   sprites stay readable above it.
 - No characters, no vehicles, no props, no obstacles, no text, no
   watermark, no vignette, no border, no lighting hotspot.
@@ -318,7 +318,7 @@ Requirements:
    Most models fake tileability — expect to fix it (Photoshop offset filter,
    or `imagemagick -roll +800+0` then paint out the seam).
 2. **Resize** to exactly 1600×540 / 1600×360, no crop that shifts the horizon.
-3. **Sanity check at real size**: view the road at 800×270 with a 70px sprite
+3. **Sanity check at real size**: view the road at 800×270 with a 90px sprite
    and a 30% black ellipse on it — if the shadow vanishes, the road is too dark;
    if the sprite gets lost, the road is too busy.
 4. Keep one road + one background per variant so a theme can be swapped as a

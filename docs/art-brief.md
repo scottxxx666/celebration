@@ -2,7 +2,7 @@
 
 ## Context
 This is for a 2D side-scrolling game with a fake-3D ground plane illusion (Little Fighter 2 style).
-The game has 5 depth rows — objects in the back row look far away, objects in the front row look close.
+The game has 3 depth rows — objects in the back row look far away, objects in the front row look close.
 
 ---
 
@@ -61,10 +61,8 @@ The game will automatically resize sprites depending on which depth row they app
 | Row | Distance | Scale |
 |-----|----------|-------|
 | Row 1 (top) | Far | ~60% |
-| Row 2 | | ~70% |
-| Row 3 (mid) | Mid | ~80% |
-| Row 4 | | ~90% |
-| Row 5 (bottom) | Near | 100% |
+| Row 2 (mid) | Mid | ~80% |
+| Row 3 (bottom) | Near | 100% |
 
 So a 256px sprite at 100% scale is the "closest to camera" size. Design at full size.
 

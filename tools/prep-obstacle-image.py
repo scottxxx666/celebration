@@ -3,7 +3,7 @@
 
     python3 tools/prep-obstacle-image.py original_images/kazuha_zombie.png
     python3 tools/prep-obstacle-image.py original_images/"chaewon_ flamingo.png" \
-        --out public/assets/sprites/obstacles/chaewon-flamingo.png --height 216
+        --out public/assets/sprites/obstacles/chaewon-flamingo.png --height 280
 
 Unlike the scenery images (crop_band + force_seam), these source images are
 already single subjects on a transparent background at large, uneven sizes —
@@ -15,8 +15,8 @@ sprite scales consistently in `ObstacleSpawner.js` (see `OBSTACLE_SPRITES` in
   2. crop to the alpha bounding box (`Image.getbbox()`) — no padding, feet
      (bottom of the art) end up on the bottom edge of the crop
   3. resize with LANCZOS so the output height == --height, keeping aspect
-     (width follows); default 216 = 2x the tallest logical obstacle height
-     (108, the wall sprite, docs/image-assets.md)
+     (width follows); default 280 = 2x the tallest logical obstacle height
+     (140, the wall sprite, docs/image-assets.md)
   4. save as PNG with optimize=True
 
 Needs pillow (pip3 install --user pillow).
@@ -26,7 +26,7 @@ import os
 
 from PIL import Image
 
-DEFAULT_HEIGHT = 216
+DEFAULT_HEIGHT = 280
 
 
 def slugify(path):

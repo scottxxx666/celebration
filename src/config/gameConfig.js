@@ -16,12 +16,12 @@ export const WALK_ZONE_TOP = GAME_HEIGHT * 0.4; // y=180; above is scenery
 export const SCENERY_THEME = 'night';
 
 // Player half-dimensions
-export const PLAYER_HW = 35;
-export const PLAYER_HH = 35;
+export const PLAYER_HW = 45;
+export const PLAYER_HH = 45;
 
 // Player rows
-export const NUM_ROWS = 5;
-export const ROW_HEIGHT = (GAME_HEIGHT - WALK_ZONE_TOP) / NUM_ROWS; // 54
+export const NUM_ROWS = 3;
+export const ROW_HEIGHT = (GAME_HEIGHT - WALK_ZONE_TOP) / NUM_ROWS; // 90
 
 // Fake-3D depth (docs/art-brief.md): visual scale from back row (0) to front row
 export const ROW_SCALE_BACK = 0.6;
@@ -37,8 +37,8 @@ export const SWIPE_THRESHOLD = 40;
 // Chasing enemy
 export const ENEMY_SPEED = 400;      // world px/s; keep player.speed above this to stay safe
 export const ENEMY_START_X = 0;   // initial off-screen x position
-export const ENEMY_HW = 20;          // half-width
-export const ENEMY_HH = 30;          // half-height
+export const ENEMY_HW = 26;          // half-width
+export const ENEMY_HH = 39;          // half-height
 
 // Enemy speed ramp, anchored to song time (see docs/speed-design.md)
 export const ENEMY_CRUISE_SPEED = 565;    // after ramp; quarter-note tapping at 150.55 BPM (2.51 taps/s) sustains ~575, so 565 leaves an escape margin for on-rhythm play

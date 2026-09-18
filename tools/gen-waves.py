@@ -17,12 +17,12 @@ density "profile" (sparse/light/normal/dense/none). For each section this script
      <150Hz, snare/hat band 2000-8000Hz),
   2. samples those envelopes at every real beat in the section,
   3. greedily picks obstacle beats per the profile's minGap/fill parameters,
-  4. assigns each obstacle a row (0=back/top .. 4=front/bottom) from the
+  4. assigns each obstacle a row (0=back/top .. 2=front/bottom) from the
      kick/snare balance at that beat, alternating within a row-group and never
      repeating the immediately preceding obstacle's row,
   5. sizes each obstacle from its section-relative strength quartile,
   6. (dense sections only) emits top+bottom obstacle PAIRS on phrase downbeats,
-  7. and (wall sections only) emits a four-obstacle WALL with one gap row on
+  7. and (wall sections only) emits a (NUM_ROWS-1)-obstacle WALL with one gap row on
      every game beat (every 2 real beats), the gap stepping exactly ±1 row per
      wall so the player must move exactly one row per beat.
 
@@ -68,13 +68,19 @@ PROFILES = {
     'light':  dict(minGap=4, fill=0.6, startMargin=0),
     'normal': dict(minGap=2, fill=0.7, startMargin=0),
     'dense':  dict(minGap=2, fill=0.85, startMargin=0),
-    # 'wall': gap-wall profile — every game beat (2 real beats) blocks all rows
-    # except one gap row, and the gap steps ±1 row per wall. Handled entirely
+    # 'wall': gap-wall profile — every game beat (2 real beats) blocks all
+    # NUM_ROWS-1 rows except one gap row, and the gap steps ±1 row per wall. Handled entirely
     # by its own branch in build_waves (never calls pick_obstacles); minGap=2
     # only documents the game-beat cadence between walls.
     'wall':   dict(minGap=2),
     'none':   None,
 }
+
+# Row layout (src/config/gameConfig.js NUM_ROWS — keep in sync)
+NUM_ROWS = 3
+BACK = 0
+FRONT = NUM_ROWS - 1
+MID = NUM_ROWS // 2
 
 
 def beat_ms(n):
@@ -199,49 +205,40 @@ def assign_rows_and_sizes(section_name, profile_name, accepted, strengths_in_sec
         # kick-heavy third -> front rows, snare/hat-heavy third -> back rows
         if r > r_hi:
             group = 'low'
-            rows = (3, 4)
+            rows = (FRONT, FRONT)
         elif r < r_lo:
             group = 'high'
-            rows = (0, 1)
+            rows = (BACK, BACK)
         else:
             group = 'mid'
-            rows = (2, 2)
+            rows = (MID, MID)
 
         if is_pair:
-            row_list = [0, 4]
+            row_list = [BACK, FRONT]
             hw = 30
             vhh = 54
             for row in row_list:
                 obstacles.append({'beat': n, 'row': row, 'hw': hw, 'visualHh': vhh})
-            prev_row_state['prev_rows'] = {0, 4}
+            prev_row_state['prev_rows'] = {BACK, FRONT}
             continue
 
         if group == 'mid':
-            row = 2
+            row = MID
         else:
             idx = group_alt_state[group] % 2
             row = rows[idx]
             group_alt_state[group] += 1
 
-        # never share row of immediately previous obstacle
+        # never share row of immediately previous obstacle. Generic fallback:
+        # try the row's neighbours, then scan every row in order — after a
+        # wall section prev_rows blocks every row but the last gap row, so
+        # the full-range scan always finds that gap row.
         prev_rows = prev_row_state.get('prev_rows')
         if prev_rows and row in prev_rows:
-            if group == 'mid':
-                row = 1 if 1 not in prev_rows else 3
-            else:
-                other = rows[1] if row == rows[0] else rows[0]
-                row = other
-            if row in prev_rows:
-                # Coming out of a wall section prev_rows blocks 4 of 5 rows
-                # (every row but the last gap row) — the group-based alternate
-                # above can't help. Fall back toward the gap row: try its
-                # neighbours first, then the gap row itself (always free).
-                last_gap_row = prev_row_state.get('last_gap_row')
-                if last_gap_row is not None:
-                    for cand in (last_gap_row - 1, last_gap_row + 1, last_gap_row):
-                        if 0 <= cand <= 4 and cand not in prev_rows:
-                            row = cand
-                            break
+            for cand in [row - 1, row + 1] + list(range(NUM_ROWS)):
+                if 0 <= cand <= FRONT and cand not in prev_rows:
+                    row = cand
+                    break
 
         hw = hw_for(strength)
         vhh = visual_hh_for(group)
@@ -295,14 +292,14 @@ def build_waves(env_full, env_kick, env_snare, times, duration_s):
             # starting gap row: default middle, unless the previous obstacle
             # (a single) tells us to start adjacent to its row instead.
             prev_rows = prev_row_state.get('prev_rows')
-            gap_row = 2
+            gap_row = MID
             if prev_rows and len(prev_rows) == 1:
                 r = next(iter(prev_rows))
-                if r == 2:
-                    gap_row = 3 if ratios[wall_beats[0]] >= median_ratio else 1
+                if r == MID:
+                    gap_row = MID + 1 if ratios[wall_beats[0]] >= median_ratio else MID - 1
                 else:
-                    candidates = [c for c in (r - 1, r + 1) if 0 <= c <= 4]
-                    gap_row = min(candidates, key=lambda c: abs(c - 2))
+                    candidates = [c for c in (r - 1, r + 1) if 0 <= c <= FRONT]
+                    gap_row = min(candidates, key=lambda c: abs(c - MID))
 
             gap_rows = []
             for i, n in enumerate(wall_beats):
@@ -310,9 +307,9 @@ def build_waves(env_full, env_kick, env_snare, times, duration_s):
                     g = gap_row
                 else:
                     prev_g = gap_rows[-1]
-                    if prev_g == 0:
+                    if prev_g == BACK:
                         g = prev_g + 1
-                    elif prev_g == 4:
+                    elif prev_g == FRONT:
                         g = prev_g - 1
                     elif ratios[n] >= median_ratio:
                         g = prev_g + 1
@@ -325,7 +322,7 @@ def build_waves(env_full, env_kick, env_snare, times, duration_s):
             obstacles = []
             for n, g in zip(wall_beats, gap_rows):
                 t_off = round(beat_ms(n) - section_start_ms)
-                for row in range(5):
+                for row in range(NUM_ROWS):
                     if row == g:
                         continue
                     obstacles.append({'timeOffset': t_off, 'row': row, 'hw': 25, 'visualHh': 54})
@@ -344,7 +341,7 @@ def build_waves(env_full, env_kick, env_snare, times, duration_s):
                   f'obstacles={len(obstacles):3d}  walls={len(wall_beats):3d}')
 
             last_gap_row = gap_rows[-1]
-            prev_row_state['prev_rows'] = set(range(5)) - {last_gap_row}
+            prev_row_state['prev_rows'] = set(range(NUM_ROWS)) - {last_gap_row}
             prev_row_state['last_gap_row'] = last_gap_row
             prev_section_last_accepted_beat = wall_beats[-1]
             continue
@@ -433,10 +430,10 @@ def render_js(waves):
     lines.append('// so real beat n happens at song time `549 + n * 398.54` ms. Section table')
     lines.append('// and density profiles live in tools/gen-waves.py.')
     lines.append('//')
-    lines.append('// wall sections: 4 obstacles per beat with one gap row; the gap moves ±1 row')
+    lines.append(f'// wall sections: {NUM_ROWS - 1} obstacles per beat with one gap row; the gap moves ±1 row')
     lines.append('// per wall so the player steps rows on the beat.')
     lines.append('//')
-    lines.append('// row: player row index the obstacle occupies, 0 (top/back) – 4 (bottom/front).')
+    lines.append(f'// row: player row index the obstacle occupies, 0 (top/back) – {FRONT} (bottom/front).')
     lines.append('// hw: collision half-width (AABB) — matches ObstacleSpawner collision.')
     lines.append('// visualHh: drawn half-height only; never affects collision (always blocks exactly 1 row).')
     lines.append('// timeOffset: ms after wave start; events must be sorted ascending.')
@@ -480,9 +477,9 @@ def sanity_check(waves, wall_section_names):
         gap_rows = []
         for t in sorted(by_t):
             rows = by_t[t]
-            assert len(rows) == 4 and len(set(rows)) == 4, (
-                f"wall {w['name']} at {t}ms has rows {rows}, expected 4 distinct rows")
-            gap = [r for r in range(5) if r not in rows][0]
+            assert len(rows) == NUM_ROWS - 1 and len(set(rows)) == NUM_ROWS - 1, (
+                f"wall {w['name']} at {t}ms has rows {rows}, expected {NUM_ROWS - 1} distinct rows")
+            gap = [r for r in range(NUM_ROWS) if r not in rows][0]
             gap_rows.append(gap)
         for a, b in zip(gap_rows, gap_rows[1:]):
             assert abs(b - a) == 1, (

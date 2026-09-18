@@ -19,7 +19,8 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter
 W = 1600
 ROAD_H = 540
 BG_H = 360
-LANE_H = ROAD_H // 5  # 108
+NUM_LANES = 3
+LANE_H = ROAD_H // NUM_LANES  # 180
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "public", "assets", "bg")
 
@@ -88,12 +89,12 @@ def make_road():
         mask = mask.point(lambda v, s=strength: int(v * s * 0.8 + 255 * s * 0.2))
         road = Image.composite(grainy, road, mask)
 
-    # ---- lane seams: 5 equal bands, faint tone step + worn scuff dashes
+    # ---- lane seams: 3 equal bands, faint tone step + worn scuff dashes
     seams = Image.new("RGBA", (W, ROAD_H), (0, 0, 0, 0))
     ds = ImageDraw.Draw(seams, "RGBA")
-    for i in range(1, 5):
+    for i in range(1, NUM_LANES):
         y = i * LANE_H
-        near = i / 4.0  # lower seams are nearer the camera -> a touch stronger
+        near = i / (NUM_LANES - 1)  # lower seams are nearer the camera -> a touch stronger
         ds.line([(0, y), (W, y)], fill=(6, 8, 18, int(80 + 45 * near)))
         ds.line([(0, y + 1), (W, y + 1)], fill=(150, 165, 200, int(20 + 20 * near)))
         # painted scuffs: worn dashes riding the seam, never a bold line
