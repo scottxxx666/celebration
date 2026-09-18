@@ -33,7 +33,7 @@ h = `visualHh × 2`, from `gameConfig.js` / `waves.js`):
 | Obstacle — big block | 80 × 100 | wave enders |
 | Obstacle — wall | 60 × 140 | gap-run pairs; tall art may extend above the walk zone (by design) |
 | Obstacle — character sprites | varies (`hw × 2` × `hh × 2`, `OBSTACLE_SPRITES`) | replaces the red rectangle; see below |
-| (Enemy, if also swapped later) | 52 × 78 | `ENEMY_HW/HH = 26/39` |
+| **Chaser (enemy)** | collision 52 × 78, art `ENEMY_SPRITE_HH × 2` tall | `ENEMY_HW/HH = 26/39` for collision; art height comes from `ENEMY_SPRITE_HH` (`gameConfig.js`, defaults to matching collision height), width follows the source aspect |
 
 Obstacles with similar aspect ratios can share one sprite (the engine scales
 by width) — a minimal set is **4 obstacle sprites**: square-ish (~1:1),
@@ -207,45 +207,65 @@ Things to be aware of:
   toward 30 and accept some art trailing past the hitbox — the left
   (dangerous) edge stays aligned regardless.
 
-## Player run frames
+## Run-cycle frames (player & enemy)
 
-The player's placeholder rectangle can be replaced with a run cycle via
-`tools/prep-player-frames.py`, a file-naming-convention pipeline (no
-manifest, no Phaser animation manager):
+Both the player's and the enemy's placeholder rectangles can be replaced with
+a run cycle via `tools/prep-run-frames.py`, a file-naming-convention pipeline
+(no manifest, no Phaser animation manager):
 
 ```
-python3 tools/prep-player-frames.py original_images/player/run-1.png \
+python3 tools/prep-run-frames.py original_images/player/run-1.png \
     original_images/player/run-2.png
+python3 tools/prep-run-frames.py original_images/enemy/run-1.png \
+    original_images/enemy/run-2.png --target enemy
 ```
 
-Like the obstacle prep script, it crops each source frame to its alpha
-bounding box and resizes to a uniform height (default 280 = 2x logical),
-writing `public/assets/sprites/player/run-<i>.png` (`i` starting at 0, in
-argument order) — deleting any stale `run-*.png` first so a previous, larger
-frame count never lingers. See `docs/player-sprite-prompt.md` for the
-ChatGPT prompt used to generate source frames from a reference photo.
+`--target` (default `player`) picks the output directory
+(`public/assets/sprites/<target>`), the config-constant reminder it prints,
+and the dummy-mode placeholder colour (green for player, red for enemy);
+`--out-dir` overrides the directory directly. Like the obstacle prep script,
+it crops each source frame to its alpha bounding box and resizes to a
+uniform height (default 280 = 2x logical), writing
+`public/assets/sprites/<target>/run-<i>.png` (`i` starting at 0, in argument
+order) — deleting any stale `run-*.png` first so a previous, larger frame
+count never lingers. See `docs/run-sprite-prompt.md` for the ChatGPT prompts
+used to generate source frames from a reference photo (player) or a zombie
+concept (enemy).
 
 `--dummy N` generates N placeholder frames instead (a stylised zombie
-silhouette in the placeholder green with alternating leg stride), so the
-loading/frame-advance pipeline can be exercised before real art exists.
+silhouette in the target's placeholder colour with alternating leg stride),
+so the loading/frame-advance pipeline can be exercised before real art
+exists.
 
-Registration is two config values in `src/config/gameConfig.js`:
+Registration is a pair of config values per character in
+`src/config/gameConfig.js`:
 
-- `PLAYER_FRAME_COUNT` — number of `run-<i>.png` frames; `0` keeps the
-  original green placeholder rectangle.
-- `PLAYER_SPRITE_HH` — logical half-height at front-row scale (like obstacle
-  `hh`); drives display scale only (`(PLAYER_SPRITE_HH * 2 / textureHeight) *
-  rowScale`) — the collision AABB stays `PLAYER_HW`/`PLAYER_HH`.
+- `PLAYER_FRAME_COUNT` / `ENEMY_FRAME_COUNT` — number of `run-<i>.png`
+  frames; `0` keeps the original placeholder rectangle (green for player,
+  red for enemy).
+- `PLAYER_SPRITE_HH` / `ENEMY_SPRITE_HH` — logical half-height at front-row
+  scale (like obstacle `hh`); drives display scale only
+  (`(spriteHh * 2 / textureHeight) * rowScale`) — the collision AABB stays
+  `PLAYER_HW`/`PLAYER_HH` or `ENEMY_HW`/`ENEMY_HH`.
+- `RUN_FRAME_MS` — the shared free-running walk-cycle period (one 8th note),
+  used by both characters.
 
-`src/config/playerSprites.js` builds `PLAYER_FRAMES` (`{ key, file }[]`) from
-`PLAYER_FRAME_COUNT`; `BootScene` preloads every entry. `Player.js` renders
-the sprite with origin `(0.5, 1)` so its feet sit on the row's feet line (the
-same point the shadow anchors to). `stepFrame()` advances to the next frame
-(wrapping, via `setTexture`) on every 8th-note half-beat crossing from song
-start, plus a free-running `PLAYER_FRAME_MS` timer (one 8th note) that each
-crossing resets, so the player walks from the first frame and phase-locks to
-the beat once it arrives; `pulse()` adds the beat squash only once beat sync
-is on. Collision is unaffected either way.
+`src/config/runFrames.js` builds `PLAYER_FRAMES` and `ENEMY_FRAMES`
+(`{ key, file }[]`) from their respective `*_FRAME_COUNT`; `BootScene`
+preloads every entry in both lists. The visual — sprite (or fallback
+rectangle) plus drop shadow, frame stepping, and beat-squash pulse — is
+owned by the shared `RunCycle` helper (`src/objects/RunCycle.js`), used by
+both `Player.js` and `Enemy.js`; each just forwards `stepFrame()`/`pulse()`
+to its own `RunCycle` instance. The sprite renders with origin `(0.5, 1)` so
+its feet sit on the row's feet line (the same point the shadow anchors to).
+`stepFrame()` advances to the next frame (wrapping, via `setTexture`) on
+every 8th-note half-beat crossing from song start — `GameScene` calls it on
+both the player and the enemy together, so they stay in lockstep — plus a
+free-running `RUN_FRAME_MS` timer (one 8th note) that each crossing resets,
+so each character walks from its first frame and phase-locks to the beat
+once it arrives; `pulse()` adds the beat squash only once beat sync is on,
+again called on both characters together. Collision is unaffected either
+way.
 
 ## Road & background (the two scenery layers)
 

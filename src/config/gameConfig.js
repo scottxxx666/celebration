@@ -19,11 +19,12 @@ export const SCENERY_THEME = 'night';
 export const PLAYER_HW = 45;
 export const PLAYER_HH = 45;
 
-// Player run-cycle sprite (docs/image-assets.md "Player run frames"): number
-// of `run-<i>.png` frames prepped by `tools/prep-player-frames.py` (0 = keep
-// the green placeholder rectangle) and the sprite's logical half-height at
-// front-row scale (like obstacle `hh` in obstacleSprites.js) — drives display
-// scale only, the collision AABB stays PLAYER_HW/PLAYER_HH.
+// Player run-cycle sprite (docs/image-assets.md "Run-cycle frames (player &
+// enemy)"): number of `run-<i>.png` frames prepped by
+// `tools/prep-run-frames.py` (0 = keep the green placeholder rectangle) and
+// the sprite's logical half-height at front-row scale (like obstacle `hh` in
+// obstacleSprites.js) — drives display scale only, the collision AABB stays
+// PLAYER_HW/PLAYER_HH.
 export const PLAYER_FRAME_COUNT = 2;
 export const PLAYER_SPRITE_HH = 70;
 // Free-running walk-cycle period so the player walks from the very first
@@ -52,6 +53,16 @@ export const ENEMY_START_X = 0;   // initial off-screen x position
 export const ENEMY_HW = 26;          // half-width
 export const ENEMY_HH = 39;          // half-height
 
+// Enemy run-cycle sprite (docs/image-assets.md "Run-cycle frames (player &
+// enemy)"): same scheme as the player's — number of `run-<i>.png` frames
+// prepped by `tools/prep-run-frames.py --target enemy` (0 = keep the red
+// placeholder rectangle) and the sprite's logical half-height at front-row
+// scale; 39 matches the current 78px-tall placeholder so swapping in art
+// doesn't change size. Drives display scale only, collision AABB stays
+// ENEMY_HW/ENEMY_HH.
+export const ENEMY_FRAME_COUNT = 2;
+export const ENEMY_SPRITE_HH = 39;
+
 // Enemy speed ramp, anchored to song time (see docs/speed-design.md)
 export const ENEMY_CRUISE_SPEED = 565;    // after ramp; quarter-note tapping at 150.55 BPM (2.51 taps/s) sustains ~575, so 565 leaves an escape margin for on-rhythm play
 export const ENEMY_RAMP_START_MS = 5331;  // song time when enemy speed starts rising (real beat 12, mid-intro)
@@ -74,7 +85,7 @@ export const BEAT_SYNC_START_MS = 14896;
 export const TRACK_BPM = 150.55;
 export const BPM = TRACK_BPM / 2;   // half-time game beat (~797 ms) — obstacles land on beats and half-beats
 // export const BPM = TRACK_BPM;    // true-tempo game beat (~398 ms) — swap in to compare
-export const PLAYER_FRAME_MS = 60000 / BPM / 2; // one 8th note
+export const RUN_FRAME_MS = 60000 / BPM / 2; // one 8th note — shared by player and enemy run cycles
 export const FIRST_BEAT_OFFSET_MS = 2143;
 
 // Default user volume when nothing is saved — sources play at full loudness,

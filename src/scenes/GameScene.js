@@ -164,8 +164,14 @@ export class GameScene extends Phaser.Scene {
 
     this.player.update(this.cursors, this.leftKey, this.rightKey, delta);
     if (this.conductor.halfBeatCrossed) {
-      this.player.stepFrame(); // walk cycle runs on 8th notes from song start
-      if (beatSyncOn) this.player.pulse();
+      // walk cycle runs on 8th notes from song start; both characters bounce
+      // in lockstep once beat sync is on
+      this.player.stepFrame();
+      this.enemy.stepFrame();
+      if (beatSyncOn) {
+        this.player.pulse();
+        this.enemy.pulse();
+      }
     }
 
     // Coordinated disco palette base index, advancing per bar (DISCO_HUE_BEATS):

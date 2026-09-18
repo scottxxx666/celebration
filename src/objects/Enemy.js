@@ -2,12 +2,16 @@ import {
   ENEMY_SPEED,
   ENEMY_HW,
   ENEMY_HH,
+  ENEMY_SPRITE_HH,
   ENEMY_CRUISE_SPEED,
   ENEMY_RAMP_START_MS,
   ENEMY_RAMP_END_MS,
+  RUN_FRAME_MS,
   NUM_ROWS,
 } from '../config/gameConfig.js';
-import { rowLayout, addShadow } from '../rowLayout.js';
+import { ENEMY_FRAMES } from '../config/runFrames.js';
+import { rowLayout } from '../rowLayout.js';
+import { RunCycle } from './RunCycle.js';
 
 export class Enemy {
   constructor(scene, x) {
@@ -18,8 +22,13 @@ export class Enemy {
     this.targetRow = this.row;
     this.atBoundary = false;
     this.speed = ENEMY_SPEED;
-    this.shadow = addShadow(scene, ENEMY_HW);
-    this.rect = scene.add.rectangle(x, 0, this.hw * 2, this.hh * 2, 0xff3333);
+    this.runCycle = new RunCycle(scene, ENEMY_FRAMES, {
+      spriteHh: ENEMY_SPRITE_HH,
+      hw: ENEMY_HW,
+      hh: ENEMY_HH,
+      fallbackColor: 0xff3333,
+      frameMs: RUN_FRAME_MS,
+    });
     this._applyRow();
   }
 
@@ -36,8 +45,8 @@ export class Enemy {
     if (this.atBoundary) {
       this.x = -ENEMY_HW;
     }
-    this.rect.setPosition(this.x, this.y);
-    this.shadow.setPosition(this.x, this.y + ENEMY_HH * this.scale);
+    this.runCycle.update(dt * 1000);
+    this.runCycle.layout(this.x, this.y, this.scale, this.depth);
   }
 
   // Tracks the player's row instantly while beat sync is off (intro); once it's
@@ -55,12 +64,21 @@ export class Enemy {
     const { y, scale, depth } = rowLayout(this.row);
     this.y = y;
     this.scale = scale;
-    this.rect.setPosition(this.x, y).setScale(scale).setDepth(depth);
-    this.shadow.setPosition(this.x, y + ENEMY_HH * scale).setScale(scale).setDepth(depth - 0.5);
+    this.depth = depth;
+    this.runCycle.layout(this.x, y, scale, depth);
+  }
+
+  // Forwarders — GameScene calls these on the enemy without knowing about
+  // the run cycle underneath.
+  stepFrame() {
+    this.runCycle.stepFrame();
+  }
+
+  pulse() {
+    this.runCycle.pulse();
   }
 
   destroy() {
-    this.rect.destroy();
-    this.shadow.destroy();
+    this.runCycle.destroy();
   }
 }
