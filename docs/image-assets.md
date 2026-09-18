@@ -32,6 +32,7 @@ h = `visualHh × 2`, from `gameConfig.js` / `waves.js`):
 | Obstacle — tall/narrow | 40 × 100 | intro |
 | Obstacle — big block | 80 × 100 | wave enders |
 | Obstacle — wall | 60 × 108 | gap-run pairs; tall art may extend above the walk zone (by design) |
+| Obstacle — character sprites | varies (`hw × 2` × `hh × 2`, `OBSTACLE_SPRITES`) | replaces the red rectangle; see below |
 | (Enemy, if also swapped later) | 40 × 60 | `ENEMY_HW/HH = 20/30` |
 
 Obstacles with similar aspect ratios can share one sprite (the engine scales
@@ -163,6 +164,48 @@ Models often ignore the size/transparency lines, so check and fix:
    don't stretch.
 4. Check readability: zoom the result down to 70px (and 60% of that for the
    back row) — the silhouette and face should still read.
+
+## Obstacle character sprites
+
+Character cutouts (arbitrary size, transparent background) become obstacle
+sprites via `tools/prep-obstacle-image.py`:
+
+```
+python3 tools/prep-obstacle-image.py original_images/kazuha_zombie.png \
+    --out public/assets/sprites/obstacles/kazuha-zombie.png --height 216
+```
+
+It crops to the alpha bounding box (`Image.getbbox()`, no padding) and
+resizes so the output height matches `--height` (default 216 = 2x the
+tallest logical obstacle height, 108) — width follows the source aspect, so
+sprites of different builds don't get distorted to a common box.
+
+Each prepped PNG is registered in `src/config/obstacleSprites.js`
+(`OBSTACLE_SPRITES`, `{ key, file, hh, hw }`), loaded by `BootScene`, and
+picked by `ObstacleSpawner.spriteFor()`:
+
+- `hh` — logical half-height at front-row scale; the sprite's *display*
+  scale is derived from `hh` (`(hh * 2 / textureHeight) * rowScale`), so
+  width scales along with it to preserve the source aspect ratio.
+- `hw` — collision AABB half-width **and** the spawn-timing distance; tuned
+  per image to roughly match its displayed half-width at that `hh` (not
+  derived automatically, since art bleeds into transparent margins
+  differently per pose). Collision height is still fixed to one row
+  (`collisionHh` in `ObstacleSpawner.js`).
+- Sprites render with origin `(0, 1)`: the left edge sits exactly on the
+  collision box's left edge (`x - hw`) and the bottom edge sits on the row's
+  feet line, matching the shadow anchor.
+
+Things to be aware of:
+
+- The wave `visualHh` values in `waves.js` are unused once a sprite is
+  drawn — heights come only from the manifest `hh`. `visualHh` still sizes
+  the placeholder rectangle when `OBSTACLE_SPRITES` is empty.
+- Wall sections spawn four obstacles per beat, so a wide sprite (e.g. the
+  zombie at `hw: 47`) makes those walls block a row noticeably longer than
+  the authored `hw: 25`. If walls feel unfair, lower the wide sprites' `hw`
+  toward 30 and accept some art trailing past the hitbox — the left
+  (dangerous) edge stays aligned regardless.
 
 ## Road & background (the two scenery layers)
 
