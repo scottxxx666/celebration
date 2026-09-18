@@ -26,7 +26,7 @@ h = `visualHh × 2`, from `gameConfig.js` / `waves.js`):
 
 | Use | Logical box (px) | Notes |
 |---|---|---|
-| **Runner (player)** | **90 × 90** | `PLAYER_HW/HH = 45`; beat pulse squashes height to 85% |
+| **Runner (player)** | collision 90 × 90, art `PLAYER_SPRITE_HH × 2` tall | `PLAYER_HW/HH = 45` for collision; art height comes from `PLAYER_SPRITE_HH` (`gameConfig.js`), width follows the source aspect; beat pulse squashes height to 85% |
 | Obstacle — small block | 50 × 50 | intro |
 | Obstacle — low/wide | 60 × 40 and 50 × 40 | most common (high/low alternation) |
 | Obstacle — tall/narrow | 40 × 100 | intro |
@@ -206,6 +206,46 @@ Things to be aware of:
   the authored `hw: 25`. If walls feel unfair, lower the wide sprites' `hw`
   toward 30 and accept some art trailing past the hitbox — the left
   (dangerous) edge stays aligned regardless.
+
+## Player run frames
+
+The player's placeholder rectangle can be replaced with a run cycle via
+`tools/prep-player-frames.py`, a file-naming-convention pipeline (no
+manifest, no Phaser animation manager):
+
+```
+python3 tools/prep-player-frames.py original_images/player/run-1.png \
+    original_images/player/run-2.png
+```
+
+Like the obstacle prep script, it crops each source frame to its alpha
+bounding box and resizes to a uniform height (default 280 = 2x logical),
+writing `public/assets/sprites/player/run-<i>.png` (`i` starting at 0, in
+argument order) — deleting any stale `run-*.png` first so a previous, larger
+frame count never lingers. See `docs/player-sprite-prompt.md` for the
+ChatGPT prompt used to generate source frames from a reference photo.
+
+`--dummy N` generates N placeholder frames instead (a stylised zombie
+silhouette in the placeholder green with alternating leg stride), so the
+loading/frame-advance pipeline can be exercised before real art exists.
+
+Registration is two config values in `src/config/gameConfig.js`:
+
+- `PLAYER_FRAME_COUNT` — number of `run-<i>.png` frames; `0` keeps the
+  original green placeholder rectangle.
+- `PLAYER_SPRITE_HH` — logical half-height at front-row scale (like obstacle
+  `hh`); drives display scale only (`(PLAYER_SPRITE_HH * 2 / textureHeight) *
+  rowScale`) — the collision AABB stays `PLAYER_HW`/`PLAYER_HH`.
+
+`src/config/playerSprites.js` builds `PLAYER_FRAMES` (`{ key, file }[]`) from
+`PLAYER_FRAME_COUNT`; `BootScene` preloads every entry. `Player.js` renders
+the sprite with origin `(0.5, 1)` so its feet sit on the row's feet line (the
+same point the shadow anchors to). `stepFrame()` advances to the next frame
+(wrapping, via `setTexture`) on every 8th-note half-beat crossing from song
+start, plus a free-running `PLAYER_FRAME_MS` timer (one 8th note) that each
+crossing resets, so the player walks from the first frame and phase-locks to
+the beat once it arrives; `pulse()` adds the beat squash only once beat sync
+is on. Collision is unaffected either way.
 
 ## Road & background (the two scenery layers)
 

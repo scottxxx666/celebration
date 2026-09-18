@@ -163,7 +163,10 @@ export class GameScene extends Phaser.Scene {
     const section = sectionAt(songMs);
 
     this.player.update(this.cursors, this.leftKey, this.rightKey, delta);
-    if (beatSyncOn && this.conductor.halfBeatCrossed) this.player.pulse();
+    if (this.conductor.halfBeatCrossed) {
+      this.player.stepFrame(); // walk cycle runs on 8th notes from song start
+      if (beatSyncOn) this.player.pulse();
+    }
 
     // Coordinated disco palette base index, advancing per bar (DISCO_HUE_BEATS):
     // the beat flash uses this base hue; DiscoLights spreads beams/pools/lasers

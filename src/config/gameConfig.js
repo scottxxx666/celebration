@@ -19,6 +19,18 @@ export const SCENERY_THEME = 'night';
 export const PLAYER_HW = 45;
 export const PLAYER_HH = 45;
 
+// Player run-cycle sprite (docs/image-assets.md "Player run frames"): number
+// of `run-<i>.png` frames prepped by `tools/prep-player-frames.py` (0 = keep
+// the green placeholder rectangle) and the sprite's logical half-height at
+// front-row scale (like obstacle `hh` in obstacleSprites.js) — drives display
+// scale only, the collision AABB stays PLAYER_HW/PLAYER_HH.
+export const PLAYER_FRAME_COUNT = 2;
+export const PLAYER_SPRITE_HH = 70;
+// Free-running walk-cycle period so the player walks from the very first
+// frame (the beat clock fires nothing before the first downbeat + audio start
+// latency); each half-beat crossing re-steps and resets this timer, so once
+// beats arrive the cycle is phase-locked to 8th notes. Defined below BPM.
+
 // Player rows
 export const NUM_ROWS = 3;
 export const ROW_HEIGHT = (GAME_HEIGHT - WALK_ZONE_TOP) / NUM_ROWS; // 90
@@ -62,6 +74,7 @@ export const BEAT_SYNC_START_MS = 14896;
 export const TRACK_BPM = 150.55;
 export const BPM = TRACK_BPM / 2;   // half-time game beat (~797 ms) — obstacles land on beats and half-beats
 // export const BPM = TRACK_BPM;    // true-tempo game beat (~398 ms) — swap in to compare
+export const PLAYER_FRAME_MS = 60000 / BPM / 2; // one 8th note
 export const FIRST_BEAT_OFFSET_MS = 2143;
 
 // Default user volume when nothing is saved — sources play at full loudness,
