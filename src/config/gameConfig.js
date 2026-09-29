@@ -27,10 +27,6 @@ export const PLAYER_HH = 45;
 // PLAYER_HW/PLAYER_HH.
 export const PLAYER_FRAME_COUNT = 2;
 export const PLAYER_SPRITE_HH = 70;
-// Free-running walk-cycle period so the player walks from the very first
-// frame (the beat clock fires nothing before the first downbeat + audio start
-// latency); each half-beat crossing re-steps and resets this timer, so once
-// beats arrive the cycle is phase-locked to 8th notes. Defined below BPM.
 
 // Player rows
 export const NUM_ROWS = 3;
@@ -39,9 +35,6 @@ export const ROW_HEIGHT = (GAME_HEIGHT - WALK_ZONE_TOP) / NUM_ROWS; // 90
 // Fake-3D depth (docs/art-brief.md): visual scale from back row (0) to front row
 export const ROW_SCALE_BACK = 0.9;
 export const ROW_SCALE_FRONT = 1.0;
-
-// Obstacle spawning
-export const SPAWN_INTERVAL_MS = 1400;
 
 // Touch controls — vertical drag distance (game px) from the pointer's down
 // position before a swipe fires a row change (see GameScene pointer handlers)
@@ -68,8 +61,11 @@ export const ENEMY_CRUISE_SPEED = 565;    // after ramp; quarter-note tapping at
 export const ENEMY_RAMP_START_MS = 5331;  // song time when enemy speed starts rising (real beat 12, mid-intro)
 export const ENEMY_RAMP_END_MS = 14896;   // song time when enemy reaches cruise speed (real beat 36, chorus 1 hits at cruise)
 
-// Assumed player speed for obstacle spawn timing once the enemy is at cruise
+// Assumed player speed for obstacle spawn timing once the enemy pins the player
+// into the speed band; before OBSTACLE_TIMING_SWITCH_MS (song time) timing uses
+// the player's actual speed instead
 export const OBSTACLE_TIMING_SPEED = (MAX_SPEED + ENEMY_CRUISE_SPEED) / 2;
+export const OBSTACLE_TIMING_SWITCH_MS = 14896;  // real beat 36, when the enemy ramp completes
 
 // Song time when the beat-sync presentation switches on (enemy row-stepping on
 // the beat, player squash pulse, walk-zone beat flash); before it, original
@@ -85,7 +81,13 @@ export const BEAT_SYNC_START_MS = 14896;
 export const TRACK_BPM = 150.55;
 export const BPM = TRACK_BPM / 2;   // half-time game beat (~797 ms) — obstacles land on beats and half-beats
 // export const BPM = TRACK_BPM;    // true-tempo game beat (~398 ms) — swap in to compare
-export const RUN_FRAME_MS = 60000 / BPM / 2; // one 8th note — shared by player and enemy run cycles
+export const BEAT_MS = 60000 / BPM;
+// Free-running walk-cycle period (one 8th note, shared by player and enemy run
+// cycles) so a character walks from the very first frame (the beat clock fires
+// nothing before the first downbeat + audio start latency); each half-beat
+// crossing re-steps and resets this timer, so once beats arrive the cycle is
+// phase-locked to 8th notes.
+export const RUN_FRAME_MS = BEAT_MS / 2;
 export const FIRST_BEAT_OFFSET_MS = 2143;
 
 // Default user volume when nothing is saved — sources play at full loudness,

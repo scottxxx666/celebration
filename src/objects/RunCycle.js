@@ -1,19 +1,17 @@
-import { addShadow } from '../rowLayout.js';
+import { RUN_FRAME_MS } from '../config/gameConfig.js';
+import { addShadow, fitSpriteScale } from '../rowLayout.js';
 
 // Shared run-cycle visual: sprite (or fallback rectangle) + drop shadow, used
 // by both Player and Enemy so each can carry its own frame set. Frame
 // stepping is driven by GameScene on 8th-note (half-beat) crossings via
-// stepFrame(); the free-running `frameMs` timer in update() is a fallback so
+// stepFrame(); the free-running RUN_FRAME_MS timer in update() is a fallback so
 // the character walks from the first frame before the first beat fires (and
 // if beats ever stop), then phase-locks to the beat once crossings resume.
 export class RunCycle {
-  constructor(scene, frames, { spriteHh, hw, hh, fallbackColor, frameMs }) {
-    this.scene = scene;
+  constructor(scene, frames, { spriteHh, hw, hh, fallbackColor }) {
     this.frames = frames;
     this.spriteHh = spriteHh;
-    this.hw = hw;
     this.hh = hh;
-    this.frameMs = frameMs;
 
     this._frame = 0; // current frame index (only used when frames is non-empty)
     this._frameTimer = 0; // ms since the last frame step (free-running fallback)
@@ -32,25 +30,20 @@ export class RunCycle {
   }
 
   update(delta) {
-    const dt = delta / 1000;
-
-    // Free-running walk cycle: steps on its own before the first beat fires
-    // (and if beats ever stop); half-beat crossings reset the timer via
-    // stepFrame(), keeping the cycle phase-locked once the song is going
     this._frameTimer += delta;
-    if (this._frameTimer >= this.frameMs) this.stepFrame();
+    if (this._frameTimer >= RUN_FRAME_MS) this.stepFrame();
 
     // Recover from the beat squash
-    this._squash = Math.min(1, this._squash + 1.2 * dt);
+    this._squash = Math.min(1, this._squash + 1.2 * (delta / 1000));
   }
 
   layout(x, y, scale, depth) {
+    const feetY = y + this.hh * scale;
     if (this.frames.length > 0) {
       // Origin (0.5, 1): feet sit on the row's feet line — same point the
       // shadow is anchored at — so the beat squash shrinks toward the feet
       // for free.
-      const feetY = y + this.hh * scale;
-      const spriteScale = (this.spriteHh * 2 / this.sprite.height) * scale;
+      const spriteScale = fitSpriteScale(this.sprite, this.spriteHh, scale);
       this.sprite
         .setPosition(x, feetY)
         .setScale(spriteScale, spriteScale * this._squash)
@@ -61,10 +54,7 @@ export class RunCycle {
         .setScale(scale, scale * this._squash)
         .setDepth(depth);
     }
-    this.shadow
-      .setPosition(x, y + this.hh * scale)
-      .setScale(scale)
-      .setDepth(depth - 0.5);
+    this.shadow.setPosition(x, feetY).setScale(scale).setDepth(depth - 0.5);
   }
 
   // Advance the run cycle one frame (wrapping) and restart the free-running

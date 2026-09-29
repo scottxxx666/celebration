@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
+import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, isDesktop } from '../config/ui.js';
 import { Confetti } from '../objects/Confetti.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
+import { onDismiss } from '../input.js';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -20,25 +22,18 @@ export class GameOverScene extends Phaser.Scene {
     const cy = this.scale.height / 2;
 
     this.add.text(cx, cy - 50, this.won ? 'CLEAR!' : 'GAME OVER', {
-      fontSize: '48px',
+      ...TITLE_STYLE,
       color: this.won ? '#66ff88' : '#ffffff',
-      fontStyle: 'bold',
     }).setOrigin(0.5);
 
     const pct = Math.floor(this.progress * 100);
     this.add.text(cx, cy + 10, `Song progress: ${pct}% · ${this.score}s`, {
+      ...CAPTION_STYLE,
       fontSize: '22px',
-      color: '#aaaaaa',
     }).setOrigin(0.5);
 
-    const isDesktop = this.sys.game.device.os.desktop;
-    const hint = isDesktop
-      ? 'SPACE to restart · ESC for menu'
-      : 'Tap to restart';
-    this.add.text(cx, cy + 55, hint, {
-      fontSize: '18px',
-      color: '#666666',
-    }).setOrigin(0.5);
+    const hint = isDesktop(this) ? 'SPACE to restart · ESC for menu' : 'Tap to restart';
+    this.add.text(cx, cy + 55, hint, { ...HINT_STYLE, fontSize: '18px' }).setOrigin(0.5);
 
     // Celebrate a clear with a one-shot confetti-cannon pop
     if (this.won) {
@@ -47,18 +42,10 @@ export class GameOverScene extends Phaser.Scene {
       this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.confetti.destroy());
     }
 
-    this.input.keyboard.once('keydown-SPACE', () => {
-      this.scene.start('GameScene');
-    });
-    this.input.keyboard.once('keydown-ESC', () => {
-      this.scene.start('MenuScene');
-    });
-    // Require a fresh press: a finger still held from the death tap would
-    // otherwise fire pointerup here and restart before the score is seen
-    this.input.once('pointerdown', () => {
-      this.input.once('pointerup', () => {
-        this.scene.start('GameScene');
-      });
+    const restart = () => this.scene.start('GameScene');
+    onDismiss(this, {
+      keys: { SPACE: restart, ESC: () => this.scene.start('MenuScene') },
+      tap: restart,
     });
 
     addFullscreenButton(this);

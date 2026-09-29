@@ -1,9 +1,20 @@
 import Phaser from 'phaser';
-import { GAME_WIDTH } from '../config/gameConfig.js';
+import {
+  HUD_CORNER_X,
+  HUD_MARGIN,
+  HUD_HIT,
+  HUD_DEPTH,
+  HUD_ALPHA_DIM,
+  HUD_ALPHA_BRIGHT,
+  KEYCAP_DARK as COLOR_DARK,
+  KEYCAP_MID as COLOR_MID,
+  KEYCAP_LIGHT as COLOR_LIGHT,
+  hudPart,
+} from '../config/ui.js';
 import { getUserVolume, setUserVolume, saveUserVolume } from '../userVolume.js';
+import { bindPointer } from '../input.js';
 
-const SLIDER_Y = 30;       // same top row as the fullscreen button (MARGIN there)
-const MARGIN = 30;         // right edge offset from GAME_WIDTH — same anchor as the fullscreen button
+const SLIDER_Y = HUD_MARGIN; // same top row as the fullscreen button
 const TRACK_W = 80;
 const TRACK_H = 6;
 const TRACK_RADIUS = 3;    // rounded track corners; fill skipped below the corner diameter
@@ -16,13 +27,6 @@ const ARC_RADII = [5, 9, 13];        // concentric wave arcs at the cone mouth, 
 const ARC_THRESHOLDS = [0.05, 0.4, 0.75]; // value at which each arc lights up (0 arcs below the first)
 const ARC_SPAN_DEG = 55;   // arcs sweep -55°..55° around the cone's axis
 const ARC_GAP = 8;         // gap between the outermost arc and the track
-const HIT_HEIGHT = 40;
-const ALPHA_DIM = 0.45;
-const ALPHA_BRIGHT = 1;
-// Keycap palette from FullscreenButton.js / HowToPlayScene
-const COLOR_DARK = 0x2f2f44;
-const COLOR_MID = 0x777788;
-const COLOR_LIGHT = 0xdddddd;
 
 // Horizontal volume slider, top-right in every scene except the transient BootScene,
 // on the same row as and immediately left of the fullscreen button. Drives the
@@ -30,13 +34,12 @@ const COLOR_LIGHT = 0xdddddd;
 // every scene sees, and the one BootScene seeds from localStorage on launch. Visuals:
 // a speaker icon whose wave arcs light up with the level (drawn, no unicode 🔊 — font
 // support unreliable, same reasoning as FullscreenButton.js:15), a rounded track, and a
-// ring-stroked knob. Mirrors FullscreenButton.js's pattern: module-local layout
-// constants, depth 100, setScrollFactor(0), dim/bright hover alpha swap.
+// ring-stroked knob. Shares the HUD look (config/ui.js) with FullscreenButton.
 //
 // `rightEdge` is the right boundary of the whole widget *including* the knob's
 // overhang at value 1 — pass what addFullscreenButton returned so the row packs
 // right-to-left; the default is the bare corner anchor.
-export function addVolumeSlider(scene, rightEdge = GAME_WIDTH - MARGIN) {
+export function addVolumeSlider(scene, rightEdge = HUD_CORNER_X) {
   // Layout, right-aligned at rightEdge: icon, arcs, gap, track, knob overhang
   const trackRight = rightEdge - KNOB_RADIUS;
   const trackLeft = trackRight - TRACK_W;
@@ -50,7 +53,7 @@ export function addVolumeSlider(scene, rightEdge = GAME_WIDTH - MARGIN) {
   let hovering = false;
 
   // Speaker icon — body rectangle + cone trapezoid, static (drawn once)
-  const icon = scene.add.graphics().setDepth(100).setScrollFactor(0).setAlpha(ALPHA_DIM);
+  const icon = hudPart(scene.add.graphics());
   icon.fillStyle(COLOR_LIGHT, 1);
   icon.fillRect(iconLeft, SLIDER_Y - ICON_BODY_H / 2, ICON_BODY_W, ICON_BODY_H);
   icon.fillPoints([
@@ -61,7 +64,7 @@ export function addVolumeSlider(scene, rightEdge = GAME_WIDTH - MARGIN) {
   ], true);
 
   // Wave arcs — redrawn per volume change, so the arc count doubles as a level readout
-  const arcs = scene.add.graphics().setDepth(100).setScrollFactor(0).setAlpha(ALPHA_DIM);
+  const arcs = hudPart(scene.add.graphics());
   const drawArcs = () => {
     arcs.clear();
     arcs.lineStyle(2, COLOR_LIGHT, 1);
@@ -77,7 +80,7 @@ export function addVolumeSlider(scene, rightEdge = GAME_WIDTH - MARGIN) {
   };
 
   // Track — dark rounded base with a mid-grey outline, light fill up to the value
-  const track = scene.add.graphics().setDepth(100).setScrollFactor(0).setAlpha(ALPHA_DIM);
+  const track = hudPart(scene.add.graphics());
   const drawTrack = () => {
     track.clear();
     track.fillStyle(COLOR_DARK, 1);
@@ -92,9 +95,9 @@ export function addVolumeSlider(scene, rightEdge = GAME_WIDTH - MARGIN) {
     }
   };
 
-  const knob = scene.add.circle(trackLeft + value * TRACK_W, SLIDER_Y, KNOB_RADIUS, COLOR_LIGHT)
-    .setStrokeStyle(2, COLOR_DARK)
-    .setDepth(100).setScrollFactor(0).setAlpha(ALPHA_DIM);
+  const knob = hudPart(
+    scene.add.circle(trackLeft + value * TRACK_W, SLIDER_Y, KNOB_RADIUS, COLOR_LIGHT).setStrokeStyle(2, COLOR_DARK)
+  );
 
   drawArcs();
   drawTrack();
@@ -121,29 +124,29 @@ export function addVolumeSlider(scene, rightEdge = GAME_WIDTH - MARGIN) {
   const zoneRight = trackRight + KNOB_RADIUS; // cover the knob's overhang at value 1
   const zoneX = (iconLeft + zoneRight) / 2;
   const zoneWidth = zoneRight - iconLeft;
-  const zone = scene.add.zone(zoneX, SLIDER_Y, zoneWidth, HIT_HEIGHT)
-    .setDepth(100)
+  const zone = scene.add.zone(zoneX, SLIDER_Y, zoneWidth, HUD_HIT)
+    .setDepth(HUD_DEPTH)
     .setScrollFactor(0)
     .setInteractive({ useHandCursor: true });
 
   zone.on('pointerover', () => {
     hovering = true;
-    parts.forEach((part) => part.setAlpha(ALPHA_BRIGHT));
+    parts.forEach((part) => part.setAlpha(HUD_ALPHA_BRIGHT));
   });
   zone.on('pointerout', () => {
     hovering = false;
-    if (dragId === null) parts.forEach((part) => part.setAlpha(ALPHA_DIM)); // stay bright mid-drag
+    if (dragId === null) parts.forEach((part) => part.setAlpha(HUD_ALPHA_DIM)); // stay bright mid-drag
   });
 
   const endDrag = (pointer) => {
     if (pointer.id !== dragId) return;
     dragId = null;
     saveUserVolume();
-    if (!hovering) parts.forEach((part) => part.setAlpha(ALPHA_DIM));
+    if (!hovering) parts.forEach((part) => part.setAlpha(HUD_ALPHA_DIM));
   };
 
   // stopPropagation is mandatory on both handlers: without it a tap here also
-  // reaches scene-level listeners — GameScene's POINTER_DOWN tap/swipe tracking,
+  // reaches scene-level listeners — the player's touch tap/swipe tracking,
   // IntroScene's skip, GameOverScene's restart chain, HowToPlayScene's back.
   zone.on('pointerdown', (pointer, localX, localY, event) => {
     event.stopPropagation();
@@ -173,17 +176,9 @@ export function addVolumeSlider(scene, rightEdge = GAME_WIDTH - MARGIN) {
   // A scene-level down reusing dragId means the up was swallowed and the touch id
   // recycled for a new gesture (our own zone's down never reaches scene level) —
   // end the stale drag so the new gesture doesn't move the volume.
-  const onPointerDown = (pointer) => endDrag(pointer);
-  scene.input.on(Phaser.Input.Events.POINTER_DOWN, onPointerDown);
-  scene.input.on(Phaser.Input.Events.POINTER_MOVE, onPointerMove);
-  scene.input.on(Phaser.Input.Events.POINTER_UP, endDrag);
-  scene.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, endDrag);
+  bindPointer(scene, { down: endDrag, move: onPointerMove, up: endDrag });
 
   scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-    scene.input.off(Phaser.Input.Events.POINTER_DOWN, onPointerDown);
-    scene.input.off(Phaser.Input.Events.POINTER_MOVE, onPointerMove);
-    scene.input.off(Phaser.Input.Events.POINTER_UP, endDrag);
-    scene.input.off(Phaser.Input.Events.POINTER_UP_OUTSIDE, endDrag);
     // Scene torn down mid-drag (e.g. the song COMPLETE fires while dragging) — save anyway
     if (dragId !== null) saveUserVolume();
   });

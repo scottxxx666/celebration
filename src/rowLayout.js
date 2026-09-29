@@ -8,13 +8,22 @@ import {
 
 // Fake-3D ground plane (docs/art-brief.md): each row maps to a center y, a
 // visual scale (back rows smaller), and a render depth (front rows draw over
-// back rows). Visual only — collision boxes are never scaled.
+// back rows). Visual only — collision boxes are never scaled. Computed once
+// per row; callers must treat the returned object as read-only.
+const LAYOUTS = Array.from({ length: NUM_ROWS }, (_, row) => ({
+  y: WALK_ZONE_TOP + ROW_HEIGHT * row + ROW_HEIGHT / 2,
+  scale: ROW_SCALE_BACK + ((ROW_SCALE_FRONT - ROW_SCALE_BACK) * row) / (NUM_ROWS - 1),
+  depth: row,
+}));
+
 export function rowLayout(row) {
-  return {
-    y: WALK_ZONE_TOP + ROW_HEIGHT * row + ROW_HEIGHT / 2,
-    scale: ROW_SCALE_BACK + ((ROW_SCALE_FRONT - ROW_SCALE_BACK) * row) / (NUM_ROWS - 1),
-    depth: row,
-  };
+  return LAYOUTS[row];
+}
+
+// Uniform scale that fits an image's texture height to a logical half-height
+// `hh` at front-row size, then applies the row's fake-3D scale.
+export function fitSpriteScale(image, hh, rowScale) {
+  return ((hh * 2) / image.height) * rowScale;
 }
 
 // Drop-shadow ellipse for an object of half-width hw. Caller positions it at

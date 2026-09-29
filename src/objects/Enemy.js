@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import {
   ENEMY_SPEED,
   ENEMY_HW,
@@ -6,7 +7,6 @@ import {
   ENEMY_CRUISE_SPEED,
   ENEMY_RAMP_START_MS,
   ENEMY_RAMP_END_MS,
-  RUN_FRAME_MS,
   NUM_ROWS,
 } from '../config/gameConfig.js';
 import { ENEMY_FRAMES } from '../config/runFrames.js';
@@ -18,33 +18,26 @@ export class Enemy {
     this.hw = ENEMY_HW;
     this.hh = ENEMY_HH;
     this.x = x;
-    this.row = Math.floor(NUM_ROWS / 2);
-    this.targetRow = this.row;
-    this.atBoundary = false;
     this.speed = ENEMY_SPEED;
     this.runCycle = new RunCycle(scene, ENEMY_FRAMES, {
       spriteHh: ENEMY_SPRITE_HH,
       hw: ENEMY_HW,
       hh: ENEMY_HH,
       fallbackColor: 0xff3333,
-      frameMs: RUN_FRAME_MS,
     });
-    this._applyRow();
+    this._setRow(Math.floor(NUM_ROWS / 2));
   }
 
-  // speedMult scales motion only (from the section layer); the ramp itself
-  // (and the ENEMY_CRUISE_SPEED check GameScene runs against this.speed) stays untouched
+  // speedMult scales motion only (from the section layer); the ramp itself is
+  // anchored to song time
   update(dt, playerSpeed, songMs, speedMult = 1) {
-    const progress = Math.min(
-      1,
-      Math.max(0, (songMs - ENEMY_RAMP_START_MS) / (ENEMY_RAMP_END_MS - ENEMY_RAMP_START_MS))
+    const progress = Phaser.Math.Clamp(
+      (songMs - ENEMY_RAMP_START_MS) / (ENEMY_RAMP_END_MS - ENEMY_RAMP_START_MS),
+      0,
+      1
     );
     this.speed = ENEMY_SPEED + (ENEMY_CRUISE_SPEED - ENEMY_SPEED) * progress;
-    this.x += (this.speed - playerSpeed) * speedMult * dt;
-    this.atBoundary = this.x < -ENEMY_HW;
-    if (this.atBoundary) {
-      this.x = -ENEMY_HW;
-    }
+    this.x = Math.max(-ENEMY_HW, this.x + (this.speed - playerSpeed) * speedMult * dt);
     this.runCycle.update(dt * 1000);
     this.runCycle.layout(this.x, this.y, this.scale, this.depth);
   }
@@ -53,19 +46,17 @@ export class Enemy {
   // on, steps onto the row only on a beat crossing — row-dodging then buys the
   // player up to one beat of separation
   trackRow(playerRow, beatCrossed, beatSyncOn) {
-    this.targetRow = playerRow;
-    if ((beatCrossed || !beatSyncOn) && this.row !== this.targetRow) {
-      this.row = this.targetRow;
-      this._applyRow();
+    if ((beatCrossed || !beatSyncOn) && this.row !== playerRow) {
+      this._setRow(playerRow);
     }
   }
 
-  _applyRow() {
-    const { y, scale, depth } = rowLayout(this.row);
+  _setRow(row) {
+    this.row = row;
+    const { y, scale, depth } = rowLayout(row);
     this.y = y;
     this.scale = scale;
     this.depth = depth;
-    this.runCycle.layout(this.x, y, scale, depth);
   }
 
   // Forwarders — GameScene calls these on the enemy without knowing about

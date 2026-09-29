@@ -25,10 +25,17 @@ const game = new Phaser.Game({
   scene: [BootScene, MenuScene, HowToPlayScene, IntroScene, GameScene, GameOverScene],
 });
 
-// F toggles fullscreen in any scene on desktop; Phaser keyboard input is
-// per-scene, so a single DOM listener avoids re-binding in every scene.
-window.addEventListener('keydown', (e) => {
-  if (e.code === 'KeyF' && game.device.os.desktop) {
-    game.scale.toggleFullscreen();
-  }
-});
+// Fullscreen is game-global, so its hooks live here rather than per scene.
+if (game.device.os.desktop) {
+  // F toggles fullscreen in any scene; Phaser keyboard input is per-scene, so a
+  // single DOM listener avoids re-binding in every scene.
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyF') game.scale.toggleFullscreen();
+  });
+} else {
+  // Orientation lock only works while fullscreen (Android/Chromium); iOS rejects
+  // it, so swallow failures.
+  game.scale.on('enterfullscreen', () => {
+    screen.orientation?.lock?.('landscape').catch(() => {});
+  });
+}

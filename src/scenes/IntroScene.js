@@ -1,8 +1,10 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
+import { HINT_STYLE, isDesktop } from '../config/ui.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { getUserVolume } from '../userVolume.js';
+import { onDismiss } from '../input.js';
 
 export class IntroScene extends Phaser.Scene {
   constructor() {
@@ -41,21 +43,11 @@ export class IntroScene extends Phaser.Scene {
       this.sound.off(Phaser.Sound.Events.GLOBAL_VOLUME, applyVideoVolume);
     });
 
-    const isDesktop = this.sys.game.device.os.desktop;
-    const skipHint = isDesktop ? 'Press SPACE to skip' : 'Tap to skip';
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 24, skipHint, {
-      fontSize: '14px',
-      color: '#888888',
-    }).setOrigin(0.5).setDepth(10);
+    const skipHint = isDesktop(this) ? 'Press SPACE to skip' : 'Tap to skip';
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 24, skipHint, HINT_STYLE).setOrigin(0.5).setDepth(10);
 
-    this.input.keyboard.once('keydown-SPACE', () => this.startGame());
-    this.input.keyboard.once('keydown-ESC', () => this.startGame());
-    // Arm on pointerdown rather than a bare once('pointerup'): the volume slider
-    // stopPropagates its own pointerdown, so a drag that starts on the slider and
-    // is released outside it never arms this and can't skip the intro.
-    this.input.on('pointerdown', () => {
-      this.input.once('pointerup', () => this.startGame());
-    });
+    const skip = () => this.startGame();
+    onDismiss(this, { keys: { SPACE: skip, ESC: skip }, tap: skip });
 
     // Fullscreen button first: it returns where the slider's right edge goes.
     addVolumeSlider(this, addFullscreenButton(this));

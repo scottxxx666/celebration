@@ -8,15 +8,15 @@ import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
 import { sectionAt } from '../config/sections.js';
-import { getStartMs } from '../startTime.js';
+import { getStartMs, formatSongTime } from '../songTime.js';
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
   PLAYER_X,
   ENEMY_START_X,
   WALK_ZONE_TOP,
-  ENEMY_CRUISE_SPEED,
   OBSTACLE_TIMING_SPEED,
+  OBSTACLE_TIMING_SWITCH_MS,
   BEAT_SYNC_START_MS,
   DISCO_FLASH_ALPHA,
   ROTATE_BEATS_PER_TURN,
@@ -27,21 +27,12 @@ import {
   DISCO_COLORS,
   STROBE_ALPHA,
   STROBE_DECAY,
-  FIRST_BEAT_OFFSET_MS,
   ZOOM_PUNCH_AMOUNT,
   ZOOM_PUNCH_BEATS,
   ZOOM_PUNCH_DECAY_MS,
-  SWIPE_THRESHOLD,
 } from '../config/gameConfig.js';
 
-// Song time as m:ss.mmm — the format section/wave boundaries get read off in
-function formatSongTime(ms) {
-  const total = Math.max(0, ms || 0);
-  const min = Math.floor(total / 60000);
-  const sec = Math.floor((total % 60000) / 1000);
-  const msec = Math.floor(total % 1000);
-  return `${min}:${String(sec).padStart(2, '0')}.${String(msec).padStart(3, '0')}`;
-}
+const HUD_REFRESH_MS = 100; // debug readout re-renders a text texture, so throttle it
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -97,57 +88,17 @@ export class GameScene extends Phaser.Scene {
       .setDepth(8);
     this.strobeIndex = -1;
 
-    const walkZoneMidY = WALK_ZONE_TOP + (GAME_HEIGHT - WALK_ZONE_TOP) / 2;
-    this.player = new Player(this, PLAYER_X, walkZoneMidY);
+    this.player = new Player(this, PLAYER_X);
+    this.player.attachTouch(this);
+    this.cursors = this.input.keyboard.createCursorKeys();
     this.spawner = new ObstacleSpawner(this);
     if (startMs > 0) this.spawner.skipTo(startMs);
     this.enemy = new Enemy(this, ENEMY_START_X);
     this.disco = new DiscoLights(this);
 
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
-    this.rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
-
-    // Touch controls — split tap zones (left/right half = alternating accel,
-    // same as the LEFT/RIGHT arrow path) + vertical swipe (row change). Two
-    // simultaneous pointers needed for two-thumb tapping alongside a swipe.
-    this.input.addPointer(2);
-    this._touchGestures = new Map(); // pointer.id -> { startX, startY, rowChanged }
-    this._onPointerDown = (pointer) => {
-      this.player.tap(pointer.x < GAME_WIDTH / 2 ? 'left' : 'right');
-      this._touchGestures.set(pointer.id, {
-        startX: pointer.x,
-        startY: pointer.y,
-        rowChanged: false,
-      });
-    };
-    this._onPointerMove = (pointer) => {
-      const gesture = this._touchGestures.get(pointer.id);
-      if (!gesture || gesture.rowChanged) return;
-      const dx = pointer.x - gesture.startX;
-      const dy = pointer.y - gesture.startY;
-      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > SWIPE_THRESHOLD) {
-        this.player.moveRow(dy < 0 ? -1 : 1);
-        gesture.rowChanged = true;
-      }
-    };
-    this._onPointerUp = (pointer) => {
-      this._touchGestures.delete(pointer.id);
-    };
-    this.input.on(Phaser.Input.Events.POINTER_DOWN, this._onPointerDown);
-    this.input.on(Phaser.Input.Events.POINTER_MOVE, this._onPointerMove);
-    this.input.on(Phaser.Input.Events.POINTER_UP, this._onPointerUp);
-    this.input.on(Phaser.Input.Events.POINTER_UP_OUTSIDE, this._onPointerUp);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.input.off(Phaser.Input.Events.POINTER_DOWN, this._onPointerDown);
-      this.input.off(Phaser.Input.Events.POINTER_MOVE, this._onPointerMove);
-      this.input.off(Phaser.Input.Events.POINTER_UP, this._onPointerUp);
-      this.input.off(Phaser.Input.Events.POINTER_UP_OUTSIDE, this._onPointerUp);
-      this._touchGestures.clear();
-    });
-
     // Speed + song-time readout (debug HUD) — above all gameplay depths
     this.speedText = this.add.text(10, 10, '', { fontSize: '14px', color: '#ffffff' }).setDepth(10);
+    this.hudTimer = HUD_REFRESH_MS;
 
     // Fullscreen button first: it returns where the slider's right edge goes.
     addVolumeSlider(this, addFullscreenButton(this));
@@ -162,7 +113,7 @@ export class GameScene extends Phaser.Scene {
     // independent of the enemy ramp / beat-sync gate above
     const section = sectionAt(songMs);
 
-    this.player.update(this.cursors, this.leftKey, this.rightKey, delta);
+    this.player.update(this.cursors, delta);
     if (this.conductor.halfBeatCrossed) {
       // walk cycle runs on 8th notes from song start; both characters bounce
       // in lockstep once beat sync is on
@@ -191,7 +142,7 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.beatOverlay.setAlpha(Math.max(0, this.beatOverlay.alpha - 0.4 * (delta / 1000)));
     }
-    this.disco.update(songMs, this.conductor.beatCrossed, this.conductor.beatIndex, section.disco, discoColorIndex);
+    this.disco.update(this.conductor.beatCrossed, section.disco, discoColorIndex);
 
     // Disco dim — beat-aligned fade in/out at section start/end, gated purely on song time
     let dimAlpha = 0;
@@ -205,7 +156,7 @@ export class GameScene extends Phaser.Scene {
     // sub-beat), aligned to the beat grid, then a fast fade tail; gated on song time
     let strobeFlash = false;
     if (section.strobe) {
-      const idx = Math.floor((songMs - FIRST_BEAT_OFFSET_MS) * section.strobe / this.conductor.beatMs);
+      const idx = this.conductor.gridIndex(section.strobe);
       strobeFlash = idx !== this.strobeIndex;
       this.strobeIndex = idx;
     } else {
@@ -221,13 +172,12 @@ export class GameScene extends Phaser.Scene {
     this.scenery.scroll(this.player.speed * section.speedMult * (delta / 1000));
 
     this.enemy.trackRow(this.player.row, this.conductor.beatCrossed, beatSyncOn);
-    // this.enemy.speed stays the base ramp value; the multiplier only scales motion
     this.enemy.update(delta / 1000, this.player.speed, songMs, section.speedMult);
 
     // Once the enemy pins the player into the speed band, time spawns off the
     // band average instead of the instantaneous player speed (docs/speed-design.md)
     const timingSpeed =
-      (this.enemy.speed >= ENEMY_CRUISE_SPEED ? OBSTACLE_TIMING_SPEED : this.player.speed) *
+      (songMs >= OBSTACLE_TIMING_SWITCH_MS ? OBSTACLE_TIMING_SPEED : this.player.speed) *
       section.speedMult;
     this.spawner.update(songMs, this.player.speed * section.speedMult, delta, timingSpeed);
 
@@ -247,9 +197,7 @@ export class GameScene extends Phaser.Scene {
     const baseZoom = section.rotate ? ROTATE_ZOOM : 1;
     let zoomPunch = 1;
     if (section.disco) {
-      const periodMs = this.conductor.beatMs * ZOOM_PUNCH_BEATS;
-      const phase = (((songMs - FIRST_BEAT_OFFSET_MS) % periodMs) + periodMs) % periodMs;
-      const decay = Math.max(0, 1 - phase / ZOOM_PUNCH_DECAY_MS);
+      const decay = Math.max(0, 1 - this.conductor.phaseMs(ZOOM_PUNCH_BEATS) / ZOOM_PUNCH_DECAY_MS);
       zoomPunch = 1 + ZOOM_PUNCH_AMOUNT * decay;
     }
     cam.setZoom(baseZoom * zoomPunch);
@@ -267,9 +215,13 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    this.speedText.setText(
-      `speed: ${Math.floor(this.player.speed)}   time: ${formatSongTime(songMs)}`
-    );
+    this.hudTimer += delta;
+    if (this.hudTimer >= HUD_REFRESH_MS) {
+      this.hudTimer = 0;
+      this.speedText.setText(
+        `speed: ${Math.floor(this.player.speed)}   time: ${formatSongTime(songMs)}`
+      );
+    }
   }
 
   endRun(won) {

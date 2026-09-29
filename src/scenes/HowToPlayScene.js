@@ -1,7 +1,9 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
+import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, KEYCAP_DARK, KEYCAP_MID, addKeycap, isDesktop } from '../config/ui.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { markHowToPlaySeen } from '../seenHowToPlay.js';
+import { onDismiss } from '../input.js';
 
 // Desktop layout: two keycap demo columns side by side
 const LEFT_X = 250;   // run-demo column center
@@ -31,7 +33,7 @@ export class HowToPlayScene extends Phaser.Scene {
 
   create() {
     const cx = GAME_WIDTH / 2;
-    this.isDesktop = this.sys.game.device.os.desktop;
+    this.isDesktop = isDesktop(this);
     // Derived from "not the menu" rather than naming the gate's target, so it
     // survives the gate being moved around the boot flow.
     const isGate = this.next !== 'MenuScene';
@@ -40,11 +42,7 @@ export class HowToPlayScene extends Phaser.Scene {
     // reads the controls from the menu isn't shown the gate on their first run.
     markHowToPlaySeen();
 
-    this.add.text(cx, 40, 'HOW TO PLAY', {
-      fontSize: '28px',
-      color: '#ffffff',
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
+    this.add.text(cx, 40, 'HOW TO PLAY', { ...TITLE_STYLE, fontSize: '28px' }).setOrigin(0.5);
 
     if (this.isDesktop) {
       this.createDesktop();
@@ -59,31 +57,27 @@ export class HowToPlayScene extends Phaser.Scene {
     } else {
       hint = this.isDesktop ? 'ESC / SPACE / tap to go back' : 'Tap anywhere to go back';
     }
-    this.add.text(cx, GAME_HEIGHT - 30, hint, { fontSize: '14px', color: '#666666' }).setOrigin(0.5);
+    this.add.text(cx, GAME_HEIGHT - 30, hint, HINT_STYLE).setOrigin(0.5);
 
     // Every exit goes to the same target, so ESC needs no special-casing: it
     // means "back" from the menu and "skip ahead" in the gate, matching IntroScene.
+    // onDismiss's fresh-press guards matter here because the gate is only ever
+    // shown once: the input that confirmed Start must not also spend it.
     const leave = () => this.scene.start(this.next);
-    // Both guards exist because the gate is only ever shown once: the input that
-    // confirmed Start must not also spend it. MenuScene confirms on keydown-SPACE
-    // /ENTER and on a pointerup, so keys ignore auto-repeat (SPACE held down) and
-    // the pointer needs a fresh press — the same held-finger hazard GameOverScene
-    // guards against.
-    const onKey = (event) => {
-      if (!event.repeat) leave();
-    };
-    this.input.keyboard.on('keydown-ESC', onKey);
-    this.input.keyboard.on('keydown-ENTER', onKey);
-    this.input.keyboard.on('keydown-SPACE', onKey);
-    this.input.once('pointerdown', () => {
-      this.input.once('pointerup', leave);
-    });
+    onDismiss(this, { keys: { ESC: leave, ENTER: leave, SPACE: leave }, tap: leave });
 
     addFullscreenButton(this);
   }
 
   caption(x, y, text) {
-    return this.add.text(x, y, text, { fontSize: '18px', color: '#aaaaaa' }).setOrigin(0.5);
+    return this.add.text(x, y, text, CAPTION_STYLE).setOrigin(0.5);
+  }
+
+  // Expanding tap ripple inside `container` at (x, y)
+  ripple(container, x, y) {
+    const circle = this.add.circle(x, y, 12, 0xffffff, 0.45);
+    container.add(circle);
+    this.tweens.add({ targets: circle, scale: 2.6, alpha: 0, duration: 320, onComplete: () => circle.destroy() });
   }
 
   // ---- Desktop: ←/→ and ↑/↓ keycap columns ----
@@ -114,24 +108,24 @@ export class HowToPlayScene extends Phaser.Scene {
     this.caption(cx, 320, 'Dodge the obstacles');
     this.caption(cx, 345, "Don't let the chaser catch you");
 
-    this.add.text(cx, 385, 'F — fullscreen', { fontSize: '14px', color: '#666666' }).setOrigin(0.5);
+    this.add.text(cx, 385, 'F — fullscreen', HINT_STYLE).setOrigin(0.5);
 
     // Half-beat tap cadence (~350ms); rows keys press once per beat (~700ms)
-    this.runSide = 1; // first tick flips it, so the demo leads with ←
-    this.time.addEvent({ delay: 350, loop: true, callback: () => {
-      this.runSide = 1 - this.runSide;
-      this.pressKeycap(this.runDemo, this.runPads[this.runSide]);
-    } });
-    this.rowSide = 1; // first tick flips it, so the demo leads with ↑
-    this.time.addEvent({ delay: 700, loop: true, callback: () => {
-      this.rowSide = 1 - this.rowSide;
-      this.pressKeycap(this.rowsDemo, this.rowPads[this.rowSide]);
+    this.startPressLoop(350, this.runDemo, this.runPads);
+    this.startPressLoop(700, this.rowsDemo, this.rowPads);
+  }
+
+  // Alternates presses between the two pads every `delay` ms, leading with pads[0]
+  startPressLoop(delay, demo, pads) {
+    let side = 1; // first tick flips it
+    this.time.addEvent({ delay, loop: true, callback: () => {
+      side = 1 - side;
+      this.pressKeycap(demo, pads[side]);
     } });
   }
 
   buildKeycap(label) {
-    const bg = this.add.rectangle(0, 0, 44, 44, 0x2f2f44).setStrokeStyle(2, 0x777788);
-    const text = this.add.text(0, 0, label, { fontSize: '22px', color: '#dddddd' }).setOrigin(0.5);
+    const { bg, text } = addKeycap(this, label, { size: 44, fontSize: '22px', stroke: 2 });
     const pad = this.add.container(0, 0, [bg, text]);
     pad.bg = bg;
     return pad;
@@ -141,16 +135,8 @@ export class HowToPlayScene extends Phaser.Scene {
   pressKeycap(parentDemo, pad) {
     this.tweens.add({ targets: pad, scale: 0.82, duration: 90, yoyo: true });
     pad.bg.setFillStyle(0x88aa66);
-    this.time.delayedCall(180, () => pad.bg.setFillStyle(0x2f2f44));
-    const ripple = this.add.circle(pad.x, pad.y, 12, 0xffffff, 0.45);
-    parentDemo.add(ripple);
-    this.tweens.add({
-      targets: ripple,
-      scale: 2.6,
-      alpha: 0,
-      duration: 320,
-      onComplete: () => ripple.destroy(),
-    });
+    this.time.delayedCall(180, () => pad.bg.setFillStyle(KEYCAP_DARK));
+    this.ripple(parentDemo, pad.x, pad.y);
   }
 
   // ---- Mobile: one landscape phone mock, sequenced like real play ----
@@ -161,8 +147,8 @@ export class HowToPlayScene extends Phaser.Scene {
   createMobile() {
     const cx = GAME_WIDTH / 2;
     this.phone = this.add.container(cx, 150);
-    this.phone.add(this.add.rectangle(0, 0, PHONE_W, PHONE_H, 0x000000, 0).setStrokeStyle(2, 0x777788));
-    this.divider = this.add.rectangle(0, 0, 2, PHONE_H, 0x777788);
+    this.phone.add(this.add.rectangle(0, 0, PHONE_W, PHONE_H, 0x000000, 0).setStrokeStyle(2, KEYCAP_MID));
+    this.divider = this.add.rectangle(0, 0, 2, PHONE_H, KEYCAP_MID);
     this.phone.add(this.divider);
     this.chevron = this.add.text(PHONE_W / 2 + 24, 0, '▲', { fontSize: '22px', color: '#88aa66' })
       .setOrigin(0.5)
@@ -194,11 +180,9 @@ export class HowToPlayScene extends Phaser.Scene {
   mobileTap(side) {
     const x = side === 0 ? -PHONE_W / 4 : PHONE_W / 4;
     const finger = this.add.circle(x, 0, 8, 0xdddddd, 0.9);
-    const ripple = this.add.circle(x, 0, 12, 0xffffff, 0.45);
     this.phone.add(finger);
-    this.phone.add(ripple);
+    this.ripple(this.phone, x, 0);
     this.tweens.add({ targets: finger, scale: 1.3, alpha: 0, duration: 220, onComplete: () => finger.destroy() });
-    this.tweens.add({ targets: ripple, scale: 2.6, alpha: 0, duration: 320, onComplete: () => ripple.destroy() });
   }
 
   mobileSwipe() {

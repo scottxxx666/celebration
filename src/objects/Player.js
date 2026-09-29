@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import {
+  GAME_WIDTH,
   MIN_SPEED,
   MAX_SPEED,
   ACCEL_STEP,
@@ -8,64 +9,77 @@ import {
   PLAYER_HW,
   PLAYER_HH,
   PLAYER_SPRITE_HH,
-  RUN_FRAME_MS,
+  SWIPE_THRESHOLD,
 } from '../config/gameConfig.js';
 import { PLAYER_FRAMES } from '../config/runFrames.js';
 import { rowLayout } from '../rowLayout.js';
+import { bindPointer } from '../input.js';
 import { RunCycle } from './RunCycle.js';
 
-export class Player {
-  constructor(scene, x, y) {
-    this.scene = scene;
-    this.x = x;
-    this.row = Math.floor(NUM_ROWS / 2); // start in middle row
-    this.speed = MIN_SPEED; // world scroll speed (px/s)
+const { JustDown } = Phaser.Input.Keyboard;
 
-    // Alternating-tap state
-    this.lastKey = null; // 'left' | 'right'
-    this._prevLeft = false;
-    this._prevRight = false;
+export class Player {
+  constructor(scene, x) {
+    this.x = x;
+    this.speed = MIN_SPEED; // world scroll speed (px/s)
+    this.lastKey = null; // 'left' | 'right' — alternating-tap state
 
     this.runCycle = new RunCycle(scene, PLAYER_FRAMES, {
       spriteHh: PLAYER_SPRITE_HH,
       hw: PLAYER_HW,
       hh: PLAYER_HH,
       fallbackColor: 0x00ff88,
-      frameMs: RUN_FRAME_MS,
     });
-    this._applyLayout(rowLayout(this.row));
+    this._setRow(Math.floor(NUM_ROWS / 2)); // start in middle row
   }
 
-  update(cursors, leftKey, rightKey, delta) {
-    const dt = delta / 1000;
-
-    const currLeft = leftKey.isDown;
-    const currRight = rightKey.isDown;
-
-    // Fresh press that alternates from lastKey → accelerate
-    if (currLeft && !this._prevLeft) this.tap('left');
-    if (currRight && !this._prevRight) this.tap('right');
-
-    this._prevLeft = currLeft;
-    this._prevRight = currRight;
+  update(cursors, delta) {
+    // Fresh press (no auto-repeat) that alternates from lastKey → accelerate
+    if (JustDown(cursors.left)) this.tap('left');
+    if (JustDown(cursors.right)) this.tap('right');
 
     // Natural deceleration toward MIN_SPEED
-    this.speed = Math.max(MIN_SPEED, this.speed - DECEL_PER_SEC * dt);
+    this.speed = Math.max(MIN_SPEED, this.speed - DECEL_PER_SEC * (delta / 1000));
 
     // Vertical movement — snap to row on each key press
-    if (Phaser.Input.Keyboard.JustDown(cursors.up)) {
+    if (JustDown(cursors.up)) {
       this.moveRow(-1);
-    } else if (Phaser.Input.Keyboard.JustDown(cursors.down)) {
+    } else if (JustDown(cursors.down)) {
       this.moveRow(1);
     }
 
     this.runCycle.update(delta);
-    this._applyLayout(rowLayout(this.row));
+    this.runCycle.layout(this.x, this.y, this.scale, this.depth);
+  }
+
+  // Touch controls — tapping the left/right half of the screen is the
+  // alternating accel (same path as the LEFT/RIGHT arrows); a vertical swipe
+  // past SWIPE_THRESHOLD is a row change, one per pointer until release.
+  // Tracked per pointer so two-thumb tapping and a swipe don't interfere.
+  attachTouch(scene) {
+    scene.input.addPointer(2);
+    const gestures = new Map(); // pointer.id -> { startX, startY, rowChanged }
+    bindPointer(scene, {
+      down: (pointer) => {
+        this.tap(pointer.x < GAME_WIDTH / 2 ? 'left' : 'right');
+        gestures.set(pointer.id, { startX: pointer.x, startY: pointer.y, rowChanged: false });
+      },
+      move: (pointer) => {
+        const gesture = gestures.get(pointer.id);
+        if (!gesture || gesture.rowChanged) return;
+        const dx = pointer.x - gesture.startX;
+        const dy = pointer.y - gesture.startY;
+        if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > SWIPE_THRESHOLD) {
+          this.moveRow(dy < 0 ? -1 : 1);
+          gesture.rowChanged = true;
+        }
+      },
+      up: (pointer) => gestures.delete(pointer.id),
+    });
   }
 
   // Alternating tap: a press that differs from the last accelerates; a repeat
-  // of the same side does nothing. Shared by keyboard (update()) and touch
-  // (GameScene pointerdown) input paths.
+  // of the same side does nothing. Shared by keyboard and touch input.
   tap(side) {
     if (this.lastKey === side) return;
     this.speed = Math.min(this.speed + ACCEL_STEP, MAX_SPEED);
@@ -74,12 +88,15 @@ export class Player {
 
   // Row snap, clamped to the walk zone. dir = -1 (up) or +1 (down).
   moveRow(dir) {
-    this.row = Phaser.Math.Clamp(this.row + dir, 0, NUM_ROWS - 1);
+    this._setRow(Phaser.Math.Clamp(this.row + dir, 0, NUM_ROWS - 1));
   }
 
-  _applyLayout({ y, scale, depth }) {
+  _setRow(row) {
+    this.row = row;
+    const { y, scale, depth } = rowLayout(row);
     this.y = y;
-    this.runCycle.layout(this.x, y, scale, depth);
+    this.scale = scale;
+    this.depth = depth;
   }
 
   // Forwarders — GameScene calls these on the player without knowing about

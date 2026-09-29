@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
+import { TITLE_STYLE, HINT_STYLE, isDesktop } from '../config/ui.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { hasSeenHowToPlay } from '../seenHowToPlay.js';
-import { getStartMs } from '../startTime.js';
+import { getStartMs } from '../songTime.js';
 
 const OPTIONS = ['Start', 'How to Play'];
 
@@ -16,14 +17,9 @@ export class MenuScene extends Phaser.Scene {
     const cy = GAME_HEIGHT / 2;
 
     this.selected = 0;
+    this.isDesktop = isDesktop(this);
 
-    this.isDesktop = this.sys.game.device.os.desktop;
-
-    this.add.text(cx, cy - 110, 'CELEBRATION', {
-      fontSize: '56px',
-      color: '#ffffff',
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
+    this.add.text(cx, cy - 110, 'CELEBRATION', { ...TITLE_STYLE, fontSize: '56px' }).setOrigin(0.5);
 
     this.optionTexts = OPTIONS.map((label, i) => {
       const text = this.add.text(cx, cy + i * 45, label, {
@@ -62,20 +58,13 @@ export class MenuScene extends Phaser.Scene {
       cx,
       GAME_HEIGHT - 30,
       this.isDesktop ? '↑/↓ select · SPACE confirm' : 'Tap an option',
-      { fontSize: '14px', color: '#555555' }
+      HINT_STYLE
     ).setOrigin(0.5);
 
     this.input.keyboard.on('keydown-UP', () => this.move(-1));
     this.input.keyboard.on('keydown-DOWN', () => this.move(1));
     this.input.keyboard.on('keydown-ENTER', () => this.confirm());
     this.input.keyboard.on('keydown-SPACE', () => this.confirm());
-
-    if (!this.isDesktop) {
-      // Orientation lock only works while fullscreen (Android/Chromium); iOS rejects it, so swallow failures.
-      this.scale.once('enterfullscreen', () => {
-        screen.orientation?.lock?.('landscape').catch(() => {});
-      });
-    }
 
     addFullscreenButton(this);
   }
@@ -111,8 +100,9 @@ export class MenuScene extends Phaser.Scene {
     // The confirming gesture unlocks the browser audio context; the intro plays
     // before gameplay, giving audio ample time to unlock (the actual unlock-wait
     // now guards the IntroScene -> GameScene hop).
-    // Mobile: request fullscreen from this same gesture. iPhone has no Fullscreen API,
-    // so `available` is false there and Start behaves exactly as before.
+    // Mobile: request fullscreen from this same gesture (the landscape lock hooks
+    // onto enterfullscreen in main.js). iPhone has no Fullscreen API, so
+    // `available` is false there and Start behaves exactly as before.
     if (!this.isDesktop && this.scale.fullscreen.available && !this.scale.isFullscreen) {
       this.scale.startFullscreen();
     }
