@@ -10,18 +10,21 @@ import {
   PLAYER_HH,
   PLAYER_SPRITE_HH,
   SWIPE_THRESHOLD,
+  ENEMY_CRUISE_SPEED,
 } from '../config/gameConfig.js';
 import { PLAYER_FRAMES } from '../config/runFrames.js';
 import { rowLayout } from '../rowLayout.js';
 import { bindPointer } from '../input.js';
 import { RunCycle } from './RunCycle.js';
+import { isDebugMode } from '../debugMode.js';
 
 const { JustDown } = Phaser.Input.Keyboard;
 
 export class Player {
   constructor(scene, x) {
     this.x = x;
-    this.speed = MIN_SPEED; // world scroll speed (px/s)
+    this.debug = isDebugMode(); // `?debug`: speed pinned at the chaser's max
+    this.speed = this.debug ? ENEMY_CRUISE_SPEED : MIN_SPEED; // world scroll speed (px/s)
     this.lastKey = null; // 'left' | 'right' — alternating-tap state
 
     this.runCycle = new RunCycle(scene, PLAYER_FRAMES, {
@@ -38,8 +41,8 @@ export class Player {
     if (JustDown(cursors.left)) this.tap('left');
     if (JustDown(cursors.right)) this.tap('right');
 
-    // Natural deceleration toward MIN_SPEED
-    this.speed = Math.max(MIN_SPEED, this.speed - DECEL_PER_SEC * (delta / 1000));
+    // Natural deceleration toward MIN_SPEED (skipped when debug pins the speed)
+    if (!this.debug) this.speed = Math.max(MIN_SPEED, this.speed - DECEL_PER_SEC * (delta / 1000));
 
     // Vertical movement — snap to row on each key press
     if (JustDown(cursors.up)) {
@@ -82,7 +85,7 @@ export class Player {
   // of the same side does nothing. Shared by keyboard and touch input.
   tap(side) {
     if (this.lastKey === side) return;
-    this.speed = Math.min(this.speed + ACCEL_STEP, MAX_SPEED);
+    if (!this.debug) this.speed = Math.min(this.speed + ACCEL_STEP, MAX_SPEED);
     this.lastKey = side;
   }
 
