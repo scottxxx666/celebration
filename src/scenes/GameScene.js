@@ -132,15 +132,17 @@ export class GameScene extends Phaser.Scene {
     const discoColor = DISCO_COLORS[discoColorIndex];
 
     // Beat flash: brighter on the downbeat of each bar, then fade out; during
-    // disco sections it uses the base disco hue instead of white
+    // disco sections it uses the base disco hue instead of white. Gated per
+    // section (section.beatFlash); the fade below stays unconditional so a flash
+    // in progress dies out naturally when entering a beatFlash:false section
     this.beatOverlay.setFillStyle(section.disco ? discoColor : 0xffffff);
-    if (beatSyncOn && this.conductor.beatCrossed) {
+    if (beatSyncOn && section.beatFlash && this.conductor.beatCrossed) {
       const onBeat = this.conductor.beatIndex % 4 === 0;
-      const peakAlpha = section.disco ? DISCO_FLASH_ALPHA : 0.1;
-      const offAlpha = section.disco ? DISCO_FLASH_ALPHA * 0.6 : 0.05;
+      const peakAlpha = section.disco ? DISCO_FLASH_ALPHA : BEAT_FLASH_ALPHA;
+      const offAlpha = peakAlpha * (section.disco ? DISCO_FLASH_OFFBEAT_RATIO : BEAT_FLASH_OFFBEAT_RATIO);
       this.beatOverlay.setAlpha(onBeat ? peakAlpha : offAlpha);
     } else {
-      this.beatOverlay.setAlpha(Math.max(0, this.beatOverlay.alpha - 0.4 * (delta / 1000)));
+      this.beatOverlay.setAlpha(Math.max(0, this.beatOverlay.alpha - BEAT_FLASH_DECAY * (delta / 1000)));
     }
     this.disco.update(this.conductor.beatCrossed, section.disco, discoColorIndex);
 
