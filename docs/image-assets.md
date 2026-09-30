@@ -223,9 +223,12 @@ python3 tools/prep-run-frames.py original_images/enemy/run-1.png \
 `--target` (default `player`) picks the output directory
 (`public/assets/sprites/<target>`), the config-constant reminder it prints,
 and the dummy-mode placeholder colour (green for player, red for enemy);
-`--out-dir` overrides the directory directly. Like the obstacle prep script,
-it crops each source frame to its alpha bounding box and resizes to a
-uniform height (default 280 = 2x logical), writing
+`--out-dir` overrides the directory directly. Unlike the obstacle prep
+script, it crops every source frame to the union of all frames' alpha
+bounding boxes (frames must share one canvas size, e.g. cells of one sheet
+placed consistently) and resizes them with one shared scale to a uniform
+height (default 280 = 2x logical), so the character keeps a constant size and
+position between frames, writing
 `public/assets/sprites/<target>/run-<i>.png` (`i` starting at 0, in argument
 order) — deleting any stale `run-*.png` first so a previous, larger frame
 count never lingers. See `docs/run-sprite-prompt.md` for the ChatGPT prompts
@@ -255,15 +258,16 @@ Registration is a pair of config values per character in
 preloads every entry in both lists. The visual — sprite (or fallback
 rectangle) plus drop shadow, frame stepping, and beat-squash pulse — is
 owned by the shared `RunCycle` helper (`src/objects/RunCycle.js`), used by
-both `Player.js` and `Enemy.js`; each just forwards `stepFrame()`/`pulse()`
+both `Player.js` and `Enemy.js`; each just forwards `syncFrame()`/`pulse()`
 to its own `RunCycle` instance. The sprite renders with origin `(0.5, 1)` so
 its feet sit on the row's feet line (the same point the shadow anchors to).
-`stepFrame()` advances to the next frame (wrapping, via `setTexture`) on
-every 8th-note half-beat crossing from song start — `GameScene` calls it on
-both the player and the enemy together, so they stay in lockstep — plus a
-free-running `RUN_FRAME_MS` timer (one 8th note) that each crossing resets,
-so each character walks from its first frame and phase-locks to the beat
-once it arrives; `pulse()` adds the beat squash only once beat sync is on,
+`syncFrame(halfBeatIndex)` shows frame `halfBeatIndex % frameCount` (via
+`setTexture`) on every 8th-note half-beat crossing from song start —
+`GameScene` calls it on both the player and the enemy together, so they stay
+in lockstep and the phase is fixed by the beat grid (a `?t=` seek lands on
+the right frame). A free-running `RUN_FRAME_MS` timer (one 8th note) only
+animates each character's walk before the first crossing, and stops once
+beat-locked; `pulse()` adds the beat squash only once beat sync is on,
 again called on both characters together. Collision is unaffected either
 way.
 

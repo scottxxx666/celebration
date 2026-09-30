@@ -19,6 +19,10 @@ import {
   OBSTACLE_TIMING_SWITCH_MS,
   BEAT_SYNC_START_MS,
   DISCO_FLASH_ALPHA,
+  BEAT_FLASH_ALPHA,
+  BEAT_FLASH_OFFBEAT_RATIO,
+  DISCO_FLASH_OFFBEAT_RATIO,
+  BEAT_FLASH_DECAY,
   ROTATE_BEATS_PER_TURN,
   ROTATE_ZOOM,
   DISCO_DIM_ALPHA,
@@ -115,10 +119,11 @@ export class GameScene extends Phaser.Scene {
 
     this.player.update(this.cursors, delta);
     if (this.conductor.halfBeatCrossed) {
-      // walk cycle runs on 8th notes from song start; both characters bounce
-      // in lockstep once beat sync is on
-      this.player.stepFrame();
-      this.enemy.stepFrame();
+      // walk frame is the beat-grid index, so both characters stay in
+      // lockstep (and on phase after a ?t= seek); both bounce once beat sync
+      // is on
+      this.player.syncFrame(this.conductor.halfBeatIndex);
+      this.enemy.syncFrame(this.conductor.halfBeatIndex);
       if (beatSyncOn) {
         this.player.pulse();
         this.enemy.pulse();

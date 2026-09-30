@@ -8,6 +8,7 @@ const NORMAL = { speedMult: 1, disco: false, rotate: false, strobe: 0, beatFlash
 
 export const SECTIONS = [
   { name: 'highlight1', startMs: 14500, endMs: 26456, speedMult: 1, beatFlash: true },
+  // { name: 'highlight1', startMs: 27650, endMs: 53156, speedMult: 1, beatFlash: true },
   { name: 'highlight2', startMs: 65909, endMs: 78663, speedMult: 1, disco: true },
   { name: 'dance_break', startMs: 90000, endMs: 98663, speedMult: 1.5, disco: true },
   { name: 'final_highlight', startMs: 123299, endMs: 136052, speedMult: 1, disco: true, rotate: true },

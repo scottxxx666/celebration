@@ -18,13 +18,16 @@ docs/image-assets.md).
 (`PLAYER_FRAME_COUNT` / `ENEMY_FRAME_COUNT`) and the dummy-mode colours
 (green for player, red for enemy); `--out-dir` overrides the directory.
 
-Source mode, per image (in argument order):
-  1. open as RGBA
-  2. crop to the alpha bounding box (`Image.getbbox()`) — no padding, feet
-     (bottom of the art) end up on the bottom edge of the crop
-  3. resize with LANCZOS so the output height == --height, keeping aspect
-     (width follows); default 280 = 2x logical (matches obstacle sprites)
-  4. save as `public/assets/sprites/<target>/run-<i>.png`, i starting at 0
+Source mode (images in argument order):
+  1. open all as RGBA; they must share one canvas size (cells of one sheet,
+     character placed consistently)
+  2. take each image's alpha bounding box (`Image.getbbox()`) and crop every
+     frame to the UNION of them — no padding — so the character keeps the
+     same scale and position across frames
+  3. resize all with ONE shared LANCZOS scale so the output height ==
+     --height, keeping aspect (width follows); default 280 = 2x logical
+     (matches obstacle sprites)
+  4. save each as `public/assets/sprites/<target>/run-<i>.png`, i starting at 0
 
 Dummy mode (`--dummy N`): draws N placeholder run-cycle frames with PIL
 ImageDraw — a stylised zombie silhouette in the target's placeholder colour
@@ -77,23 +80,34 @@ def print_reminder(n, frame_count_const):
 
 def prep_sources(images, out_dir, height, frame_count_const):
     clear_stale_frames(out_dir)
-    for i, image in enumerate(images):
-        src = Image.open(image).convert('RGBA')
-        print(f'{image}: {src.width}x{src.height}')
+    srcs = [Image.open(image).convert('RGBA') for image in images]
+    if len({src.size for src in srcs}) > 1:
+        sizes = '\n'.join(f'  {image}: {src.width}x{src.height}'
+                          for image, src in zip(images, srcs))
+        raise SystemExit('source frames must share one canvas size:\n' + sizes)
 
+    boxes = []
+    for image, src in zip(images, srcs):
         bbox = src.getbbox()
         if bbox is None:
             raise SystemExit(f'{image} is fully transparent, nothing to crop')
-        cropped = src.crop(bbox)
-        print(f'  cropped to alpha bbox {cropped.width}x{cropped.height}')
+        boxes.append(bbox)
+    union = (min(b[0] for b in boxes), min(b[1] for b in boxes),
+             max(b[2] for b in boxes), max(b[3] for b in boxes))
+    union_w, union_h = union[2] - union[0], union[3] - union[1]
+    print(f'canvas {srcs[0].width}x{srcs[0].height}, union alpha bbox {union} '
+          f'({union_w}x{union_h})')
 
-        scale = height / cropped.height
-        out_w = round(cropped.width * scale)
-        out = cropped.resize((out_w, height), Image.LANCZOS)
+    scale = height / union_h
+    out_size = (round(union_w * scale), height)
+    print(f'shared output size {out_size[0]}x{out_size[1]}')
+
+    for i, (image, src) in enumerate(zip(images, srcs)):
+        out = src.crop(union).resize(out_size, Image.LANCZOS)
 
         dest = os.path.join(out_dir, f'run-{i}.png')
         out.save(dest, optimize=True)
-        print(f'  wrote {dest} ({out.width}x{out.height})')
+        print(f'  {image} -> wrote {dest}')
 
     print_reminder(len(images), frame_count_const)
 

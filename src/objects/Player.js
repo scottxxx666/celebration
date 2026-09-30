@@ -104,8 +104,8 @@ export class Player {
 
   // Forwarders — GameScene calls these on the player without knowing about
   // the run cycle underneath.
-  stepFrame() {
-    this.runCycle.stepFrame();
+  syncFrame(halfBeatIndex) {
+    this.runCycle.syncFrame(halfBeatIndex);
   }
 
   pulse() {

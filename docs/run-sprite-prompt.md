@@ -97,6 +97,7 @@ matches the wider silhouette.
 4. Set `PLAYER_FRAME_COUNT` / `ENEMY_FRAME_COUNT` in `src/config/gameConfig.js`
    to the number of frames produced (the script prints a reminder for
    whichever `--target` you ran).
-5. 2 frames is enough for a serviceable run cycle; 4 is smooth. Feet should
-   sit at roughly the same height across frames since the script crops each
-   to its own alpha bounding box.
+5. 2 frames is enough for a serviceable run cycle; 4 is smooth. All frames must
+   be on equal-size canvases with the character placed consistently (e.g.
+   cells of one sheet), since the script crops every frame to the union of
+   their alpha bounding boxes and scales them together.

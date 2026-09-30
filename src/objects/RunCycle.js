@@ -2,11 +2,12 @@ import { RUN_FRAME_MS } from '../config/gameConfig.js';
 import { addShadow, fitSpriteScale } from '../rowLayout.js';
 
 // Shared run-cycle visual: sprite (or fallback rectangle) + drop shadow, used
-// by both Player and Enemy so each can carry its own frame set. Frame
-// stepping is driven by GameScene on 8th-note (half-beat) crossings via
-// stepFrame(); the free-running RUN_FRAME_MS timer in update() is a fallback so
-// the character walks from the first frame before the first beat fires (and
-// if beats ever stop), then phase-locks to the beat once crossings resume.
+// by both Player and Enemy so each can carry its own frame set. Once the beat
+// clock runs, GameScene calls syncFrame(halfBeatIndex) on each 8th-note
+// (half-beat) crossing and the frame is derived from that index, so the phase
+// is fixed by the beat grid. Before the first crossing, the free-running
+// RUN_FRAME_MS timer in update() animates the walk; it stops for good once
+// beat-locked.
 export class RunCycle {
   constructor(scene, frames, { spriteHh, hw, hh, fallbackColor }) {
     this.frames = frames;
@@ -14,7 +15,8 @@ export class RunCycle {
     this.hh = hh;
 
     this._frame = 0; // current frame index (only used when frames is non-empty)
-    this._frameTimer = 0; // ms since the last frame step (free-running fallback)
+    this._frameTimer = 0; // ms since the last frame step (pre-beat fallback)
+    this._beatLocked = false; // set by the first syncFrame(); silences the timer
     this._squash = 1; // beat-pulse squash factor on top of the row scale
 
     this.shadow = addShadow(scene, hw);
@@ -30,8 +32,10 @@ export class RunCycle {
   }
 
   update(delta) {
-    this._frameTimer += delta;
-    if (this._frameTimer >= RUN_FRAME_MS) this.stepFrame();
+    if (!this._beatLocked) {
+      this._frameTimer += delta;
+      if (this._frameTimer >= RUN_FRAME_MS) this._timerStep();
+    }
 
     // Recover from the beat squash
     this._squash = Math.min(1, this._squash + 1.2 * (delta / 1000));
@@ -57,14 +61,26 @@ export class RunCycle {
     this.shadow.setPosition(x, feetY).setScale(scale).setDepth(depth - 0.5);
   }
 
-  // Advance the run cycle one frame (wrapping) and restart the free-running
-  // timer. Called on 8th-note crossings and by the timer fallback in update();
-  // a no-op when frames is empty.
-  stepFrame() {
+  // Show the frame for an 8th-note grid index (halfBeatIndex mod frame count)
+  // and lock out the free-running timer. Called on 8th-note crossings; a no-op
+  // on the frame when frames is empty.
+  syncFrame(halfBeatIndex) {
+    this._beatLocked = true;
+    if (this.frames.length === 0) return;
+    this._showFrame(halfBeatIndex % this.frames.length);
+  }
+
+  // Pre-beat fallback: advance one frame (wrapping) and restart the timer.
+  _timerStep() {
     this._frameTimer = 0;
     if (this.frames.length === 0) return;
-    this._frame = (this._frame + 1) % this.frames.length;
-    this.sprite.setTexture(this.frames[this._frame].key);
+    this._showFrame((this._frame + 1) % this.frames.length);
+  }
+
+  _showFrame(index) {
+    if (index === this._frame) return;
+    this._frame = index;
+    this.sprite.setTexture(this.frames[index].key);
   }
 
   // Squash on 8th notes — beat bounce synced to the music, only once the
