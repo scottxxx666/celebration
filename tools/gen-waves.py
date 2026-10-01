@@ -20,9 +20,8 @@ density "profile" (sparse/light/normal/dense/none). For each section this script
   4. assigns each obstacle a row (0=back/top .. 2=front/bottom) from the
      kick/snare balance at that beat, alternating within a row-group and never
      repeating the immediately preceding obstacle's row,
-  5. sizes each obstacle from its section-relative strength quartile,
-  6. (dense sections only) emits top+bottom obstacle PAIRS on phrase downbeats,
-  7. and (wall sections only) emits a (NUM_ROWS-1)-obstacle WALL with one gap row on
+  5. (dense sections only) emits top+bottom obstacle PAIRS on phrase downbeats,
+  6. and (wall sections only) emits a (NUM_ROWS-1)-obstacle WALL with one gap row on
      every game beat (every 2 real beats), the gap stepping exactly ±1 row per
      wall so the player must move exactly one row per beat.
 
@@ -160,32 +159,17 @@ def pick_obstacles(section, beats_info, prev_section_last_beat):
 def assign_rows_and_sizes(section_name, profile_name, accepted, strengths_in_section, prev_row_state):
     """prev_row_state: mutable dict with key 'prev_rows' = set of rows used by the
     immediately preceding obstacle (single obstacle -> one row, pair -> {0,4})."""
-    obstacles = []  # list of dicts: beat_n, row, hw, visualHh (order given)
+    obstacles = []  # list of dicts: beat_n, row (order given)
 
-    # Size and row-group thresholds are ranked among THIS section's picked singles
+    # Row-group thresholds are ranked among THIS section's picked singles
     # (not all beats): picks are by construction the strongest beats, so fixed
-    # thresholds would make everything wide and push every row into one group.
+    # thresholds would push every row into one group.
     singles = [it for it in accepted if not it[4]]
-    picked_strengths = [it[1] for it in singles]
     picked_ratios = [it[2] / (it[2] + it[3] + 1e-6) for it in singles]
-    if picked_strengths:
-        q1, q2, q3 = np.percentile(picked_strengths, [25, 50, 75])
+    if picked_ratios:
         r_lo, r_hi = np.percentile(picked_ratios, [33.3, 66.7])
     else:
-        q1 = q2 = q3 = 0
         r_lo = r_hi = 0.5
-
-    def hw_for(strength):
-        if strength <= q1:
-            return 20
-        if strength <= q2:
-            return 25
-        if strength <= q3:
-            return 30
-        return 40
-
-    def visual_hh_for(group):
-        return {'low': 20, 'mid': 30, 'high': 50}[group]
 
     # dense: identify phrase downbeats inside section for pairs
     is_dense = profile_name == 'dense'
@@ -215,10 +199,8 @@ def assign_rows_and_sizes(section_name, profile_name, accepted, strengths_in_sec
 
         if is_pair:
             row_list = [BACK, FRONT]
-            hw = 30
-            vhh = 54
             for row in row_list:
-                obstacles.append({'beat': n, 'row': row, 'hw': hw, 'visualHh': vhh})
+                obstacles.append({'beat': n, 'row': row})
             prev_row_state['prev_rows'] = {BACK, FRONT}
             continue
 
@@ -240,9 +222,7 @@ def assign_rows_and_sizes(section_name, profile_name, accepted, strengths_in_sec
                     row = cand
                     break
 
-        hw = hw_for(strength)
-        vhh = visual_hh_for(group)
-        obstacles.append({'beat': n, 'row': row, 'hw': hw, 'visualHh': vhh})
+        obstacles.append({'beat': n, 'row': row})
         prev_row_state['prev_rows'] = {row}
 
     return obstacles
@@ -325,7 +305,7 @@ def build_waves(env_full, env_kick, env_snare, times, duration_s):
                 for row in range(NUM_ROWS):
                     if row == g:
                         continue
-                    obstacles.append({'timeOffset': t_off, 'row': row, 'hw': 25, 'visualHh': 54})
+                    obstacles.append({'timeOffset': t_off, 'row': row})
             obstacles.sort(key=lambda o: o['timeOffset'])
 
             waves.append({
@@ -397,8 +377,6 @@ def build_waves(env_full, env_kick, env_snare, times, duration_s):
             obstacles.append({
                 'timeOffset': time_offset,
                 'row': o['row'],
-                'hw': o['hw'],
-                'visualHh': o['visualHh'],
             })
         obstacles.sort(key=lambda o: o['timeOffset'])
 
@@ -434,8 +412,6 @@ def render_js(waves):
     lines.append('// per wall so the player steps rows on the beat.')
     lines.append('//')
     lines.append(f'// row: player row index the obstacle occupies, 0 (top/back) – {FRONT} (bottom/front).')
-    lines.append('// hw: collision half-width (AABB) — matches ObstacleSpawner collision.')
-    lines.append('// visualHh: drawn half-height only; never affects collision (always blocks exactly 1 row).')
     lines.append('// timeOffset: ms after wave start; events must be sorted ascending.')
     lines.append('')
     lines.append('export const WAVES = [')
@@ -447,7 +423,7 @@ def render_js(waves):
         lines.append('    obstacles: [')
         for o in w['obstacles']:
             lines.append(
-                f"      {{ timeOffset: {o['timeOffset']}, row: {o['row']}, hw: {o['hw']}, visualHh: {o['visualHh']} }},")
+                f"      {{ timeOffset: {o['timeOffset']}, row: {o['row']} }},")
         lines.append('    ],')
         lines.append('  },')
     lines.append('];')

@@ -103,8 +103,8 @@ export class HowToPlayScene extends Phaser.Scene {
       return pad;
     });
 
-    this.caption(LEFT_X, DEMO_Y + 110, 'Alternate ← → to run faster');
-    this.caption(RIGHT_X, DEMO_Y + 110, 'Press ↑ ↓ to change rows');
+    this.caption(LEFT_X, DEMO_Y + 110, 'Alternate ← → (A D) to run faster');
+    this.caption(RIGHT_X, DEMO_Y + 110, 'Press ↑ ↓ (W S) to change rows');
     this.caption(cx, 320, 'Dodge the obstacles');
     this.caption(cx, 345, "Don't let the chaser catch you");
 

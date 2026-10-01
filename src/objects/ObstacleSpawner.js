@@ -23,10 +23,14 @@ export function spriteFor(wi, oi) {
 // PLAYER_HH + collisionHh < ROW_HEIGHT → collisionHh < ROW_HEIGHT - PLAYER_HH = 19
 const COLLISION_HH = ROW_HEIGHT - PLAYER_HH - 1;
 
+// Half-width of the placeholder rectangle (half-height is PLAYER_HH), used only
+// when no character sprites are configured.
+const FALLBACK_HW = 25;
+
 // Every obstacle is spawned ahead of its arrival by its travel time; this is
 // the longest travel any obstacle can have (widest hitbox at MIN_SPEED), so
 // the per-frame scan only needs to look this far ahead of the cursor.
-const MAX_HW = Math.max(...OBSTACLE_SPRITES.map(s => s.hw), ...WAVES.flatMap(w => w.obstacles.map(o => o.hw)));
+const MAX_HW = Math.max(FALLBACK_HW, ...OBSTACLE_SPRITES.map(s => s.hw));
 const MAX_TRAVEL_MS = ((GAME_WIDTH + MAX_HW - PLAYER_X) / MIN_SPEED) * 1000;
 
 export class ObstacleSpawner {
@@ -43,8 +47,7 @@ export class ObstacleSpawner {
         this.pending.push({
           arrivalMs: wave.songTime + obs.timeOffset,
           row: obs.row,
-          hw: sprite ? sprite.hw : obs.hw,
-          visualHh: obs.visualHh,
+          hw: sprite ? sprite.hw : FALLBACK_HW,
           sprite,
           spawned: false,
         });
@@ -97,7 +100,7 @@ export class ObstacleSpawner {
     }
   }
 
-  _spawn({ row, hw, visualHh, sprite }) {
+  _spawn({ row, hw, sprite }) {
     const { y, scale, depth } = rowLayout(row);
     const x = GAME_WIDTH + hw;
     // Base-anchored: the bottom edge sits on the row's feet line (same line as
@@ -119,9 +122,8 @@ export class ObstacleSpawner {
       rect.setScale(fitSpriteScale(rect, sprite.hh, scale));
     } else {
       // Fallback placeholder when no character sprites are configured.
-      const visualY = y + (PLAYER_HH - visualHh) * scale;
       rect = this.scene.add
-        .rectangle(x, visualY, hw * 2, visualHh * 2, 0xff4444)
+        .rectangle(x, y, hw * 2, PLAYER_HH * 2, 0xff4444)
         .setScale(scale)
         .setDepth(depth);
     }

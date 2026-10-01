@@ -36,3 +36,30 @@ export function onDismiss(scene, { keys = {}, tap }) {
     });
   }
 }
+
+// Arrow keys plus their WASD aliases, one array of keys per direction.
+const DIRECTION_KEYS = {
+  left: ['LEFT', 'A'],
+  right: ['RIGHT', 'D'],
+  up: ['UP', 'W'],
+  down: ['DOWN', 'S'],
+};
+
+export function addDirectionKeys(scene) {
+  const keys = {};
+  for (const [dir, names] of Object.entries(DIRECTION_KEYS)) {
+    keys[dir] = names.map((name) => scene.input.keyboard.addKey(name));
+  }
+  return keys;
+}
+
+// JustDown on every alias (not short-circuited): JustDown clears the key's
+// flag, so a skipped alias pressed the same frame would fire again next frame.
+export function anyJustDown(keys) {
+  return keys.map((key) => Phaser.Input.Keyboard.JustDown(key)).some(Boolean);
+}
+
+// Event-style binding for menus: `dir` fires on any alias's keydown.
+export function onDirectionKey(scene, dir, fn) {
+  for (const name of DIRECTION_KEYS[dir]) scene.input.keyboard.on(`keydown-${name}`, fn);
+}

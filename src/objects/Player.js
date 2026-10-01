@@ -14,11 +14,10 @@ import {
 } from '../config/gameConfig.js';
 import { PLAYER_FRAMES } from '../config/runFrames.js';
 import { rowLayout } from '../rowLayout.js';
-import { bindPointer } from '../input.js';
+import { bindPointer, anyJustDown } from '../input.js';
 import { RunCycle } from './RunCycle.js';
 import { isDebugMode } from '../debugMode.js';
 
-const { JustDown } = Phaser.Input.Keyboard;
 
 export class Player {
   constructor(scene, x) {
@@ -36,18 +35,18 @@ export class Player {
     this._setRow(Math.floor(NUM_ROWS / 2)); // start in middle row
   }
 
-  update(cursors, delta) {
+  update(keys, delta) {
     // Fresh press (no auto-repeat) that alternates from lastKey → accelerate
-    if (JustDown(cursors.left)) this.tap('left');
-    if (JustDown(cursors.right)) this.tap('right');
+    if (anyJustDown(keys.left)) this.tap('left');
+    if (anyJustDown(keys.right)) this.tap('right');
 
     // Natural deceleration toward MIN_SPEED (skipped when debug pins the speed)
     if (!this.debug) this.speed = Math.max(MIN_SPEED, this.speed - DECEL_PER_SEC * (delta / 1000));
 
     // Vertical movement — snap to row on each key press
-    if (JustDown(cursors.up)) {
+    if (anyJustDown(keys.up)) {
       this.moveRow(-1);
-    } else if (JustDown(cursors.down)) {
+    } else if (anyJustDown(keys.down)) {
       this.moveRow(1);
     }
 
@@ -56,7 +55,7 @@ export class Player {
   }
 
   // Touch controls — tapping the left/right half of the screen is the
-  // alternating accel (same path as the LEFT/RIGHT arrows); a vertical swipe
+  // alternating accel (same path as the LEFT/RIGHT arrows and A/D); a vertical swipe
   // past SWIPE_THRESHOLD is a row change, one per pointer until release.
   // Tracked per pointer so two-thumb tapping and a swipe don't interfere.
   attachTouch(scene) {

@@ -4,6 +4,7 @@ import { TITLE_STYLE, HINT_STYLE, isDesktop } from '../config/ui.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { hasSeenHowToPlay } from '../seenHowToPlay.js';
 import { getStartMs } from '../songTime.js';
+import { onDirectionKey } from '../input.js';
 
 const OPTIONS = ['Start', 'How to Play'];
 
@@ -61,8 +62,8 @@ export class MenuScene extends Phaser.Scene {
       HINT_STYLE
     ).setOrigin(0.5);
 
-    this.input.keyboard.on('keydown-UP', () => this.move(-1));
-    this.input.keyboard.on('keydown-DOWN', () => this.move(1));
+    onDirectionKey(this, 'up', () => this.move(-1));
+    onDirectionKey(this, 'down', () => this.move(1));
     this.input.keyboard.on('keydown-ENTER', () => this.confirm());
     this.input.keyboard.on('keydown-SPACE', () => this.confirm());
 

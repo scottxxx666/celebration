@@ -4,11 +4,10 @@
 // (280px = 2x logical) so every sprite scales consistently in
 // `ObstacleSpawner.js`. `BootScene` preloads every entry here.
 //
-// Note: once a sprite is used, the wave's `visualHh` is ignored — height comes
-// only from `hh` here. And since wall sections spawn two obstacles per beat, a
-// wide `hw` (zombie 61 vs the authored 25) makes walls block a row for longer;
-// if walls feel unfair, lower `hw` toward 30 and let art trail past the hitbox
-// (the left, dangerous edge stays aligned).
+// Note: height comes only from `hh` here. Since wall sections spawn two
+// obstacles per beat, a wide `hw` makes walls block a row for longer; if walls
+// feel unfair, lower `hw` toward 30 and let art trail past the hitbox (the
+// left, dangerous edge stays aligned).
 export const OBSTACLE_SPRITES = [
   {
     key: 'obs-chaewon-flamingo',

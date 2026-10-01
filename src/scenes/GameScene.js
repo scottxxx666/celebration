@@ -9,6 +9,7 @@ import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
 import { sectionAt } from '../config/sections.js';
 import { getStartMs, formatSongTime } from '../songTime.js';
+import { addDirectionKeys } from '../input.js';
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
@@ -94,7 +95,7 @@ export class GameScene extends Phaser.Scene {
 
     this.player = new Player(this, PLAYER_X);
     this.player.attachTouch(this);
-    this.cursors = this.input.keyboard.createCursorKeys();
+    this.keys = addDirectionKeys(this);
     this.spawner = new ObstacleSpawner(this);
     if (startMs > 0) this.spawner.skipTo(startMs);
     this.enemy = new Enemy(this, ENEMY_START_X);
@@ -117,7 +118,7 @@ export class GameScene extends Phaser.Scene {
     // independent of the enemy ramp / beat-sync gate above
     const section = sectionAt(songMs);
 
-    this.player.update(this.cursors, delta);
+    this.player.update(this.keys, delta);
     if (this.conductor.beatTimeMs >= 0) {
       // Walk frames step 2×speedMult times per beat (8th notes normally,
       // triplets at 1.5×) so feet keep pace with the faster world; the phase

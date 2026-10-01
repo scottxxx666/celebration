@@ -22,7 +22,7 @@ guidance lives in `docs/art-brief.md`; this doc is the sizing spec.
 ## Logical target sizes
 
 Sizes the sprite will occupy on screen at front-row scale (w = `hw × 2`,
-h = `visualHh × 2`, from `gameConfig.js` / `waves.js`):
+h = `hh × 2`, from `gameConfig.js` / `OBSTACLE_SPRITES`):
 
 | Use | Logical box (px) | Notes |
 |---|---|---|
@@ -198,12 +198,12 @@ picked by `ObstacleSpawner.spriteFor()`:
 
 Things to be aware of:
 
-- The wave `visualHh` values in `waves.js` are unused once a sprite is
-  drawn — heights come only from the manifest `hh`. `visualHh` still sizes
-  the placeholder rectangle when `OBSTACLE_SPRITES` is empty.
+- Heights come only from the manifest `hh`. When `OBSTACLE_SPRITES` is
+  empty, the placeholder rectangle uses fixed defaults (`FALLBACK_HW` in
+  `ObstacleSpawner.js`, player half-height).
 - Wall sections spawn two obstacles per beat, so a wide sprite (e.g. the
-  zombie at `hw: 61`) makes those walls block a row noticeably longer than
-  the authored `hw: 25`. If walls feel unfair, lower the wide sprites' `hw`
+  zombie at `hw: 61`) makes those walls block a row noticeably longer.
+  If walls feel unfair, lower the wide sprites' `hw`
   toward 30 and accept some art trailing past the hitbox — the left
   (dangerous) edge stays aligned regardless.
 
