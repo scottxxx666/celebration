@@ -118,12 +118,17 @@ export class GameScene extends Phaser.Scene {
     const section = sectionAt(songMs);
 
     this.player.update(this.cursors, delta);
+    if (this.conductor.beatTimeMs >= 0) {
+      // Walk frames step 2×speedMult times per beat (8th notes normally,
+      // triplets at 1.5×) so feet keep pace with the faster world; the phase
+      // may jump once when entering/leaving a section with a different
+      // speedMult. Idempotent per index, so calling every frame is fine.
+      const walkIndex = this.conductor.gridIndex(2 * section.speedMult);
+      this.player.syncFrame(walkIndex);
+      this.enemy.syncFrame(walkIndex);
+    }
     if (this.conductor.halfBeatCrossed) {
-      // walk frame is the beat-grid index, so both characters stay in
-      // lockstep (and on phase after a ?t= seek); both bounce once beat sync
-      // is on
-      this.player.syncFrame(this.conductor.halfBeatIndex);
-      this.enemy.syncFrame(this.conductor.halfBeatIndex);
+      // both bounce once beat sync is on
       if (beatSyncOn) {
         this.player.pulse();
         this.enemy.pulse();

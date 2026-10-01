@@ -261,12 +261,13 @@ owned by the shared `RunCycle` helper (`src/objects/RunCycle.js`), used by
 both `Player.js` and `Enemy.js`; each just forwards `syncFrame()`/`pulse()`
 to its own `RunCycle` instance. The sprite renders with origin `(0.5, 1)` so
 its feet sit on the row's feet line (the same point the shadow anchors to).
-`syncFrame(halfBeatIndex)` shows frame `halfBeatIndex % frameCount` (via
-`setTexture`) on every 8th-note half-beat crossing from song start —
-`GameScene` calls it on both the player and the enemy together, so they stay
+`syncFrame(walkIndex)` shows frame `walkIndex % frameCount` (via
+`setTexture`, only when it changes); each frame from song start `GameScene`
+passes `conductor.gridIndex(2 × section.speedMult)` (8th notes normally,
+triplets at 1.5×) — it calls it on both the player and the enemy together, so they stay
 in lockstep and the phase is fixed by the beat grid (a `?t=` seek lands on
 the right frame). A free-running `RUN_FRAME_MS` timer (one 8th note) only
-animates each character's walk before the first crossing, and stops once
+animates each character's walk before the first sync, and stops once
 beat-locked; `pulse()` adds the beat squash only once beat sync is on,
 again called on both characters together. Collision is unaffected either
 way.

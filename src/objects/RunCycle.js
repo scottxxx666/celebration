@@ -3,9 +3,9 @@ import { addShadow, fitSpriteScale } from '../rowLayout.js';
 
 // Shared run-cycle visual: sprite (or fallback rectangle) + drop shadow, used
 // by both Player and Enemy so each can carry its own frame set. Once the beat
-// clock runs, GameScene calls syncFrame(halfBeatIndex) on each 8th-note
-// (half-beat) crossing and the frame is derived from that index, so the phase
-// is fixed by the beat grid. Before the first crossing, the free-running
+// clock runs, GameScene calls syncFrame(walkIndex) each frame with the
+// walk-grid index (2 x speedMult steps per beat) and the frame is derived from
+// that index, so the phase is fixed by the beat grid. Before the first sync, the free-running
 // RUN_FRAME_MS timer in update() animates the walk; it stops for good once
 // beat-locked.
 export class RunCycle {
@@ -61,13 +61,13 @@ export class RunCycle {
     this.shadow.setPosition(x, feetY).setScale(scale).setDepth(depth - 0.5);
   }
 
-  // Show the frame for an 8th-note grid index (halfBeatIndex mod frame count)
-  // and lock out the free-running timer. Called on 8th-note crossings; a no-op
-  // on the frame when frames is empty.
-  syncFrame(halfBeatIndex) {
+  // Show the frame for a walk-grid index (index mod frame count) and lock out
+  // the free-running timer. Safe to call every frame; a no-op on the frame when
+  // frames is empty.
+  syncFrame(walkIndex) {
     this._beatLocked = true;
     if (this.frames.length === 0) return;
-    this._showFrame(halfBeatIndex % this.frames.length);
+    this._showFrame(walkIndex % this.frames.length);
   }
 
   // Pre-beat fallback: advance one frame (wrapping) and restart the timer.
