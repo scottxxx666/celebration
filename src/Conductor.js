@@ -1,4 +1,19 @@
-import { BEAT_MS, FIRST_BEAT_OFFSET_MS } from './config/gameConfig.js';
+import { BEAT_MS, FIRST_BEAT_OFFSET_MS, TRACK_BPM } from './config/gameConfig.js';
+
+const trackBeatMs = 60000 / TRACK_BPM;
+// FIRST_BEAT_OFFSET_MS sits on real beat 4 in the numbering of tools/gen-waves.py (real beat 0 = first downbeat)
+const OFFSET_REAL_BEAT = 4;
+
+// Nearest real track beat (always TRACK_BPM, whatever half-time BPM is set) to
+// `ms`. Pure, for offline tools like the beat checker.
+export function snapToTrackBeat(ms) {
+  return FIRST_BEAT_OFFSET_MS + Math.round((ms - FIRST_BEAT_OFFSET_MS) / trackBeatMs) * trackBeatMs;
+}
+
+// Real-beat number (gen-waves.py numbering) of the nearest track beat to `ms`.
+export function trackBeatOf(ms) {
+  return Math.round((ms - FIRST_BEAT_OFFSET_MS) / trackBeatMs) + OFFSET_REAL_BEAT;
+}
 
 // Minimal beat clock and the single read point for song time: polled once per
 // frame by GameScene, consumed by anything that needs song time or beat

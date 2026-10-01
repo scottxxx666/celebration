@@ -4,6 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "check:beats": "node tools/check-beats.js",
+    "fix:beats": "node tools/check-beats.js --fix",
+    "prebuild": "yarn check:beats",
     "build": "vite build",
     "preview": "vite preview"
   },
