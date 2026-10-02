@@ -10,6 +10,7 @@ import {
   PLAYER_HH,
   PLAYER_SPRITE_HH,
   PLAYER_RUN_STEPS_PER_BEAT,
+  PLAYER_TAP_RUN_IDLE_MS,
   SWIPE_THRESHOLD,
   ENEMY_CRUISE_SPEED,
 } from '../config/gameConfig.js';
@@ -33,6 +34,8 @@ export class Player {
       hh: PLAYER_HH,
       fallbackColor: 0x00ff88,
       stepsPerBeat: PLAYER_RUN_STEPS_PER_BEAT,
+      // `?debug` ignores taps, so it keeps the beat-locked cycle
+      tapIdleMs: this.debug ? 0 : PLAYER_TAP_RUN_IDLE_MS,
     });
     this._setRow(Math.floor(NUM_ROWS / 2)); // start in middle row
   }
@@ -82,12 +85,14 @@ export class Player {
     });
   }
 
-  // Alternating tap: a press that differs from the last accelerates; a repeat
-  // of the same side does nothing. Shared by keyboard and touch input.
+  // Alternating tap: a press that differs from the last accelerates and
+  // advances the run cycle one frame; a repeat of the same side does nothing.
+  // Shared by keyboard and touch input.
   tap(side) {
     if (this.lastKey === side) return;
     if (!this.debug) this.speed = Math.min(this.speed + ACCEL_STEP, MAX_SPEED);
     this.lastKey = side;
+    this.runCycle.step();
   }
 
   // Row snap, clamped to the walk zone. dir = -1 (up) or +1 (down).

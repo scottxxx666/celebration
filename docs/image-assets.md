@@ -274,6 +274,14 @@ beat-locked; `pulse()` adds the beat squash only once beat sync is on,
 again called on both characters together. Collision is unaffected either
 way.
 
+The player is tap-driven while the user is tapping (`PLAYER_TAP_RUN_IDLE_MS`,
+non-zero): each accelerating tap calls `step()`, which advances exactly one
+frame and holds it — `syncFrame()` and the timer are ignored — until that
+long passes without another tap, when the beat-locked cycle above takes over
+again (it also runs before the first tap, so the character never freezes).
+Set it to 0 (or use `?debug`, which ignores taps) for the beat-locked cycle
+only.
+
 ## Road & background (the two scenery layers)
 
 `GameScene` currently draws these as flat rectangles (`GameScene.js` create):

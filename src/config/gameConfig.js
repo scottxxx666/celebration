@@ -90,6 +90,15 @@ export const BEAT_MS = 60000 / BPM;
 // character runs from the very first frame, before the beat clock starts.
 export const PLAYER_RUN_STEPS_PER_BEAT = 6;
 export const ENEMY_RUN_STEPS_PER_BEAT = 2;
+// Tap-driven player run: each accelerating (alternating) tap advances the run
+// cycle by exactly one frame, and it holds that frame until the next tap — so
+// feet follow the fingers instead of the beat grid. After this long without a
+// tap (and before the first one) the cycle falls back to the beat-locked run
+// at PLAYER_RUN_STEPS_PER_BEAT, so the character never freezes; keep it well
+// above the intended tap interval (~400 ms) or the two would fight between
+// taps. 0 = always beat-locked (also what `?debug` uses, since it ignores
+// taps).
+export const PLAYER_TAP_RUN_IDLE_MS = 80;
 export const FIRST_BEAT_OFFSET_MS = 2143;
 
 // Default user volume when nothing is saved — sources play at full loudness,

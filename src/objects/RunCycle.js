@@ -8,12 +8,17 @@ import { addShadow, fitSpriteScale } from '../rowLayout.js';
 // beat) and the frame is derived from that index, so the phase is fixed by the
 // beat grid. Before the first sync, a free-running timer in update() animates
 // the walk at the same stepsPerBeat rate; it stops for good once beat-locked.
+// With a non-zero tapIdleMs, step() takes the cycle over: each call advances
+// one frame and holds it, and syncFrame()/the timer are ignored until
+// tapIdleMs passes without another step(), when they resume.
 export class RunCycle {
-  constructor(scene, frames, { spriteHh, hw, hh, fallbackColor, stepsPerBeat }) {
+  constructor(scene, frames, { spriteHh, hw, hh, fallbackColor, stepsPerBeat, tapIdleMs = 0 }) {
     this.frames = frames;
     this.spriteHh = spriteHh;
     this.hh = hh;
     this.frameMs = BEAT_MS / stepsPerBeat; // pre-beat fallback frame period
+    this.tapIdleMs = tapIdleMs;
+    this._sinceStepMs = Infinity; // ms since the last step(); Infinity = never stepped
 
     this._frame = 0; // current frame index (only used when frames is non-empty)
     this._frameTimer = 0; // ms since the last frame step (pre-beat fallback)
@@ -33,7 +38,8 @@ export class RunCycle {
   }
 
   update(delta) {
-    if (!this._beatLocked) {
+    this._sinceStepMs += delta;
+    if (!this._tapHeld() && !this._beatLocked) {
       this._frameTimer += delta;
       if (this._frameTimer >= this.frameMs) this._timerStep();
     }
@@ -64,16 +70,33 @@ export class RunCycle {
 
   // Show the frame for a walk-grid index (index mod frame count) and lock out
   // the free-running timer. Safe to call every frame; a no-op on the frame when
-  // frames is empty.
+  // frames is empty or while a recent step() holds the cycle.
   syncFrame(walkIndex) {
     this._beatLocked = true;
-    if (this.frames.length === 0) return;
+    if (this.frames.length === 0 || this._tapHeld()) return;
     this._showFrame(walkIndex % this.frames.length);
+  }
+
+  // Tap-driven mode: advance one frame (wrapping) and hold it against the
+  // beat grid/timer for tapIdleMs. No-op when tapIdleMs is 0.
+  step() {
+    if (this.tapIdleMs <= 0) return;
+    this._sinceStepMs = 0;
+    this._nextFrame();
+  }
+
+  // True while the last step() is recent enough to own the frame.
+  _tapHeld() {
+    return this._sinceStepMs < this.tapIdleMs;
   }
 
   // Pre-beat fallback: advance one frame (wrapping) and restart the timer.
   _timerStep() {
     this._frameTimer = 0;
+    this._nextFrame();
+  }
+
+  _nextFrame() {
     if (this.frames.length === 0) return;
     this._showFrame((this._frame + 1) % this.frames.length);
   }
