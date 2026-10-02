@@ -25,7 +25,7 @@ export const PLAYER_HH = 45;
 // the sprite's logical half-height at front-row scale (like obstacle `hh` in
 // obstacleSprites.js) — drives display scale only, the collision AABB stays
 // PLAYER_HW/PLAYER_HH.
-export const PLAYER_FRAME_COUNT = 4;
+export const PLAYER_FRAME_COUNT = 3;
 export const PLAYER_SPRITE_HH = 70;
 
 // Player rows
