@@ -19,6 +19,8 @@ import {
   OBSTACLE_TIMING_SPEED,
   OBSTACLE_TIMING_SWITCH_MS,
   BEAT_SYNC_START_MS,
+  PLAYER_RUN_STEPS_PER_BEAT,
+  ENEMY_RUN_STEPS_PER_BEAT,
   DISCO_FLASH_ALPHA,
   BEAT_FLASH_ALPHA,
   BEAT_FLASH_OFFBEAT_RATIO,
@@ -120,13 +122,13 @@ export class GameScene extends Phaser.Scene {
 
     this.player.update(this.keys, delta);
     if (this.conductor.beatTimeMs >= 0) {
-      // Walk frames step 2×speedMult times per beat (8th notes normally,
-      // triplets at 1.5×) so feet keep pace with the faster world; the phase
-      // may jump once when entering/leaving a section with a different
-      // speedMult. Idempotent per index, so calling every frame is fine.
-      const walkIndex = this.conductor.gridIndex(2 * section.speedMult);
-      this.player.syncFrame(walkIndex);
-      this.enemy.syncFrame(walkIndex);
+      // Walk frames step (character's steps per beat)×speedMult times per
+      // beat so feet keep pace with the faster world; the phase may jump once
+      // when entering/leaving a section with a different speedMult.
+      // Idempotent per index, so calling every frame is fine.
+      const { speedMult } = section;
+      this.player.syncFrame(this.conductor.gridIndex(PLAYER_RUN_STEPS_PER_BEAT * speedMult));
+      this.enemy.syncFrame(this.conductor.gridIndex(ENEMY_RUN_STEPS_PER_BEAT * speedMult));
     }
     if (this.conductor.halfBeatCrossed) {
       // both bounce once beat sync is on

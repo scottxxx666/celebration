@@ -9,6 +9,7 @@ import {
   PLAYER_HW,
   PLAYER_HH,
   PLAYER_SPRITE_HH,
+  PLAYER_RUN_STEPS_PER_BEAT,
   SWIPE_THRESHOLD,
   ENEMY_CRUISE_SPEED,
 } from '../config/gameConfig.js';
@@ -31,6 +32,7 @@ export class Player {
       hw: PLAYER_HW,
       hh: PLAYER_HH,
       fallbackColor: 0x00ff88,
+      stepsPerBeat: PLAYER_RUN_STEPS_PER_BEAT,
     });
     this._setRow(Math.floor(NUM_ROWS / 2)); // start in middle row
   }

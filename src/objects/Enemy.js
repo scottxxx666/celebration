@@ -4,6 +4,7 @@ import {
   ENEMY_HW,
   ENEMY_HH,
   ENEMY_SPRITE_HH,
+  ENEMY_RUN_STEPS_PER_BEAT,
   ENEMY_CRUISE_SPEED,
   ENEMY_RAMP_START_MS,
   ENEMY_RAMP_END_MS,
@@ -24,6 +25,7 @@ export class Enemy {
       hw: ENEMY_HW,
       hh: ENEMY_HH,
       fallbackColor: 0xff3333,
+      stepsPerBeat: ENEMY_RUN_STEPS_PER_BEAT,
     });
     this._setRow(Math.floor(NUM_ROWS / 2));
   }

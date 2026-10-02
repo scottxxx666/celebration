@@ -250,8 +250,10 @@ Registration is a pair of config values per character in
   scale (like obstacle `hh`); drives display scale only
   (`(spriteHh * 2 / textureHeight) * rowScale`) — the collision AABB stays
   `PLAYER_HW`/`PLAYER_HH` or `ENEMY_HW`/`ENEMY_HH`.
-- `RUN_FRAME_MS` — the shared free-running walk-cycle period (one 8th note),
-  used by both characters.
+- `PLAYER_RUN_STEPS_PER_BEAT` / `ENEMY_RUN_STEPS_PER_BEAT` — frame steps per
+  game beat. The player's 3-frame cycle at 6 steps lands a foot contact
+  (frame 0) on every real track beat; the enemy's 2-frame cycle steps on
+  8th notes (2).
 
 `src/config/runFrames.js` builds `PLAYER_FRAMES` and `ENEMY_FRAMES`
 (`{ key, file }[]`) from their respective `*_FRAME_COUNT`; `BootScene`
@@ -263,10 +265,10 @@ to its own `RunCycle` instance. The sprite renders with origin `(0.5, 1)` so
 its feet sit on the row's feet line (the same point the shadow anchors to).
 `syncFrame(walkIndex)` shows frame `walkIndex % frameCount` (via
 `setTexture`, only when it changes); each frame from song start `GameScene`
-passes `conductor.gridIndex(2 × section.speedMult)` (8th notes normally,
-triplets at 1.5×) — it calls it on both the player and the enemy together, so they stay
-in lockstep and the phase is fixed by the beat grid (a `?t=` seek lands on
-the right frame). A free-running `RUN_FRAME_MS` timer (one 8th note) only
+passes each character `conductor.gridIndex(<its steps per beat> ×
+section.speedMult)` — both indices come off the same beat grid, so the phase
+is fixed by the music (a `?t=` seek lands on the right frame). A free-running
+timer at the same per-character rate (`BEAT_MS / stepsPerBeat`) only
 animates each character's walk before the first sync, and stops once
 beat-locked; `pulse()` adds the beat squash only once beat sync is on,
 again called on both characters together. Collision is unaffected either

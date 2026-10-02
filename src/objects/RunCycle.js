@@ -1,18 +1,19 @@
-import { RUN_FRAME_MS } from '../config/gameConfig.js';
+import { BEAT_MS } from '../config/gameConfig.js';
 import { addShadow, fitSpriteScale } from '../rowLayout.js';
 
 // Shared run-cycle visual: sprite (or fallback rectangle) + drop shadow, used
-// by both Player and Enemy so each can carry its own frame set. Once the beat
-// clock runs, GameScene calls syncFrame(walkIndex) each frame with the
-// walk-grid index (2 x speedMult steps per beat) and the frame is derived from
-// that index, so the phase is fixed by the beat grid. Before the first sync, the free-running
-// RUN_FRAME_MS timer in update() animates the walk; it stops for good once
-// beat-locked.
+// by both Player and Enemy so each can carry its own frame set and step rate.
+// Once the beat clock runs, GameScene calls syncFrame(walkIndex) each frame
+// with the character's walk-grid index (stepsPerBeat x speedMult steps per
+// beat) and the frame is derived from that index, so the phase is fixed by the
+// beat grid. Before the first sync, a free-running timer in update() animates
+// the walk at the same stepsPerBeat rate; it stops for good once beat-locked.
 export class RunCycle {
-  constructor(scene, frames, { spriteHh, hw, hh, fallbackColor }) {
+  constructor(scene, frames, { spriteHh, hw, hh, fallbackColor, stepsPerBeat }) {
     this.frames = frames;
     this.spriteHh = spriteHh;
     this.hh = hh;
+    this.frameMs = BEAT_MS / stepsPerBeat; // pre-beat fallback frame period
 
     this._frame = 0; // current frame index (only used when frames is non-empty)
     this._frameTimer = 0; // ms since the last frame step (pre-beat fallback)
@@ -34,7 +35,7 @@ export class RunCycle {
   update(delta) {
     if (!this._beatLocked) {
       this._frameTimer += delta;
-      if (this._frameTimer >= RUN_FRAME_MS) this._timerStep();
+      if (this._frameTimer >= this.frameMs) this._timerStep();
     }
 
     // Recover from the beat squash

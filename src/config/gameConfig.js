@@ -82,12 +82,14 @@ export const TRACK_BPM = 150.55;
 export const BPM = TRACK_BPM / 2;   // half-time game beat (~797 ms) — obstacles land on beats and half-beats
 // export const BPM = TRACK_BPM;    // true-tempo game beat (~398 ms) — swap in to compare
 export const BEAT_MS = 60000 / BPM;
-// Free-running walk-cycle period (one 8th note, shared by player and enemy run
-// cycles) so a character walks from the very first frame (the beat clock fires
-// nothing before the first downbeat + audio start latency); each half-beat
-// crossing re-steps and resets this timer, so once beats arrive the cycle is
-// phase-locked to 8th notes.
-export const RUN_FRAME_MS = BEAT_MS / 2;
+// Run-cycle frame steps per game beat, per character (GameScene multiplies by
+// the section's speedMult). The player's 3-frame cycle at 6 steps puts a foot
+// contact (frame 0) on every half game beat, i.e. every real track beat; the
+// enemy's 2-frame cycle steps on 8th notes. Also sets each character's
+// free-running pre-beat frame period (BEAT_MS / steps) in RunCycle, so a
+// character runs from the very first frame, before the beat clock starts.
+export const PLAYER_RUN_STEPS_PER_BEAT = 6;
+export const ENEMY_RUN_STEPS_PER_BEAT = 2;
 export const FIRST_BEAT_OFFSET_MS = 2143;
 
 // Default user volume when nothing is saved — sources play at full loudness,
