@@ -26,7 +26,7 @@ export const PLAYER_HH = 45;
 // obstacleSprites.js) — drives display scale only, the collision AABB stays
 // PLAYER_HW/PLAYER_HH.
 export const PLAYER_FRAME_COUNT = 3;
-export const PLAYER_SPRITE_HH = 70;
+export const PLAYER_SPRITE_HH = 80;
 
 // Player rows
 export const NUM_ROWS = 3;
@@ -50,11 +50,10 @@ export const ENEMY_HH = 39;          // half-height
 // enemy)"): same scheme as the player's — number of `run-<i>.png` frames
 // prepped by `tools/prep-run-frames.py --target enemy` (0 = keep the red
 // placeholder rectangle) and the sprite's logical half-height at front-row
-// scale; 39 matches the current 78px-tall placeholder so swapping in art
-// doesn't change size. Drives display scale only, collision AABB stays
-// ENEMY_HW/ENEMY_HH.
+// scale; 80 matches PLAYER_SPRITE_HH so the chaser draws as tall as the
+// player. Drives display scale only, collision AABB stays ENEMY_HW/ENEMY_HH.
 export const ENEMY_FRAME_COUNT = 2;
-export const ENEMY_SPRITE_HH = 39;
+export const ENEMY_SPRITE_HH = 80;
 
 // Enemy speed ramp, anchored to song time (see docs/speed-design.md)
 export const ENEMY_CRUISE_SPEED = 565;    // after ramp; quarter-note tapping at 150.55 BPM (2.51 taps/s) sustains ~575, so 565 leaves an escape margin for on-rhythm play

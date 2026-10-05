@@ -33,7 +33,7 @@ h = `hh × 2`, from `gameConfig.js` / `OBSTACLE_SPRITES`):
 | Obstacle — big block | 80 × 100 | wave enders |
 | Obstacle — wall | 60 × 140 | gap-run pairs; tall art may extend above the walk zone (by design) |
 | Obstacle — character sprites | varies (`hw × 2` × `hh × 2`, `OBSTACLE_SPRITES`) | replaces the red rectangle; see below |
-| **Chaser (enemy)** | collision 52 × 78, art `ENEMY_SPRITE_HH × 2` tall | `ENEMY_HW/HH = 26/39` for collision; art height comes from `ENEMY_SPRITE_HH` (`gameConfig.js`, defaults to matching collision height), width follows the source aspect |
+| **Chaser (enemy)** | collision 52 × 78, art `ENEMY_SPRITE_HH × 2` tall | `ENEMY_HW/HH = 26/39` for collision; art height comes from `ENEMY_SPRITE_HH` (`gameConfig.js`, 80 — same as `PLAYER_SPRITE_HH`, taller than the collision box), width follows the source aspect |
 
 Obstacles with similar aspect ratios can share one sprite (the engine scales
 by width) — a minimal set is **4 obstacle sprites**: square-ish (~1:1),
@@ -176,8 +176,8 @@ python3 tools/prep-obstacle-image.py original_images/kazuha_zombie.png \
 ```
 
 It crops to the alpha bounding box (`Image.getbbox()`, no padding) and
-resizes so the output height matches `--height` (default 280 = 2x the
-tallest logical obstacle height, 140) — width follows the source aspect, so
+resizes so the output height matches `--height` (default 280 = 1.75x the
+tallest logical obstacle height, 160) — width follows the source aspect, so
 sprites of different builds don't get distorted to a common box.
 
 Each prepped PNG is registered in `src/config/obstacleSprites.js`
@@ -202,7 +202,7 @@ Things to be aware of:
   empty, the placeholder rectangle uses fixed defaults (`FALLBACK_HW` in
   `ObstacleSpawner.js`, player half-height).
 - Wall sections spawn two obstacles per beat, so a wide sprite (e.g. the
-  zombie at `hw: 61`) makes those walls block a row noticeably longer.
+  zombie at `hw: 70`) makes those walls block a row noticeably longer.
   If walls feel unfair, lower the wide sprites' `hw`
   toward 30 and accept some art trailing past the hitbox — the left
   (dangerous) edge stays aligned regardless.
