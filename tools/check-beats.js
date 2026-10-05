@@ -1,5 +1,6 @@
 // Verifies every live section time (sections.js) and every wave/obstacle time
-// (waves.js) sits on a real track beat. Usage: yarn check:beats [--fix]
+// (waves.js) sits on a real track beat. Obstacle timeOffset is in real track
+// beats and may subdivide the beat down to 1/WAVE_BEAT_DIVISIONS. Usage: yarn check:beats [--fix]
 // --fix snaps off-grid section times (sections.js) and wave times (waves.js)
 // in place to the nearest real track beat. Regenerating waves.js with
 // tools/gen-waves.py overwrites such edits.
@@ -9,8 +10,10 @@ import { WAVES } from '../src/config/waves.js';
 import { snapToTrackBeat, trackBeatOf } from '../src/Conductor.js';
 
 const TOLERANCE_MS = 1;
-// songTime and timeOffset are each rounded to integer ms, so errors can stack to ~1 ms.
+// songTime is rounded to integer ms (up to 0.5 ms off the beat); timeOffset is in beats.
 const WAVE_TOLERANCE_MS = 1.5;
+// Finest obstacle subdivision allowed: timeOffset must be a multiple of 1/4 track beat.
+const WAVE_BEAT_DIVISIONS = 4;
 const FIELDS = ['startMs', 'endMs'];
 const SOURCE = new URL('../src/config/sections.js', import.meta.url);
 const WAVES_SOURCE = new URL('../src/config/waves.js', import.meta.url);
@@ -65,18 +68,20 @@ for (const wave of WAVES) {
   const newSongTime = songOff ? Math.round(snapToTrackBeat(songTime)) : songTime;
   if (newSongTime !== songTime) waveChanges.push({ name: wave.name, kind: 'songTime', from: songTime, to: newSongTime });
   checkWaveTime(`waves.${wave.name}.songTime`, songTime, newSongTime);
+  // Obstacle offsets are in real track beats from the wave start, so the wave
+  // start carries the grid: an offset only has to sit on a beat subdivision.
   wave.obstacles.forEach((o, i) => {
-    const abs = songTime + o.timeOffset;
-    const off = Math.abs(snapToTrackBeat(abs) - abs) > WAVE_TOLERANCE_MS;
-    const to = Math.round(snapToTrackBeat(abs)) - newSongTime;
-    if ((off || newSongTime !== songTime) && to !== o.timeOffset) {
-      waveChanges.push({ name: wave.name, kind: 'timeOffset', index: i, from: o.timeOffset, to });
-    }
-    checkWaveTime(`waves.${wave.name}.obstacles[${i}]`, abs, newSongTime + to);
+    waveTimes++;
+    const to = Math.round(o.timeOffset * WAVE_BEAT_DIVISIONS) / WAVE_BEAT_DIVISIONS;
+    if (to === o.timeOffset) return;
+    waveFailures++;
+    waveChanges.push({ name: wave.name, kind: 'timeOffset', index: i, from: o.timeOffset, to });
+    const arrow = fix ? ` → ${to}` : '';
+    console.log(`✗ waves.${wave.name}.obstacles[${i}].timeOffset ${o.timeOffset}${arrow} (not a 1/${WAVE_BEAT_DIVISIONS}-beat step)`);
   });
 }
 if (!waveFailures) {
-  console.log(`✓ waves: ${waveTimes} times on a real track beat`);
+  console.log(`✓ waves: ${waveTimes} times on the track beat grid`);
 } else if (!fix) {
   console.log(`\n${waveFailures} off-grid wave time(s). Run \`yarn fix:beats\` to snap them in place.`);
   console.log('Regenerating with `uv run --with librosa --with numpy python tools/gen-waves.py` overwrites hand edits.');

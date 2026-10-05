@@ -78,6 +78,7 @@ export const BEAT_SYNC_START_MS = 14896;
 // game's beat 0 is anchored there and downbeats (beatIndex % 4 === 0) land on
 // phrase starts on either grid below.
 export const TRACK_BPM = 150.55;
+export const TRACK_BEAT_MS = 60000 / TRACK_BPM;   // real track beat (~398.54 ms) — the unit of waves.js timeOffset
 export const BPM = TRACK_BPM / 2;   // half-time game beat (~797 ms) — obstacles land on beats and half-beats
 // export const BPM = TRACK_BPM;    // true-tempo game beat (~398 ms) — swap in to compare
 export const BEAT_MS = 60000 / BPM;

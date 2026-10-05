@@ -1,6 +1,6 @@
-import { BEAT_MS, FIRST_BEAT_OFFSET_MS, TRACK_BPM } from './config/gameConfig.js';
+import { BEAT_MS, FIRST_BEAT_OFFSET_MS, TRACK_BEAT_MS } from './config/gameConfig.js';
 
-const trackBeatMs = 60000 / TRACK_BPM;
+const trackBeatMs = TRACK_BEAT_MS;
 // FIRST_BEAT_OFFSET_MS sits on real beat 4 in the numbering of tools/gen-waves.py (real beat 0 = first downbeat)
 const OFFSET_REAL_BEAT = 4;
 

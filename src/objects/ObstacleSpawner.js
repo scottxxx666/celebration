@@ -1,4 +1,4 @@
-import { GAME_WIDTH, PLAYER_X, MIN_SPEED, ROW_HEIGHT, PLAYER_HH } from '../config/gameConfig.js';
+import { GAME_WIDTH, PLAYER_X, MIN_SPEED, ROW_HEIGHT, PLAYER_HH, TRACK_BEAT_MS } from '../config/gameConfig.js';
 import { WAVES } from '../config/waves.js';
 import { OBSTACLE_SPRITES } from '../config/obstacleSprites.js';
 import { rowLayout, addShadow, fitSpriteScale } from '../rowLayout.js';
@@ -45,7 +45,7 @@ export class ObstacleSpawner {
       wave.obstacles.forEach((obs, oi) => {
         const sprite = spriteFor(wi, oi);
         this.pending.push({
-          arrivalMs: wave.songTime + obs.timeOffset,
+          arrivalMs: wave.songTime + obs.timeOffset * TRACK_BEAT_MS, // timeOffset is in real track beats
           row: obs.row,
           hw: sprite ? sprite.hw : FALLBACK_HW,
           sprite,

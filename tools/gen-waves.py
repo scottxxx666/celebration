@@ -301,7 +301,7 @@ def build_waves(env_full, env_kick, env_snare, times, duration_s):
             section_end_ms = beat_ms(end)
             obstacles = []
             for n, g in zip(wall_beats, gap_rows):
-                t_off = round(beat_ms(n) - section_start_ms)
+                t_off = n - start
                 for row in range(NUM_ROWS):
                     if row == g:
                         continue
@@ -373,7 +373,7 @@ def build_waves(env_full, env_kick, env_snare, times, duration_s):
 
         obstacles = []
         for o in obstacles_raw:
-            time_offset = round(beat_ms(o['beat']) - section_start_ms)
+            time_offset = o['beat'] - start
             obstacles.append({
                 'timeOffset': time_offset,
                 'row': o['row'],
@@ -412,7 +412,8 @@ def render_js(waves):
     lines.append('// per wall so the player steps rows on the beat.')
     lines.append('//')
     lines.append(f'// row: player row index the obstacle occupies, 0 (top/back) – {FRONT} (bottom/front).')
-    lines.append('// timeOffset: ms after wave start; events must be sorted ascending.')
+    lines.append('// timeOffset: real track beats after wave start (arrival = songTime +')
+    lines.append('// timeOffset * beat length); events must be sorted ascending.')
     lines.append('')
     lines.append('export const WAVES = [')
     for w in waves:
@@ -435,14 +436,14 @@ def sanity_check(waves, wall_section_names):
     all_events = []
     for w in waves:
         for o in w['obstacles']:
-            all_events.append(w['songTime'] + o['timeOffset'])
+            all_events.append(w['songTime'] + o['timeOffset'] * BEAT_MS)
     distinct = sorted(set(all_events))
     assert distinct, 'no obstacles generated at all'
-    assert distinct[0] >= 3000, f'first obstacle at {distinct[0]}ms, expected >= 3000ms'
+    assert distinct[0] >= 3000, f'first obstacle at {distinct[0]:.0f}ms, expected >= 3000ms'
     min_gap_beat_ms = 2 * BEAT_MS  # ~797ms
     for a, b in zip(distinct, distinct[1:]):
         assert (b - a) >= min_gap_beat_ms - 1, (
-            f'gap {b - a}ms between {a}ms and {b}ms is below the {min_gap_beat_ms:.1f}ms minimum')
+            f'gap {b - a:.0f}ms between {a:.0f}ms and {b:.0f}ms is below the {min_gap_beat_ms:.1f}ms minimum')
 
     for w in waves:
         if w['name'] not in wall_section_names:
@@ -454,7 +455,7 @@ def sanity_check(waves, wall_section_names):
         for t in sorted(by_t):
             rows = by_t[t]
             assert len(rows) == NUM_ROWS - 1 and len(set(rows)) == NUM_ROWS - 1, (
-                f"wall {w['name']} at {t}ms has rows {rows}, expected {NUM_ROWS - 1} distinct rows")
+                f"wall {w['name']} at beat offset {t} has rows {rows}, expected {NUM_ROWS - 1} distinct rows")
             gap = [r for r in range(NUM_ROWS) if r not in rows][0]
             gap_rows.append(gap)
         for a, b in zip(gap_rows, gap_rows[1:]):
