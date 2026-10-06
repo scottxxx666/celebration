@@ -12,22 +12,22 @@ export const OBSTACLE_SPRITES = [
   {
     key: 'obs-chaewon-flamingo',
     file: 'assets/sprites/obstacles/chaewon-flamingo.png',
-    hh: 80, // logical half-height at front-row scale; drives the uniform
+    hh: 70, // logical half-height at front-row scale; drives the uniform
             // scale applied to the sprite (width follows the image aspect)
-    hw: 40, // collision AABB half-width AND spawn-timing distance — tuned
+    hw: 35, // collision AABB half-width AND spawn-timing distance — tuned
             // per image from its displayed half-width at this hh; collision
             // height is still fixed to one row (see collisionHh)
   },
   {
     key: 'obs-kazuha-zombie',
     file: 'assets/sprites/obstacles/kazuha-zombie.png',
-    hh: 80,
-    hw: 70,
+    hh: 70,
+    hw: 61,
   },
   {
     key: 'obs-sakura-chainsaw',
     file: 'assets/sprites/obstacles/sakura-chainsaw.png',
-    hh: 71,
-    hw: 64,
+    hh: 62,
+    hw: 56,
   },
 ];
