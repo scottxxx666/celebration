@@ -20,11 +20,12 @@ screen the OS then upscales that buffer. Source resolution above 720p is wasted;
 | Quality    | CRF 20–22, `preset slow` (≈ 2.5–4 Mbps at 720p) | dark, high-motion footage needs the headroom — blocking shows badly in shadows |
 | Framerate  | keep source (24/30), max 30                    | |
 | Audio      | AAC 128–160 kbps stereo, 48 kHz                | |
-| File size  | ≤ ~5–8 MB per clip                             | preloaded in `BootScene` before the title shows; mobile users may be on cellular |
+| File size  | ≤ ~5–8 MB per clip                             | not preloaded — `BootScene`'s `load.video` only registers the URL (Phaser 3.90); the browser starts streaming when `IntroScene` creates the Video object, so size and `+faststart` decide how soon the first frame shows; mobile users may be on cellular |
 
-The current `intro.mp4` (854×480 @ 485 kbps) is well below this — re-export from the
-original master if available; visible macroblocking in dark scenes is the encode,
-not the renderer.
+The current `intro.mp4` (854×480 @ 481 kbps, 42.7 s) is well below this, but it is a
+stream copy (`-c copy`, no re-encode) of the only source available, so re-encoding it
+cannot help — it needs a higher-quality master; visible macroblocking in dark scenes
+is the source encode, not the renderer.
 
 ## Reference command
 
