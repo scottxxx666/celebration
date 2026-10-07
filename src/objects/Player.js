@@ -118,6 +118,10 @@ export class Player {
     this.runCycle.pulse();
   }
 
+  setShadowGlow(on) {
+    this.runCycle.shadowGlow = on;
+  }
+
   // AABB overlap check against an obstacle { x, y, hw, hh }
   overlaps(obs) {
     return (

@@ -1,7 +1,7 @@
 import { GAME_WIDTH, PLAYER_X, MIN_SPEED, ROW_HEIGHT, PLAYER_HH, TRACK_BEAT_MS } from '../config/gameConfig.js';
 import { WAVES } from '../config/waves.js';
 import { OBSTACLE_SPRITES } from '../config/obstacleSprites.js';
-import { rowLayout, addShadow, fitSpriteScale } from '../rowLayout.js';
+import { rowLayout, addShadow, styleShadow, fitSpriteScale } from '../rowLayout.js';
 
 // Deterministic sprite pick for wave `wi`, obstacle index `oi` — avoids
 // repeating the previous obstacle's sprite within the same wave (when
@@ -26,6 +26,9 @@ const COLLISION_HH = ROW_HEIGHT - PLAYER_HH - 1;
 // Half-width of the placeholder rectangle (half-height is PLAYER_HH), used only
 // when no character sprites are configured.
 const FALLBACK_HW = 25;
+// Darker than the player's shadow so the ground contact — which marks the
+// blocked row — reads at a glance despite tall art.
+const SHADOW_ALPHA = 0.5;
 
 // Every obstacle is spawned ahead of its arrival by its travel time; this is
 // the longest travel any obstacle can have (widest hitbox at MIN_SPEED), so
@@ -36,7 +39,8 @@ const MAX_TRAVEL_MS = ((GAME_WIDTH + MAX_HW - PLAYER_X) / MIN_SPEED) * 1000;
 export class ObstacleSpawner {
   constructor(scene) {
     this.scene = scene;
-    this.obstacles = []; // live { rect, shadow, sprite, x, y, hw, hh }
+    this.obstacles = []; // live { rect, shadow, sprite, x, y, hw, hh, depth }
+    this.shadowGlow = false; // lights-out: shadows glow above the blackout (see styleShadow)
 
     // Authored waves flattened once into arrival order, sprite/hitbox resolved
     // up front; `next` is the first entry that hasn't spawned yet.
@@ -81,6 +85,7 @@ export class ObstacleSpawner {
       obs.x -= dx;
       obs.rect.setX(obs.sprite ? obs.x - obs.hw : obs.x);
       obs.shadow.setX(obs.x);
+      styleShadow(obs.shadow, obs.depth, this.shadowGlow, SHADOW_ALPHA);
       if (obs.x + obs.hw < 0) {
         obs.rect.destroy();
         obs.shadow.destroy();
@@ -107,12 +112,8 @@ export class ObstacleSpawner {
     // the player's feet/shadow), so shadow position always shows the blocked row;
     // tall art extends upward, even past the walk zone into scenery.
     const feetY = y + PLAYER_HH * scale;
-    // Obstacles get a darker shadow than the player so the ground contact —
-    // which marks the blocked row — reads at a glance despite tall art.
-    const shadow = addShadow(this.scene, hw, 0.5)
-      .setPosition(x, feetY)
-      .setScale(scale)
-      .setDepth(depth - 0.5);
+    // Depth and fill are set per frame in update() (styleShadow)
+    const shadow = addShadow(this.scene, hw, SHADOW_ALPHA).setPosition(x, feetY).setScale(scale);
 
     let rect;
     if (sprite) {
@@ -127,7 +128,7 @@ export class ObstacleSpawner {
         .setScale(scale)
         .setDepth(depth);
     }
-    this.obstacles.push({ rect, shadow, sprite, x, y, hw, hh: COLLISION_HH });
+    this.obstacles.push({ rect, shadow, sprite, x, y, hw, hh: COLLISION_HH, depth });
   }
 
   destroyAll() {

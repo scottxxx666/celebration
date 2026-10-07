@@ -97,7 +97,7 @@ export class GameScene extends Phaser.Scene {
     this.strobeIndex = -1;
 
     // Lights out — full-screen black hiding all gameplay on the dark part of each
-    // cycle; above the strobe (8), below the HUD (10)
+    // cycle; above the strobe (8), below the glowing shadows (9.5) and the HUD (10)
     this.lightsOutOverlay = this.add
       .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000)
       .setOrigin(0, 0)
@@ -194,16 +194,24 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Lights out — cycle anchored to the section start: black for lightsOut.dark beats,
-    // then lit for lightsOut.lit beats (quick fade in, snaps back on).
+    // then lit for lightsOut.lit beats (quick fade in, snaps back on). With
+    // lightsOut.shadows the drop shadows glow above the black while it's dark.
     // Stateless, gated on song time
     let lightsOutAlpha = 0;
+    let shadowGlow = false;
     if (section.lightsOut) {
       const darkMs = this.conductor.beatMs * section.lightsOut.dark;
       const cycleMs = darkMs + this.conductor.beatMs * section.lightsOut.lit;
       const phaseMs = (songMs - section.startMs) % cycleMs;
-      if (phaseMs < darkMs) lightsOutAlpha = Math.min(1, phaseMs / LIGHTS_OUT_FADE_MS);
+      if (phaseMs < darkMs) {
+        lightsOutAlpha = Math.min(1, phaseMs / LIGHTS_OUT_FADE_MS);
+        shadowGlow = !!section.lightsOut.shadows;
+      }
     }
     this.lightsOutOverlay.setAlpha(lightsOutAlpha);
+    this.player.setShadowGlow(shadowGlow);
+    this.enemy.setShadowGlow(shadowGlow);
+    this.spawner.shadowGlow = shadowGlow;
 
     // Scroll background — global world multiplier from the current section
     this.scenery.scroll(this.player.speed * section.speedMult * (delta / 1000));
