@@ -34,6 +34,7 @@ import {
   DISCO_COLORS,
   STROBE_ALPHA,
   STROBE_DECAY,
+  LIGHTS_OUT_FADE_MS,
   ZOOM_PUNCH_AMOUNT,
   ZOOM_PUNCH_BEATS,
   ZOOM_PUNCH_DECAY_MS,
@@ -94,6 +95,14 @@ export class GameScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(8);
     this.strobeIndex = -1;
+
+    // Lights out — full-screen black hiding all gameplay on the dark part of each
+    // cycle; above the strobe (8), below the HUD (10)
+    this.lightsOutOverlay = this.add
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000)
+      .setOrigin(0, 0)
+      .setAlpha(0)
+      .setDepth(9);
 
     this.player = new Player(this, PLAYER_X);
     this.player.attachTouch(this);
@@ -183,6 +192,18 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.strobeOverlay.setAlpha(Math.max(0, this.strobeOverlay.alpha - STROBE_DECAY * (delta / 1000)));
     }
+
+    // Lights out — cycle anchored to the section start: black for lightsOut.dark beats,
+    // then lit for lightsOut.lit beats (quick fade in, snaps back on).
+    // Stateless, gated on song time
+    let lightsOutAlpha = 0;
+    if (section.lightsOut) {
+      const darkMs = this.conductor.beatMs * section.lightsOut.dark;
+      const cycleMs = darkMs + this.conductor.beatMs * section.lightsOut.lit;
+      const phaseMs = (songMs - section.startMs) % cycleMs;
+      if (phaseMs < darkMs) lightsOutAlpha = Math.min(1, phaseMs / LIGHTS_OUT_FADE_MS);
+    }
+    this.lightsOutOverlay.setAlpha(lightsOutAlpha);
 
     // Scroll background — global world multiplier from the current section
     this.scenery.scroll(this.player.speed * section.speedMult * (delta / 1000));
