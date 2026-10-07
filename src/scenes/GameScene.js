@@ -35,6 +35,7 @@ import {
   STROBE_ALPHA,
   STROBE_DECAY,
   LIGHTS_OUT_FADE_MS,
+  LIGHTS_OUT_SILHOUETTE_BG,
   ZOOM_PUNCH_AMOUNT,
   ZOOM_PUNCH_BEATS,
   ZOOM_PUNCH_DECAY_MS,
@@ -97,7 +98,8 @@ export class GameScene extends Phaser.Scene {
     this.strobeIndex = -1;
 
     // Lights out — full-screen black hiding all gameplay on the dark part of each
-    // cycle; above the strobe (8), below the glowing shadows (9.5) and the HUD (10)
+    // cycle; above the strobe (8), below the glowing shadows (9.5) and the HUD (10).
+    // In 'silhouettes' reveal it drops behind gameplay instead (see update)
     this.lightsOutOverlay = this.add
       .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x000000)
       .setOrigin(0, 0)
@@ -194,24 +196,30 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Lights out — cycle anchored to the section start: black for lightsOut.dark beats,
-    // then lit for lightsOut.lit beats (quick fade in, snaps back on). With
-    // lightsOut.shadows the drop shadows glow above the black while it's dark.
-    // Stateless, gated on song time
+    // then lit for lightsOut.lit beats (quick fade in, snaps back on).
+    // lightsOut.reveal picks what stays readable while dark: 'shadows' = drop
+    // shadows glow above the black; 'silhouettes' = the overlay becomes a
+    // near-black backdrop behind gameplay (depth −1, above the lights, below the
+    // row-0 shadow) and sprites tint solid black. Stateless, gated on song time
     let lightsOutAlpha = 0;
-    let shadowGlow = false;
+    let reveal = null;
     if (section.lightsOut) {
       const darkMs = this.conductor.beatMs * section.lightsOut.dark;
       const cycleMs = darkMs + this.conductor.beatMs * section.lightsOut.lit;
       const phaseMs = (songMs - section.startMs) % cycleMs;
       if (phaseMs < darkMs) {
         lightsOutAlpha = Math.min(1, phaseMs / LIGHTS_OUT_FADE_MS);
-        shadowGlow = !!section.lightsOut.shadows;
+        reveal = section.lightsOut.reveal ?? null;
       }
     }
-    this.lightsOutOverlay.setAlpha(lightsOutAlpha);
-    this.player.setShadowGlow(shadowGlow);
-    this.enemy.setShadowGlow(shadowGlow);
-    this.spawner.shadowGlow = shadowGlow;
+    const silhouettes = section.lightsOut?.reveal === 'silhouettes';
+    this.lightsOutOverlay
+      .setFillStyle(silhouettes ? LIGHTS_OUT_SILHOUETTE_BG : 0x000000)
+      .setDepth(silhouettes ? -1 : 9)
+      .setAlpha(lightsOutAlpha);
+    this.player.setReveal(reveal);
+    this.enemy.setReveal(reveal);
+    this.spawner.reveal = reveal;
 
     // Scroll background — global world multiplier from the current section
     this.scenery.scroll(this.player.speed * section.speedMult * (delta / 1000));

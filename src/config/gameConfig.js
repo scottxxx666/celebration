@@ -128,10 +128,12 @@ export const STROBE_ALPHA = 0.4;  // peak white alpha of the strobe
 export const STROBE_DECAY = 12;    // alpha units/sec fade after the flash (~100ms tail)
 // Lights out — full-black overlay on the dark part of each cycle (lit/dark beat lengths are authored per-section, lightsOut in sections.js)
 export const LIGHTS_OUT_FADE_MS = 60;  // fade to black at the start of each dark part; the lights snap back on
-// With lightsOut.shadows, drop shadows glow above the black so rows and distances stay readable
+// lightsOut.reveal 'shadows': drop shadows glow above the black so rows and distances stay readable
 export const LIGHTS_OUT_SHADOW_COLOR = 0xffffff;
 export const LIGHTS_OUT_SHADOW_ALPHA = 0.85;
 export const LIGHTS_OUT_SHADOW_DEPTH = 9.5;  // above the lights-out overlay (9), below the HUD (10)
+// lightsOut.reveal 'silhouettes': the overlay drops behind gameplay as a near-black backdrop and sprites tint solid black
+export const LIGHTS_OUT_SILHOUETTE_BG = 0x0c0c0c;  // backdrop colour — lighter = outlines read more easily, darker = closer to full dark
 
 // Camera zoom punch — subtle zoom pulse during lights sections, decaying over the beat.
 // Multiplies the base zoom (1, or ROTATE_ZOOM when rotate is on), so it composes

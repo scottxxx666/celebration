@@ -1,5 +1,5 @@
 import { BEAT_MS } from '../config/gameConfig.js';
-import { addShadow, styleShadow, fitSpriteScale } from '../rowLayout.js';
+import { addShadow, styleShadow, styleSilhouette, fitSpriteScale } from '../rowLayout.js';
 
 // Shared run-cycle visual: sprite (or fallback rectangle) + drop shadow, used
 // by both Player and Enemy so each can carry its own frame set and step rate.
@@ -24,7 +24,7 @@ export class RunCycle {
     this._frameTimer = 0; // ms since the last frame step (pre-beat fallback)
     this._beatLocked = false; // set by the first syncFrame(); silences the timer
     this._squash = 1; // beat-pulse squash factor on top of the row scale
-    this.shadowGlow = false; // lights-out: shadow glows above the blackout (see styleShadow)
+    this.reveal = null; // lights-out dark beats: 'shadows' | 'silhouettes' | null (sections.js lightsOut.reveal)
 
     this.shadow = addShadow(scene, hw);
 
@@ -67,7 +67,8 @@ export class RunCycle {
         .setDepth(depth);
     }
     this.shadow.setPosition(x, feetY).setScale(scale);
-    styleShadow(this.shadow, depth, this.shadowGlow);
+    styleShadow(this.shadow, depth, this.reveal === 'shadows');
+    styleSilhouette(this.sprite, this.reveal === 'silhouettes');
   }
 
   // Show the frame for a walk-grid index (index mod frame count) and lock out

@@ -71,8 +71,8 @@ export class Enemy {
     this.runCycle.pulse();
   }
 
-  setShadowGlow(on) {
-    this.runCycle.shadowGlow = on;
+  setReveal(reveal) {
+    this.runCycle.reveal = reveal;
   }
 
   destroy() {

@@ -48,3 +48,11 @@ export function styleShadow(shadow, rowDepth, glow, alpha = SHADOW_ALPHA) {
     shadow.setFillStyle(0x000000, alpha).setDepth(rowDepth - 0.5);
   }
 }
+
+// Tint a sprite solid black (lights-out silhouettes) or restore it. No-op for
+// the placeholder rectangles, which can't be tinted.
+export function styleSilhouette(sprite, on) {
+  if (!sprite.setTint) return;
+  if (on) sprite.setTint(0x000000);
+  else sprite.clearTint();
+}

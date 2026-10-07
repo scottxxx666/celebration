@@ -1,7 +1,7 @@
 import { GAME_WIDTH, PLAYER_X, MIN_SPEED, ROW_HEIGHT, PLAYER_HH, TRACK_BEAT_MS } from '../config/gameConfig.js';
 import { WAVES } from '../config/waves.js';
 import { OBSTACLE_SPRITES } from '../config/obstacleSprites.js';
-import { rowLayout, addShadow, styleShadow, fitSpriteScale } from '../rowLayout.js';
+import { rowLayout, addShadow, styleShadow, styleSilhouette, fitSpriteScale } from '../rowLayout.js';
 
 // Deterministic sprite pick for wave `wi`, obstacle index `oi` — avoids
 // repeating the previous obstacle's sprite within the same wave (when
@@ -40,7 +40,7 @@ export class ObstacleSpawner {
   constructor(scene) {
     this.scene = scene;
     this.obstacles = []; // live { rect, shadow, sprite, x, y, hw, hh, depth }
-    this.shadowGlow = false; // lights-out: shadows glow above the blackout (see styleShadow)
+    this.reveal = null; // lights-out dark beats: 'shadows' | 'silhouettes' | null (sections.js lightsOut.reveal)
 
     // Authored waves flattened once into arrival order, sprite/hitbox resolved
     // up front; `next` is the first entry that hasn't spawned yet.
@@ -85,7 +85,8 @@ export class ObstacleSpawner {
       obs.x -= dx;
       obs.rect.setX(obs.sprite ? obs.x - obs.hw : obs.x);
       obs.shadow.setX(obs.x);
-      styleShadow(obs.shadow, obs.depth, this.shadowGlow, SHADOW_ALPHA);
+      styleShadow(obs.shadow, obs.depth, this.reveal === 'shadows', SHADOW_ALPHA);
+      styleSilhouette(obs.rect, this.reveal === 'silhouettes');
       if (obs.x + obs.hw < 0) {
         obs.rect.destroy();
         obs.shadow.destroy();
