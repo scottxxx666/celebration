@@ -104,7 +104,7 @@ export const FIRST_BEAT_OFFSET_MS = 2143;
 
 // Default user volume when nothing is saved — sources play at full loudness,
 // so the slider's max (1.0) is louder than this default
-export const DEFAULT_VOLUME = 0.7;
+export const DEFAULT_VOLUME = 0.6;
 
 // Section effects (src/config/sections.js holds the section times)
 export const BEAT_FLASH_ALPHA = 0.1;          // beat-flash peak alpha outside disco (downbeat of each bar)
