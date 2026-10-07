@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, DISCO_COLORS } from '../config/gameConfig.js';
 
-// Top-down light beams shown only during disco sections (src/config/sections.js).
+// Top-down light beams shown only during sections with `lights` (src/config/sections.js).
 // Purely decorative — sits above the background/beat overlay (−10/−5) and below shadows.
 // Each beam is a triangle cone: apex at the top edge (y=0) widening to a base where the
 // light lands on the road — a random spot per beat, not pinned to the bottom edge, so pools

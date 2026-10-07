@@ -145,24 +145,25 @@ export class GameScene extends Phaser.Scene {
     const discoColor = DISCO_COLORS[discoColorIndex];
 
     // Beat flash: brighter on the downbeat of each bar, then fade out; during
-    // disco sections it uses the base disco hue instead of white. Gated per
+    // lights sections it uses the base disco hue instead of white. Gated per
     // section (section.beatFlash); the fade below stays unconditional so a flash
     // in progress dies out naturally when entering a beatFlash:false section
-    this.beatOverlay.setFillStyle(section.disco ? discoColor : 0xffffff);
+    this.beatOverlay.setFillStyle(section.lights ? discoColor : 0xffffff);
     if (beatSyncOn && section.beatFlash && this.conductor.beatCrossed) {
       const onBeat = this.conductor.beatIndex % 4 === 0;
-      const peakAlpha = section.disco ? DISCO_FLASH_ALPHA : BEAT_FLASH_ALPHA;
-      const offAlpha = peakAlpha * (section.disco ? DISCO_FLASH_OFFBEAT_RATIO : BEAT_FLASH_OFFBEAT_RATIO);
+      const peakAlpha = section.lights ? DISCO_FLASH_ALPHA : BEAT_FLASH_ALPHA;
+      const offAlpha = peakAlpha * (section.lights ? DISCO_FLASH_OFFBEAT_RATIO : BEAT_FLASH_OFFBEAT_RATIO);
       this.beatOverlay.setAlpha(onBeat ? peakAlpha : offAlpha);
     } else {
       this.beatOverlay.setAlpha(Math.max(0, this.beatOverlay.alpha - BEAT_FLASH_DECAY * (delta / 1000)));
     }
-    this.disco.update(this.conductor.beatCrossed, section.disco, discoColorIndex);
+    this.disco.update(this.conductor.beatCrossed, section.lights, discoColorIndex);
 
-    // Disco dim — beat-aligned fade in/out at section start/end, gated purely on song time
+    // Dim — beat-aligned fade in/out across the contiguous dimmed span (back-to-back
+    // dimmed sections fade as one), gated purely on song time
     let dimAlpha = 0;
-    if (section.disco) {
-      const edgeMs = Math.min(songMs - section.startMs, section.endMs - songMs);
+    if (section.dim) {
+      const edgeMs = Math.min(songMs - section.dimStartMs, section.dimEndMs - songMs);
       dimAlpha = DISCO_DIM_ALPHA * Phaser.Math.Clamp(edgeMs / DISCO_DIM_FADE_MS, 0, 1);
     }
     this.discoDim.setAlpha(dimAlpha);
@@ -211,7 +212,7 @@ export class GameScene extends Phaser.Scene {
     // base zoom so it composes with ROTATE_ZOOM. Stateless: derived from beat phase.
     const baseZoom = section.rotate ? ROTATE_ZOOM : 1;
     let zoomPunch = 1;
-    if (section.disco) {
+    if (section.lights) {
       const decay = Math.max(0, 1 - this.conductor.phaseMs(ZOOM_PUNCH_BEATS) / ZOOM_PUNCH_DECAY_MS);
       zoomPunch = 1 + ZOOM_PUNCH_AMOUNT * decay;
     }
