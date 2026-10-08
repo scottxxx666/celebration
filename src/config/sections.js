@@ -25,7 +25,7 @@ const DISCO = { dim: true, lights: true };
 export const SECTIONS = [
   { name: 'highlight1', startMs: 14498, endMs: 26454, speedMult: 1, beatFlash: true },
   { name: 'highlight2', startMs: 65909, endMs: 78663, speedMult: 1, ...DISCO },
-  { name: 'ready', startMs: 84641, endMs: 89822, speedMult: 1, strobe: [[5, 1], [4, 2], [2, 4], [2, 8]], strobeRamp: 0.25 },
+  { name: 'ready', startMs: 84641, endMs: 89822, speedMult: 1, strobe: [[6, 1], [3, 2], [3, 4], [1, 8]], strobeRamp: 0.25 },
   { name: 'blackout', startMs: 89822, endMs: 91017, speedMult: 1.5, lightsOut: { lit:0, dark: 2, reveal: 'silhouettes' }, dim: true },
   { name: 'blackout2', startMs: 91017, endMs: 91814, speedMult: 1.5, lightsOut: { lit:0, dark: 2 }, dim: true },
   { name: 'dance_break', startMs: 91814, endMs: 96198, speedMult: 1.5, lightsOut: { lit: 0.25, gap: 0.25, bursts: 2, dark: 1.25, strobe: true }, dim: true },

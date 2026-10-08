@@ -32,7 +32,7 @@ test('the ramp clamps outside the section', () => {
 test('the ready section strobes in stepped rates and ramps up', () => {
   const ready = sectionAt(84641);
   assert.equal(ready.name, 'ready');
-  assert.deepEqual(ready.strobe, [[5, 1], [4, 2], [2, 4], [2, 8]]);
+  assert.deepEqual(ready.strobe, [[6, 1], [3, 2], [3, 4], [1, 8]]);
   near(strobeScale(ready, ready.startMs), ready.strobeRamp);
   assert.ok(strobeScale(ready, (ready.startMs + ready.endMs) / 2) > ready.strobeRamp);
 });
