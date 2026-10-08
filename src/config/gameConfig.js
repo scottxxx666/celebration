@@ -102,6 +102,11 @@ export const ENEMY_RUN_STEPS_PER_BEAT = 2;
 // taps).
 export const PLAYER_TAP_RUN_IDLE_MS = 80;
 export const FIRST_BEAT_OFFSET_MS = 2143;
+// Song time at which the run is cleared — 3 s after the last obstacle arrives
+// (chorus3 timeOffset 30 ≈ 135653 ms), a little before the track's own end
+// (139498 ms). Its own knob: re-tune by hand if waves.js is regenerated. The
+// track's COMPLETE event still wins the run if this is set past the end.
+export const WIN_MS = 138653;
 // Manual trim added on top of the auto-detected audio output latency (see
 // Conductor); positive = visuals later
 export const AUDIO_LATENCY_OFFSET_MS = 0;

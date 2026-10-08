@@ -39,6 +39,7 @@ import {
   ZOOM_PUNCH_AMOUNT,
   ZOOM_PUNCH_BEATS,
   ZOOM_PUNCH_DECAY_MS,
+  WIN_MS,
 } from '../config/gameConfig.js';
 
 const HUD_REFRESH_MS = 100; // debug readout re-renders a text texture, so throttle it
@@ -283,6 +284,11 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    if (songMs >= WIN_MS) {
+      this.endRun(true);
+      return;
+    }
+
     this.hudTimer += delta;
     if (this.hudTimer >= HUD_REFRESH_MS) {
       this.hudTimer = 0;
@@ -294,9 +300,10 @@ export class GameScene extends Phaser.Scene {
 
   endRun(won) {
     const durationMs = this.music.duration * 1000;
-    // On COMPLETE the sound's seek has already reset, so take the full duration;
+    // A win is at WIN_MS, or at the track's end when WIN_MS lies past it (on
+    // COMPLETE the sound's seek has already reset, so it can't be read back);
     // song time starts slightly negative (output latency), hence the clamp
-    const songMs = won ? durationMs : Math.max(0, this.conductor.songMs);
+    const songMs = won ? Math.min(durationMs, WIN_MS) : Math.max(0, this.conductor.songMs);
     const progress = won ? 1 : Math.min(1, durationMs > 0 ? songMs / durationMs : 0);
     this.music.stop();
     this.enemy.destroy();
