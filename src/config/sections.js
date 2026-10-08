@@ -1,3 +1,5 @@
+import { LIGHTS_OUT_FADE_MS } from './gameConfig.js';
+
 // Song sections with per-section effects. Times are authored in ms (read them
 // off the HUD / ?t=) and must sit on a real track beat of public/assets/music.m4a
 // (= a game half-beat at the default half-time BPM); `yarn check:beats`
@@ -45,6 +47,32 @@ for (let i = SECTIONS.length - 1; i >= 0; i--) {
   if (!section.dim) continue;
   const next = SECTIONS[i + 1];
   section.dimEndMs = next?.dim && section.endMs === next.startMs ? next.dimEndMs : section.endMs;
+}
+
+// Where a lightsOut cycle stands `sinceStartMs` after its section began. The
+// cycle: lightsOut.bursts lit blinks of lightsOut.lit beats, lightsOut.gap
+// beats of black between them, then black for lightsOut.dark beats. Each blink
+// fades to black over its last `fadeMs` (capped at the blink length), so full
+// black lands on the grid point where the lit part ends; the lights snap back
+// on. Returns the overlay `alpha`, the `reveal` in effect (from the fade's
+// start through the dark, else null) and `litMs` — ms since the lights came
+// on, or null once the lit part is over. Pure and stateless
+export function lightsOutAt(lightsOut, sinceStartMs, beatMs, fadeMs = LIGHTS_OUT_FADE_MS) {
+  const { lit, dark, gap = 0, bursts = 1 } = lightsOut;
+  const blinkMs = lit * beatMs;
+  const burstMs = (lit + gap) * beatMs; // one blink + the gap after it
+  const burstsMs = bursts * burstMs - gap * beatMs; // the last blink has no gap, the long dark follows
+  const phaseMs = sinceStartMs % (burstsMs + dark * beatMs);
+  // ms since the current (or last) blink began: lit while < blinkMs, black after
+  const sinceLitMs = phaseMs < burstsMs ? phaseMs % burstMs : phaseMs - burstsMs + blinkMs;
+  const litMs = sinceLitMs < blinkMs ? sinceLitMs : null;
+  const fade = Math.min(fadeMs, blinkMs);
+  const intoFadeMs = sinceLitMs - (blinkMs - fade);
+  if (intoFadeMs < 0) return { alpha: 0, reveal: null, litMs };
+  // lit: 0 (dark throughout) and a zero fade both land here with nothing to
+  // ramp — full black, no dip at the cycle wrap
+  const alpha = intoFadeMs >= fade ? 1 : intoFadeMs / fade;
+  return { alpha, reveal: lightsOut.reveal ?? null, litMs };
 }
 
 export function sectionAt(songMs) {
