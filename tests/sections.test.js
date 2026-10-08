@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sectionAt, strobeRate, strobeScale } from '../src/config/sections.js';
-import { TRACK_BEAT_MS } from '../src/config/gameConfig.js';
+import { rotateTurns, sectionAt, strobeRate, strobeScale } from '../src/config/sections.js';
+import { ROTATE_BEATS_PER_TURN, TRACK_BEAT_MS } from '../src/config/gameConfig.js';
 
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} !== ${expected}`);
 
@@ -65,4 +65,31 @@ test('the ready strobe steps fill the section and only speed up', () => {
   rates.forEach((rate, i) => assert.ok(i === 0 || rate >= rates[i - 1]));
   assert.equal(strobeRate(ready, ready.startMs, TRACK_BEAT_MS), rates[0]);
   assert.equal(strobeRate(ready, ready.endMs - 1, TRACK_BEAT_MS), rates[rates.length - 1]);
+});
+
+const spin = { startMs: 1000 };
+
+test('rotate spins forward through the first turn', () => {
+  near(rotateTurns(spin, 1000, 400), 0);
+  near(rotateTurns(spin, 1100, 400), 0.25);
+  near(rotateTurns(spin, 1400, 400), 1);
+});
+
+test('rotate runs in reverse through the second turn, back to upright', () => {
+  near(rotateTurns(spin, 1500, 400), 0.75);
+  near(rotateTurns(spin, 1700, 400), 0.25);
+  near(rotateTurns(spin, 1800, 400), 0);
+});
+
+test('rotate keeps alternating direction on later turns', () => {
+  near(rotateTurns(spin, 1900, 400), 0.25);
+  near(rotateTurns(spin, 2300, 400), 0.75);
+});
+
+test('the final highlight is one turn out and one turn back, ending upright', () => {
+  const final = sectionAt(123697);
+  const turnMs = TRACK_BEAT_MS * ROTATE_BEATS_PER_TURN;
+  assert.ok(final.rotate);
+  assert.ok(Math.abs((final.endMs - final.startMs) / turnMs - 2) < 0.01);
+  assert.ok(rotateTurns(final, final.endMs - 1, turnMs) < 0.01);
 });

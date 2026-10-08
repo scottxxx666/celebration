@@ -7,7 +7,7 @@ import { Scenery } from '../objects/Scenery.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
-import { sectionAt, strobeRate, strobeScale } from '../config/sections.js';
+import { rotateTurns, sectionAt, strobeRate, strobeScale } from '../config/sections.js';
 import { getStartMs, formatSongTime } from '../songTime.js';
 import { addDirectionKeys } from '../input.js';
 import {
@@ -251,11 +251,11 @@ export class GameScene extends Phaser.Scene {
 
     // Continuous camera spin during the final highlight — visual only, collision/rows untouched.
     // Negative camera.rotation makes the world spin counterclockwise on screen — the direction
-    // we want (confirmed by play-testing).
+    // we want (confirmed by play-testing); after each full turn it reverses (rotateTurns).
     const cam = this.cameras.main;
     if (section.rotate) {
       const turnMs = this.conductor.beatMs * ROTATE_BEATS_PER_TURN;
-      cam.setRotation(-((songMs - section.startMs) / turnMs) * Math.PI * 2);
+      cam.setRotation(-rotateTurns(section, songMs, turnMs) * Math.PI * 2);
     } else {
       cam.setRotation(0);
     }
