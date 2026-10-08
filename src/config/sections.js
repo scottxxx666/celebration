@@ -10,6 +10,8 @@
 // lights = DiscoLights beams/pools/lasers + zoom punch + disco-coloured beat flash.
 // lightsOut = { lit, dark } in beats, cycling from the section start: lit for `lit` beats, then
 //   fully black for `dark` beats, hiding all gameplay ({ lit: 1, dark: 1 } = 1 beat each; null/absent = off).
+//   Optional `bursts` + `gap` blink the lit part: `bursts` lit blinks of `lit` beats with `gap` beats of
+//   black between them, then `dark` ({ lit: 0.125, gap: 0.125, bursts: 3, dark: 1.375 } = 3 blinks per 2 beats).
 //   Optional `strobe: true` fires a white strobe flash each time the lights come on (including the section start).
 //   Optional `reveal` keeps something readable through the dark: 'shadows' = drop shadows glow on
 //   pure black; 'silhouettes' = sprites turn solid black on a near-black backdrop. Without it,
@@ -22,10 +24,9 @@ export const SECTIONS = [
   { name: 'highlight1', startMs: 14498, endMs: 26454, speedMult: 1, beatFlash: true },
   { name: 'highlight2', startMs: 65909, endMs: 78663, speedMult: 1, ...DISCO },
   { name: 'ready', startMs: 84641, endMs: 89822, speedMult: 1, strobe: 2 },
-  // { name: 'blackout', startMs: 89822, endMs: 91814, speedMult: 1.5, dim: true },
-  { name: 'blackout', startMs: 89822, endMs: 91814, speedMult: 1.5, lightsOut: { lit:0, dark: 2, reveal: 'silhouettes' }, dim: true },
-  // { name: 'dance_break', startMs: 91814, endMs: 98589, speedMult: 1.5, lightsOut: { lit: 0.33, dark: 0.67, strobe: true }, dim: true },
-  { name: 'dance_break', startMs: 91814, endMs: 98589, speedMult: 1.5, lightsOut: { lit: 0.165, dark: 0.335 }, dim: true },
+  { name: 'blackout', startMs: 89822, endMs: 90818, speedMult: 1.5, lightsOut: { lit:0, dark: 1, reveal: 'silhouettes' }, dim: true },
+  { name: 'blackout', startMs: 90818, endMs: 91814, speedMult: 1.5, lightsOut: { lit:0, dark: 1 }, dim: true },
+  { name: 'dance_break', startMs: 91814, endMs: 98589, speedMult: 1.5, lightsOut: { lit: 0.125, gap: 0.125, bursts: 3, dark: 1.375, strobe: true }, dim: true },
   { name: 'final_highlight', startMs: 123299, endMs: 136052, speedMult: 1, ...DISCO, rotate: true },
 ].map(section => ({ ...NORMAL, ...section }));
 

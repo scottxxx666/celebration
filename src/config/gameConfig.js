@@ -133,7 +133,7 @@ export const LIGHTS_OUT_SHADOW_COLOR = 0xffffff;
 export const LIGHTS_OUT_SHADOW_ALPHA = 0.85;
 export const LIGHTS_OUT_SHADOW_DEPTH = 9.5;  // above the lights-out overlay (9), below the HUD (10)
 // lightsOut.reveal 'silhouettes': the overlay drops behind gameplay as a near-black backdrop and sprites tint solid black
-export const LIGHTS_OUT_SILHOUETTE_BG = 0x0c0c0c;  // backdrop colour — lighter = outlines read more easily, darker = closer to full dark
+export const LIGHTS_OUT_SILHOUETTE_BG = 0x0f0f0f;  // backdrop colour — lighter = outlines read more easily, darker = closer to full dark
 
 // Camera zoom punch — subtle zoom pulse during lights sections, decaying over the beat.
 // Multiplies the base zoom (1, or ROTATE_ZOOM when rotate is on), so it composes
