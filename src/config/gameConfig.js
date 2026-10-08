@@ -127,7 +127,7 @@ export const DISCO_HUE_BEATS = 4; // beats the shared disco hue is held before a
 // beams/pools/lasers across it by element index. The whole set advances per bar.
 export const DISCO_COLORS = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff00, 0xff8800];
 // Strobe — full-screen white flash on beats; frequency is authored per-section (strobe = flashes/beat in sections.js)
-export const STROBE_ALPHA = 0.4;  // peak white alpha of the strobe
+export const STROBE_ALPHA = 0.4;  // peak white alpha of the strobe (a section's strobeRamp scales it up to this)
 export const STROBE_DECAY = 12;    // alpha units/sec fade after the flash (~100ms tail)
 // Lights out — full-black overlay on the dark part of each cycle (lit/dark beat lengths are authored per-section, lightsOut in sections.js)
 export const LIGHTS_OUT_FADE_MS = 60;  // fade to black at the start of each dark part; the lights snap back on

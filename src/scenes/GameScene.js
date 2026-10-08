@@ -7,7 +7,7 @@ import { Scenery } from '../objects/Scenery.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
-import { sectionAt } from '../config/sections.js';
+import { sectionAt, strobeRate, strobeScale } from '../config/sections.js';
 import { getStartMs, formatSongTime } from '../songTime.js';
 import { addDirectionKeys } from '../input.js';
 import {
@@ -180,17 +180,20 @@ export class GameScene extends Phaser.Scene {
     this.discoDim.setAlpha(dimAlpha);
 
     // Strobe — flash white section.strobe times per beat during the section (may be
-    // sub-beat), aligned to the beat grid, then a fast fade tail; gated on song time
+    // sub-beat, and stepped over the section: strobeRate), aligned to the beat grid,
+    // then a fast fade tail; gated on song time. The peak follows section.strobeRamp
+    // (faint at the section start, full at its end).
     let strobeFlash = false;
-    if (section.strobe) {
-      const idx = this.conductor.gridIndex(section.strobe);
+    const strobePerBeat = strobeRate(section, songMs, this.conductor.beatMs);
+    if (strobePerBeat) {
+      const idx = this.conductor.gridIndex(strobePerBeat);
       strobeFlash = idx !== this.strobeIndex;
       this.strobeIndex = idx;
     } else {
       this.strobeIndex = -1;
     }
     if (strobeFlash) {
-      this.strobeOverlay.setAlpha(STROBE_ALPHA);
+      this.strobeOverlay.setAlpha(STROBE_ALPHA * strobeScale(section, songMs));
     } else {
       this.strobeOverlay.setAlpha(Math.max(0, this.strobeOverlay.alpha - STROBE_DECAY * (delta / 1000)));
     }

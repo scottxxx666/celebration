@@ -5,6 +5,8 @@
 // before `yarn build`. Gaps between sections = normal play. Entries list only
 // what differs from NORMAL.
 // strobe = flashes per beat (0.25 = per bar, 1 = per beat, 2 = per half-beat; 0/absent = off).
+//   Or a list of [beats, rate] steps from the section start for a build: [[4, 1], [4, 2]] = 4 beats at 1/beat, then 2/beat (the last step holds to the section end).
+// strobeRamp = strobe peak at the section start as a fraction of STROBE_ALPHA, rising linearly to full at the section end (1/absent = no ramp).
 // beatFlash = walk-zone flash on each beat (still waits for BEAT_SYNC_START_MS; colour/alpha follow lights).
 // dim = black overlay darkening the world; back-to-back dimmed sections fade as one span.
 // lights = DiscoLights beams/pools/lasers + zoom punch + disco-coloured beat flash.
@@ -17,13 +19,13 @@
 //   pure black; 'silhouettes' = sprites turn solid black on a near-black backdrop. Without it,
 //   author this section's obstacles to arrive while lit or right as the dark begins.
 // ...DISCO = preset for dim + lights together.
-const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, beatFlash: false, lightsOut: null };
+const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, strobeRamp: 1, beatFlash: false, lightsOut: null };
 const DISCO = { dim: true, lights: true };
 
 export const SECTIONS = [
   { name: 'highlight1', startMs: 14498, endMs: 26454, speedMult: 1, beatFlash: true },
   { name: 'highlight2', startMs: 65909, endMs: 78663, speedMult: 1, ...DISCO },
-  { name: 'ready', startMs: 84641, endMs: 89822, speedMult: 1, strobe: 1 },
+  { name: 'ready', startMs: 84641, endMs: 89822, speedMult: 1, strobe: [[5, 1], [4, 2], [2, 4], [2, 8]], strobeRamp: 0.25 },
   { name: 'blackout', startMs: 89822, endMs: 91017, speedMult: 1.5, lightsOut: { lit:0, dark: 2, reveal: 'silhouettes' }, dim: true },
   { name: 'blackout2', startMs: 91017, endMs: 91814, speedMult: 1.5, lightsOut: { lit:0, dark: 2 }, dim: true },
   { name: 'dance_break', startMs: 91814, endMs: 96198, speedMult: 1.5, lightsOut: { lit: 0.25, gap: 0.25, bursts: 2, dark: 1.25, strobe: true }, dim: true },
@@ -52,4 +54,25 @@ export function sectionAt(songMs) {
     if (songMs >= section.startMs && songMs < section.endMs) return section;
   }
   return NORMAL;
+}
+
+// Strobe peak multiplier at songMs: section.strobeRamp at the section start, rising linearly to 1 at its end.
+export function strobeScale(section, songMs) {
+  const { strobeRamp = 1, startMs, endMs } = section;
+  if (strobeRamp === 1) return 1;
+  const progress = Math.min(1, Math.max(0, (songMs - startMs) / (endMs - startMs)));
+  return strobeRamp + (1 - strobeRamp) * progress;
+}
+
+// Strobe flashes per beat at songMs: section.strobe itself, or, when it is a list of
+// [beats, rate] steps, the rate of the step songMs falls in (the last step holds).
+export function strobeRate(section, songMs, beatMs) {
+  const { strobe, startMs } = section;
+  if (!Array.isArray(strobe)) return strobe;
+  let beats = (songMs - startMs) / beatMs;
+  for (const [length, rate] of strobe) {
+    if (beats < length) return rate;
+    beats -= length;
+  }
+  return strobe[strobe.length - 1][1];
 }
