@@ -51,6 +51,11 @@ progress %. `GameOverScene` takes `{ won, score, progress }` and shows progress 
 seconds, which also closes **M7**. The seek-backwards `spawned` reset in the spawner was removed
 (song time never rewinds mid-run without looping).
 
+Update 2026-10-08 (audio latency), resolved issue removed —
+**A1** latency offset: `Conductor.songMs` is now the heard position — `music.seek` minus the
+auto-detected output latency (`baseLatency + outputLatency`, with hysteresis) and the manual
+`AUDIO_LATENCY_OFFSET_MS` trim. Nothing outside the Conductor knows about latency.
+
 ---
 
 ## Architecture Improvements (for the dance-game goal)
@@ -60,16 +65,13 @@ seconds, which also closes **M7**. The seek-backwards `spawned` reset in the spa
 **Where (current state):** `src/Conductor.js` exists as a minimal polled beat clock
 (`beatMs` from `BPM`, beat/half-beat crossing flags) consumed by `GameScene` for the ambient
 beat-sync layer, and since A6 it is also the single read point for song time (`songMs`). But
-`waves.js` still hardcodes ms (`5600`, `700`, `1400` — 700 ms = one beat at 85.7 BPM), and
-there is no latency calibration.
+`waves.js` still hardcodes ms (`5600`, `700`, `1400` — 700 ms = one beat at 85.7 BPM).
 
 **Remaining scope:**
 
 - Author waves in **beats** (`{ beat: 8, row: 0, … }`) and convert via the Conductor —
   swapping songs becomes changing `BPM` + `FIRST_BEAT_OFFSET_MS`, not rewriting every number.
   Do this before authoring a full track's waves.
-- Add an `AUDIO_LATENCY_OFFSET_MS` calibration constant inside the Conductor (clock reads are
-  already centralized there, so it's a one-place change).
 - Beat/bar *events* (vs. polled flags) only if a consumer outside `GameScene.update` needs
   them — YAGNI so far.
 

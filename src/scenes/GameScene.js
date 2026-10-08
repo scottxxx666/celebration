@@ -291,8 +291,9 @@ export class GameScene extends Phaser.Scene {
 
   endRun(won) {
     const durationMs = this.music.duration * 1000;
-    // On COMPLETE the sound's seek has already reset, so take the full duration
-    const songMs = won ? durationMs : this.conductor.songMs;
+    // On COMPLETE the sound's seek has already reset, so take the full duration;
+    // song time starts slightly negative (output latency), hence the clamp
+    const songMs = won ? durationMs : Math.max(0, this.conductor.songMs);
     const progress = won ? 1 : Math.min(1, durationMs > 0 ? songMs / durationMs : 0);
     this.music.stop();
     this.enemy.destroy();

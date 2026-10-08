@@ -101,6 +101,9 @@ export const ENEMY_RUN_STEPS_PER_BEAT = 2;
 // taps).
 export const PLAYER_TAP_RUN_IDLE_MS = 80;
 export const FIRST_BEAT_OFFSET_MS = 2143;
+// Manual trim added on top of the auto-detected audio output latency (see
+// Conductor); positive = visuals later
+export const AUDIO_LATENCY_OFFSET_MS = 0;
 
 // Default user volume when nothing is saved — sources play at full loudness,
 // so the slider's max (1.0) is louder than this default

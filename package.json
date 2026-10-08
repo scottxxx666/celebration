@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "test": "node --test \"tests/**/*.test.js\"",
     "check:beats": "node tools/check-beats.js",
     "fix:beats": "node tools/check-beats.js --fix",
     "prebuild": "yarn check:beats",
