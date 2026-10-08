@@ -1,7 +1,7 @@
 # Image Assets — Runner & Obstacle Sprites
 
-Concrete pixel sizes and export specs for replacing the placeholder rectangles
-(player `Player.js`, obstacles `ObstacleSpawner.js`) with images. Style/angle
+Concrete pixel sizes, export specs and prep pipelines for the game's images
+(player/enemy run cycles, obstacle sprites, road and background). Style/angle
 guidance lives in `docs/art-brief.md`; this doc is the sizing spec.
 
 ## How the game displays images (why sizes are what they are)
@@ -12,11 +12,12 @@ guidance lives in `docs/art-brief.md`; this doc is the sizing spec.
   size in the 800×450 world** — oversized source art cannot add fullscreen
   sharpness, it only survives downscaling better.
 - Sprites are drawn at their logical (front-row) size, then scaled **down**
-  by the fake-3D row scale (0.6 back row → 1.0 front row, `rowLayout.js`).
-- The only scale-ups ever applied are trivial: the disco zoom punch (×1.02)
+  by the fake-3D row scale (0.9 back row → 1.0 front row, `ROW_SCALE_BACK`/
+  `ROW_SCALE_FRONT`, applied in `rowLayout.js`).
+- The only scale-ups ever applied are trivial: the `lights` zoom punch (×1.02)
   and the CSS stretch above. The rotate section zooms **out** (×0.49).
 - Collision boxes never change with art — the player is always a 90×90 AABB,
-  obstacles always block exactly one row (`collisionHh` in
+  obstacles always block exactly one row (`COLLISION_HH` in
   `ObstacleSpawner.js`). Art only needs to *read* correctly, not collide.
 
 ## Logical target sizes
@@ -27,143 +28,45 @@ h = `hh × 2`, from `gameConfig.js` / `OBSTACLE_SPRITES`):
 | Use | Logical box (px) | Notes |
 |---|---|---|
 | **Runner (player)** | collision 90 × 90, art `PLAYER_SPRITE_HH × 2` tall | `PLAYER_HW/HH = 45` for collision; art height comes from `PLAYER_SPRITE_HH` (`gameConfig.js`), width follows the source aspect; beat pulse squashes height to 85% |
-| Obstacle — small block | 50 × 50 | intro |
-| Obstacle — low/wide | 60 × 40 and 50 × 40 | most common (high/low alternation) |
-| Obstacle — tall/narrow | 40 × 100 | intro |
-| Obstacle — big block | 80 × 100 | wave enders |
-| Obstacle — wall | 60 × 140 | gap-run pairs; tall art may extend above the walk zone (by design) |
-| Obstacle — character sprites | varies (`hw × 2` × `hh × 2`, `OBSTACLE_SPRITES`) | replaces the red rectangle; see below |
+| Obstacle — character sprites | `hw × 2` wide × `hh × 2` tall, per entry in `OBSTACLE_SPRITES` | `hh` sets the art height (currently 62–70 → 124–140 px), `hw` the collision half-width; see below |
 | **Chaser (enemy)** | collision 52 × 78, art `ENEMY_SPRITE_HH × 2` tall | `ENEMY_HW/HH = 26/39` for collision; art height comes from `ENEMY_SPRITE_HH` (`gameConfig.js`, defaults to matching collision height), width follows the source aspect |
 
-Obstacles with similar aspect ratios can share one sprite (the engine scales
-by width) — a minimal set is **4 obstacle sprites**: square-ish (~1:1),
-low/wide (~3:2), tall/narrow (~2:5), and big wall (~4:5).
+`waves.js` carries no sizes — an obstacle is only `{ timeOffset, row }`, and
+its sprite (hence its size) is picked by `ObstacleSpawner.spriteFor()`.
 
-## Recommended source resolution
+## Source resolution
 
-**Option A — Recommended: smooth/cartoon art at 2× logical size.**
-Export each sprite at exactly **2× its logical box** (runner **180×180**,
-low/wide obstacle 120×80, wall 120×280, …). 2× keeps back rows (drawn at
-0.6× logical = 1.2× minification from a 2× source) crisp under linear
-filtering, and is the ceiling of useful resolution given the 800×450
-framebuffer. Anything larger (e.g. the 256×256 in the original art brief) is
-wasted texture memory and can look *worse* when minified ~4× without mipmaps.
+Sprites are smooth art prepped at **2× logical size**: the prep scripts below
+resize to 280 px tall, 2× the tallest logical height (140). 2× keeps the back
+row (0.9× logical) crisp under linear filtering and is the ceiling of useful
+resolution given the 800×450 framebuffer; anything larger is wasted texture
+memory. Pixel art at 1× with `pixelArt: true` was considered and not used —
+filtering mode is global, and non-integer row scales shimmer under
+nearest-neighbor.
 
-**Option B — Pixel art at exact 1× logical size.**
-Author at the logical box itself (runner 90×90) and set `pixelArt: true` in
-the Phaser game config so nearest-neighbor filtering keeps pixels crisp
-through the CSS upscale. Best retro look and smallest files, but the art must
-be authored pixel-perfect at these small sizes (a big pixel-art canvas scaled
-down turns to mush), and the 0.6–0.9 row scales will shimmer slightly since
-non-integer nearest-neighbor scaling drops pixel rows.
+## Export specs
 
-Pick per the final art style; don't mix (filtering mode is global).
-
-## Export specs (both options)
+The prep scripts handle crop and resize; the source art only needs:
 
 - **Format**: PNG with alpha (PNG-24). No JPEG (no transparency), no WebP
   needed at these sizes.
-- **Crop**: tight bounding box — no padding. The engine sizes sprites by
-  their image dimensions, so empty margins would shrink the visible art and
-  desync it from the collision box and shadow width.
-- **Anchor**: design so the **feet/base sit exactly on the bottom edge** of
-  the image. Obstacles are base-anchored to the row's feet line and tall art
-  grows upward; the engine-drawn shadow ellipse marks ground contact.
+- **Transparent background** — the scripts crop to the alpha bounding box, so
+  a leftover backdrop defeats the crop. Empty margins would otherwise shrink
+  the visible art and desync it from the collision box and shadow width.
+- **Feet/base as the lowest opaque pixels**, so after the crop they sit on
+  the bottom edge of the image. Sprites are base-anchored to the row's feet
+  line and tall art grows upward; the engine-drawn shadow ellipse marks
+  ground contact.
 - **No baked shadow, no ground** — the engine draws the drop shadow
   (`addShadow` in `rowLayout.js`).
-- **Aspect ratio must match the target box** in the table above (e.g. the
-  wall sprite must be authored at 5:9). If art is authored off-ratio, either
-  the visual size or the collision fairness drifts.
-- Power-of-two dimensions are **not** required (Phaser 3 WebGL handles NPOT
-  textures for 2D sprites).
+- **Facing right** for the player and enemy: obstacles scroll in from the
+  right and the enemy chases from the left.
+- Aspect ratio is free — width follows the source aspect at the configured
+  height. Power-of-two dimensions are **not** required (Phaser 3 WebGL
+  handles NPOT textures for 2D sprites).
 
-## Runner animation (optional, later)
-
-The beat squash is done in code via `setScale`, so a single static frame
-works day one. If a run cycle is wanted later, export a **horizontal
-spritesheet** of uniform frames at the same per-frame size as above
-(e.g. 6–8 frames × 180×180 → 1080–1440 × 180) and step frames on the
-Conductor's 8th-note grid so the run cycle stays on the music like
-everything else.
-
-## AI-generation prompts for the runner (from a real photo)
-
-Two ways to get the runner sprite from a photo of the person. Both target
-**Option A** (smooth cartoon at 2× = 180×180) — pixel art from a photo
-doesn't survive at 90px.
-
-**Why chibi proportions**: the runner's box is **square** (90×90). A
-realistically proportioned person is ~1:3 wide:tall, so they'd either be
-squashed to fit or fill only a third of the canvas width. Both prompts ask
-for a chibi (2–2.5 heads tall) build so the character fills the square and
-stays readable at 90px.
-
-**Facing right**: obstacles scroll in from the right and the enemy chases
-from the left, so the runner must face right.
-
-### Prompt 1 — whole photo, AI restyles it into a sprite
-
-Attach a clear, well-lit **full-body** photo (front or side view).
-
-```
-Turn the person in this photo into a 2D video-game character sprite.
-Keep their likeness recognizable: face shape, hairstyle, skin tone, and
-the outfit/colors from the photo.
-
-Requirements:
-- Full-body chibi proportions, about 2 to 2.5 heads tall, so the whole
-  character fits a SQUARE canvas
-- Mid-stride running pose, side view seen very slightly from above
-  (~10-15 degrees), facing RIGHT
-- Smooth cartoon style with clean bold outlines and flat cel shading,
-  light source from the top-left
-- Feet touching the exact bottom edge of the image, character centered
-  horizontally, cropped tight with no empty margins
-- Fully transparent background (PNG), no ground, no floor, NO drop
-  shadow (the game engine adds the shadow)
-- Output: 180 x 180 pixels, PNG with alpha
-```
-
-### Prompt 2 — only the face is real, AI draws the body
-
-Attach a clear **head/face** photo (a casual portrait is fine). Fill in the
-clothing description — the body is invented, so say what they should wear.
-
-```
-Draw a 2D video-game character sprite whose face is based on the person
-in this photo. Capture their likeness — face shape, hairstyle, hair
-color, skin tone, glasses/facial hair if present — as a cartoon, not a
-photo cutout.
-
-Design the body yourself: a chibi character about 2 to 2.5 heads tall
-(oversized head, small body) wearing [DESCRIBE OUTFIT, e.g. "a red
-hoodie, dark jeans and white sneakers"].
-
-Requirements:
-- Mid-stride running pose, side view seen very slightly from above
-  (~10-15 degrees), facing RIGHT
-- Smooth cartoon style with clean bold outlines and flat cel shading,
-  light source from the top-left; the face must match the drawn style
-  (same outlines/shading), not pasted-in photo texture
-- Feet touching the exact bottom edge of the image, character centered
-  horizontally, cropped tight with no empty margins
-- Fully transparent background (PNG), no ground, no floor, NO drop
-  shadow (the game engine adds the shadow)
-- Output: 180 x 180 pixels, PNG with alpha
-```
-
-### After generation (both prompts)
-
-Models often ignore the size/transparency lines, so check and fix:
-
-1. **Background**: if it isn't truly transparent, remove it (e.g.
-   Preview.app → Instant Alpha, or any background-removal tool).
-2. **Crop** to the tight bounding box — no padding, feet on the bottom edge.
-3. **Resize** to 180×180. If the tight crop isn't square, pad **width only**
-   (transparent, centered) to make it square — never pad the bottom, and
-   don't stretch.
-4. Check readability: zoom the result down to 90px (and 60% of that for the
-   back row) — the silhouette and face should still read.
+Generation prompts for the player and enemy frames live in
+`docs/run-sprite-prompt.md`.
 
 ## Obstacle character sprites
 
@@ -191,7 +94,7 @@ picked by `ObstacleSpawner.spriteFor()`:
   per image to roughly match its displayed half-width at that `hh` (not
   derived automatically, since art bleeds into transparent margins
   differently per pose). Collision height is still fixed to one row
-  (`collisionHh` in `ObstacleSpawner.js`).
+  (`COLLISION_HH` in `ObstacleSpawner.js`).
 - Sprites render with origin `(0, 1)`: the left edge sits exactly on the
   collision box's left edge (`x - hw`) and the bottom edge sits on the row's
   feet line, matching the shadow anchor.
@@ -232,8 +135,7 @@ position between frames, writing
 `public/assets/sprites/<target>/run-<i>.png` (`i` starting at 0, in argument
 order) — deleting any stale `run-*.png` first so a previous, larger frame
 count never lingers. See `docs/run-sprite-prompt.md` for the ChatGPT prompts
-used to generate source frames from a reference photo (player) or a zombie
-concept (enemy).
+used to generate source frames for each character.
 
 `--dummy N` generates N placeholder frames instead (a stylised zombie
 silhouette in the target's placeholder colour with alternating leg stride),
@@ -284,13 +186,13 @@ only.
 
 ## Road & background (the two scenery layers)
 
-`GameScene` currently draws these as flat rectangles (`GameScene.js` create):
+`Scenery` (`src/objects/Scenery.js`) draws both as `tileSprite`s from the
+active theme's image pair:
 
-| Layer | Rect today | Logical box | Scrolls? |
+| Layer | Position | Logical box | Scrolls? |
 |---|---|---|---|
-| **Road** (walk zone) | `0x1a1a2e`, `y = WALK_ZONE_TOP` → bottom | **800 × 270** | yes, left, wraps every 800px |
-| **Background** (scenery strip) | `0x2a4a2e`, `y = 0` → `WALK_ZONE_TOP` | **800 × 180** | no (static) |
-| Horizon line | `0x88aa66`, 2px at `y = WALK_ZONE_TOP` | 800 × 2 | no |
+| **Road** (walk zone) | `y = WALK_ZONE_TOP` → bottom | **800 × 270** | yes, left, wraps every 800px |
+| **Background** (scenery strip) | `y = 0` → `WALK_ZONE_TOP` | **800 × 180** | no (static) |
 
 Both sit at depth −10, under everything. Export at **2×** like the sprites:
 road **1600 × 540**, background **1600 × 360**. Opaque PNG (no alpha needed).
@@ -308,18 +210,19 @@ Constraints that come from the engine, not taste:
   horizontal bands at those offsets do not, and they help players read which
   row an obstacle is in.
 - **Keep the road mid-dark and low-contrast.** The engine drops a black ellipse
-  shadow at alpha 0.3 under every object, flashes the whole walk zone white on
-  the beat, and fades a black dim overlay in during `disco` sections — a road
-  that is already near-black kills the shadows, and a busy one buries the 90px
-  sprites.
+  shadow under every object (alpha 0.3 for the player/enemy, 0.5 for
+  obstacles), flashes the whole walk zone white on the beat, and fades a black
+  dim overlay in during `dim` sections — a road that is already near-black
+  kills the shadows, and a busy one buries the sprites.
 - **Nothing on the road that looks like an obstacle.** Every solid, chunky shape
   on the ground reads as something to dodge.
 - **Tall obstacles overhang the background.** A wall sprite in the back row
   crosses above `y = 180`, so keep the scenery strip silhouette-y and
   low-contrast enough that a wall still reads against it.
 - The background's bottom edge is where it meets the road; design the last few
-  pixels as the horizon seam (then the code's 2px line is optional). Making it
-  seamlessly tileable too is cheap insurance if it ever gets parallax.
+  pixels as the horizon seam (the code draws no horizon line). It must tile
+  left↔right too: the tileSprite is wider than one tile (see "Handling the
+  rotate section").
 
 ### Prompt template — road
 
@@ -389,15 +292,27 @@ Requirements:
 
 ### After generation
 
-1. **Check the seam**: duplicate the road side by side and look at the join.
-   Most models fake tileability — expect to fix it (Photoshop offset filter,
-   or `imagemagick -roll +800+0` then paint out the seam).
-2. **Resize** to exactly 1600×540 / 1600×360, no crop that shifts the horizon.
-3. **Sanity check at real size**: view the road at 800×270 with a 90px sprite
-   and a 30% black ellipse on it — if the shadow vanishes, the road is too dark;
-   if the sprite gets lost, the road is too busy.
+1. **Run the prep script** — image models don't emit these sizes and never
+   really tile:
+   ```
+   python3 tools/prep-scenery-image.py road    shot.png --out public/assets/bg/road-day.png
+   python3 tools/prep-scenery-image.py scenery shot.png --offset -120
+   ```
+   It crops the widest band of the target aspect (`--offset` nudges the band
+   vertically), resizes to exactly 1600×540 / 1600×360, forces the left↔right
+   seam (`--blend`), and reports the edge-row colours to paste into the
+   theme's `sky`/`ground` in `SCENERY_THEMES`.
+2. **Check the seam**: duplicate the result side by side and look at the join.
+3. **Sanity check at real size**: view the road at 800×270 with a sprite and a
+   30% black ellipse on it — if the shadow vanishes, the road is too dark; if
+   the sprite gets lost, the road is too busy.
 4. Keep one road + one background per variant so a theme can be swapped as a
-   pair.
+   pair: add an entry to `SCENERY_THEMES` and point `SCENERY_THEME`
+   (`gameConfig.js`) at it.
+
+The shipped `night` theme was not AI-generated: `tools/gen-night-assets.py`
+draws both layers procedurally (`--preview DIR` also dumps an in-game mock and
+the tiled-seam checks).
 
 **Handling the rotate section**: the `rotate` section zooms the camera out to
 0.49 and spins it, which would otherwise reveal area outside the 800×450
@@ -408,12 +323,14 @@ extending beyond them so no black ever shows.
 
 ## File locations
 
-Place under `public/assets/` alongside `intro.mp4` / `music.m4a`, e.g.
-`public/assets/sprites/runner.png`, `public/assets/sprites/obstacle-wall.png`,
-`public/assets/bg/road-night.png`, `public/assets/bg/scenery-night.png`;
+Everything lives under `public/assets/` alongside `intro.mp4` / `music.m4a`:
+
+- `sprites/player/run-<i>.png`, `sprites/enemy/run-<i>.png` — run-cycle frames
+- `sprites/obstacles/<slug>.png` — obstacle character sprites
+- `bg/road-<theme>.png`, `bg/scenery-<theme>.png` — scenery pair
+
 `BootScene` loads the active theme's pair via the `SCENERY_THEMES` table in
 `src/objects/Scenery.js`, which owns both layers. The road and the background
 are **both** `add.tileSprite` (not `add.image`) — the background needs one too
 because of the rotate-section oversizing above, even though it never scrolls;
-the road's `tilePositionX` replaces the old manual `bgX` wrap in
-`GameScene.update`.
+the road scrolls via its `tilePositionX` (`Scenery.scroll`).

@@ -1,7 +1,8 @@
 # Run-Cycle Sprite Prompts (Player & Enemy)
 
 ChatGPT (image generation) prompts for producing run-cycle frames from a
-reference photo (player) or a zombie concept (enemy). Keep every frame in
+reference image — both the player and the enemy are zombies, drawn as
+different characters. Keep every frame in
 **one conversation** so the character, outfit, lighting and size stay
 consistent across frames.
 
@@ -97,7 +98,10 @@ matches the wider silhouette.
 4. Set `PLAYER_FRAME_COUNT` / `ENEMY_FRAME_COUNT` in `src/config/gameConfig.js`
    to the number of frames produced (the script prints a reminder for
    whichever `--target` you ran).
-5. 2 frames is enough for a serviceable run cycle; 4 is smooth. All frames must
+5. 2 frames is enough for a serviceable run cycle; 4 is smooth. The current
+   build ships 3 player frames and 2 enemy frames; if the player's count
+   changes, revisit `PLAYER_RUN_STEPS_PER_BEAT`, which is tuned so a 3-frame
+   cycle lands a foot contact every half beat. All frames must
    be on equal-size canvases with the character placed consistently (e.g.
    cells of one sheet), since the script crops every frame to the union of
    their alpha bounding boxes and scales them together.

@@ -1,86 +1,74 @@
-# Speed & Chase Design — Decisions
+# Speed & Chase Design
 
-Date: 2026-07-07. Resolves C1/C2 from `architecture-review.md` with the chosen concept.
-Concept only — no code yet.
+How the chase and on-beat obstacle arrival work, and the math behind the tuning
+knobs in `src/config/gameConfig.js`.
 
 ## Core idea
 
 The chasing enemy pins the player into a narrow speed band near max. Once the player is
 forced into that band, obstacle spawn timing can assume the band's average speed and
-obstacles arrive on the beat within ±30–45 ms (inside a typical rhythm-game "Perfect"
-window). Speed is the defense against the enemy; rows are the defense against obstacles.
+obstacles arrive on the beat within roughly ±30–40 ms (inside a typical rhythm-game
+"Perfect" window). Speed is the defense against the enemy; rows are the defense against
+obstacles.
 
-## Decisions
+## How it works
 
-### 1. Enemy chase speed: song-anchored ramp, tunable cruise
+### 1. Enemy chase speed: song-anchored ramp
 
-- Enemy starts at `ENEMY_SPEED` (400) and ramps up to `ENEMY_CRUISE_SPEED`,
-  **anchored to song time** (e.g. reach cruise at a given `songTime` / section start),
-  stepping per bar or lerping over a few bars — never an instant jump.
-- `ENEMY_CRUISE_SPEED` is a **config variable** so difficulty can be tuned by hand.
-  Starting suggestion: ~575 (see tuning math below for why not 580).
-- **Remove** the current boundary-touch boost in `Enemy.update()`
-  (`if atBoundary → speed = MAX_SPEED − 20`). The boundary clamp itself stays.
+- The enemy starts at `ENEMY_SPEED` (400) and lerps linearly to `ENEMY_CRUISE_SPEED`
+  (565) between `ENEMY_RAMP_START_MS` (real beat 12, mid-intro) and `ENEMY_RAMP_END_MS`
+  (real beat 36, so chorus 1 hits at cruise) — see `Enemy.update()`.
+- The ramp runs on song time (`conductor.songMs`, the same clock as wave spawning), not
+  wall-clock time, so pause and tab-blur keep enemy pressure in sync with the music.
+- The enemy is clamped at the left screen edge; touching it gives no speed boost.
 
 ### 2. Obstacle motion & spawn timing: two phases
 
-Obstacles **always scroll at the player's current speed** (unchanged from today).
-Only the *spawn-time calculation* changes phase:
+Obstacles **always scroll at the player's current speed**. Only the *spawn-time
+calculation* (`travelMs` in `ObstacleSpawner.update()`) changes phase:
 
-- **Before the enemy reaches cruise speed** (easy intro): compute `travelMs` from the
-  player's current speed at spawn — current behavior. Obstacles may arrive off-tempo;
-  acceptable because the intro is authored sparse (few or no obstacles).
-- **After the enemy reaches cruise speed**: compute `travelMs` from
-  `OBSTACLE_TIMING_SPEED` — the average of the forced band, ≈ `(MAX_SPEED + ENEMY_CRUISE_SPEED) / 2`
-  (~587 at current numbers). Player is pinned in the band, so real arrival error stays
-  within ±30–45 ms of the beat.
-- Switch condition: `enemy.speed >= ENEMY_CRUISE_SPEED` (simple boolean; no blending).
+- **Before `OBSTACLE_TIMING_SWITCH_MS`** (sparse intro): `travelMs` uses the player's
+  current speed at spawn. Obstacles may arrive off-tempo; acceptable because the intro
+  is authored sparse.
+- **From `OBSTACLE_TIMING_SWITCH_MS`**: `travelMs` uses `OBSTACLE_TIMING_SPEED` — the
+  average of the forced band, `(MAX_SPEED + ENEMY_CRUISE_SPEED) / 2` (582.5). The player
+  is pinned in the band, so real arrival error stays small.
 
-### 3. Ramp trigger uses song time
+The switch is its own song-time constant, set to when the ramp completes — it does not
+read `enemy.speed`, so the two can be tuned independently. `GameScene` also multiplies
+the timing speed by the section's `speedMult`.
 
-The ramp schedule is defined against the audio clock (same clock as wave spawning),
-not wall-clock/game time. Pause and tab-blur then keep enemy pressure in sync with
-the music, and the ramp can be authored to land on a musical build-up.
+### 3. Taps are never judged against the beat
 
-### 4. BPM is undecided — keep it a variable
+Taps always give full accel — the game stays a running game, and rhythm is conveyed
+world-side (the beat-sync layer from `BEAT_SYNC_START_MS`). The equilibrium math below
+therefore needs no timing-window term.
 
-- Add config variables now (values TBD): `BPM`, `FIRST_BEAT_OFFSET_MS`.
-- When the track/BPM is chosen, re-derive wave `timeOffset`s and the ramp schedule
-  from beats, and re-run the tuning math below.
+## Tuning math
 
-## Tuning math (revisit when BPM is chosen)
+Track: 150.55 BPM (`TRACK_BPM`), so a quarter note is ~398.5 ms = 2.51 taps/s.
 
 With tap gain `ACCEL_STEP` (50), decay `DECEL_PER_SEC` (125), and cap `MAX_SPEED` (600):
 
 - Sustainable average speed at tap rate `r` (taps/sec, for r ≥ DECEL/ACCEL = 2.5):
   `avg = MAX_SPEED − DECEL_PER_SEC / (2r)`
 - Below 2.5 taps/s speed decays toward `MIN_SPEED` — the cap creates the band.
-- Required tap rate to hold a given enemy cruise speed `E`:
-  `r = DECEL_PER_SEC / (2 × (MAX_SPEED − E))`
-  - E = 580 → 3.13 taps/s (between 8th notes and triplets at ~86 BPM — unmusical)
-  - E = 575 → 2.50 taps/s minimum; 8th notes at 86 BPM (2.86/s) sustain ~578 → small
-    escape margin, so perfect rhythmic tapping slowly regrows the gap (avoids the
-    "walking dead" state where an early mistake is unrecoverable)
-- **Rule of thumb:** pick `ENEMY_CRUISE_SPEED` slightly *below* the sustainable average
-  at the intended musical tap cadence (e.g. 8th notes), so on-rhythm play escapes and
-  mistakes shrink the gap. The gap becomes a visible skill meter.
-- Beat-judged taps were considered and **rejected** (2026-07-07): taps always give full
-  accel — the game stays a running game, and rhythm is conveyed world-side (beat-sync layer
-  from `BEAT_SYNC_START_MS`). The equilibrium math above therefore stands as-is.
+- Quarter-note tapping (2.51 taps/s) sits just above that threshold and sustains ~575.
+- `ENEMY_CRUISE_SPEED` = 565 is ~10 px/s below that, so on-rhythm tapping slowly regrows
+  the gap (avoids the "walking dead" state where an early mistake is unrecoverable).
+- **Rule of thumb:** keep `ENEMY_CRUISE_SPEED` slightly *below* the sustainable average
+  at the intended musical tap cadence, so on-rhythm play escapes and mistakes shrink the
+  gap. The gap becomes a visible skill meter.
 
-## Config additions (names indicative)
+Re-run this if `ACCEL_STEP`, `DECEL_PER_SEC`, `MAX_SPEED` or the track changes.
 
-| Variable | Meaning | Initial value |
+## Config
+
+| Variable | Meaning | Value |
 |---|---|---|
-| `ENEMY_CRUISE_SPEED` | enemy speed after ramp completes | ~575 (tune) |
-| `ENEMY_RAMP` | song-time schedule for the ramp (start/end songTime or per-section) | TBD with track |
-| `OBSTACLE_TIMING_SPEED` | assumed speed for spawn timing after ramp | `(MAX_SPEED + ENEMY_CRUISE_SPEED) / 2` |
-| `BPM` | track BPM | TBD |
-| `FIRST_BEAT_OFFSET_MS` | offset of first beat in the audio file | TBD |
-
-## Open items
-
-1. ~~Choose the track~~ — done 2026-09-18: 150.55 BPM, first downbeat 549 ms, game beat anchored at real beat 4 (2143 ms), see `tools/gen-waves.py`.
-2. Decide the ramp anchor points (which section/bar reaches cruise).
-3. Author the intro waves sparse (ramp phase tolerates off-tempo arrivals).
-4. Tune `ENEMY_CRUISE_SPEED` by feel; keep it just below the sustainable average.
+| `ENEMY_SPEED` | enemy speed before the ramp | 400 |
+| `ENEMY_CRUISE_SPEED` | enemy speed after the ramp | 565 |
+| `ENEMY_RAMP_START_MS` / `ENEMY_RAMP_END_MS` | song-time span of the ramp | 5331 / 14896 |
+| `OBSTACLE_TIMING_SPEED` | assumed speed for spawn timing after the switch | `(MAX_SPEED + ENEMY_CRUISE_SPEED) / 2` |
+| `OBSTACLE_TIMING_SWITCH_MS` | song time when spawn timing switches phase | 14896 |
+| `BPM` / `FIRST_BEAT_OFFSET_MS` | game beat grid (measured 2026-09-18, see `tools/gen-waves.py`) | 150.55 / 2143 |

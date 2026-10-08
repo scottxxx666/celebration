@@ -20,17 +20,17 @@ The game creates a 3D illusion using 3 things:
 
 ### Format
 - **File type**: PNG with transparent background
-- **Canvas size**: 256 × 256 px (object should fill roughly 70–80% of canvas)
-- **Anchor point**: object base (feet/bottom) should sit at the vertical center-bottom of the canvas
+- **Canvas size**: any — `tools/prep-obstacle-image.py` crops to the alpha bounding box and
+  resizes to 280 px tall (2× the logical size). Supply at least that height; see
+  `docs/image-assets.md` for the pipeline
+- **Anchor point**: the base (feet/bottom) is the lowest opaque pixel — after the crop it
+  sits on the image's bottom edge, which the game places on the row's feet line
 
 ### Viewing Angle
 - **Side view**, slightly from above (~10–15° downward tilt)
-- Think: how you'd see a rock or barrel sitting on the ground if you were standing nearby and looking slightly down
-- The "top" of the object should be slightly visible — not a pure flat side view
+- Think: how you'd see someone standing on the ground if you were nearby and looking slightly down
 
 ### Style
-- **Pixel art preferred** — crisp pixels, no anti-aliasing on edges
-- Smooth cartoon also acceptable if pixel art isn't available
 - Clear outlines, readable silhouette
 - Consistent light source: **top-left**
 - No shadow drawn into the sprite — shadow is added by the game engine
@@ -44,27 +44,29 @@ The game creates a 3D illusion using 3 things:
 
 ## Object List
 
-Objects are **photo-sourced** — the artist will pixelate/redraw based on reference photos provided.
-For each object, provide a clear photo of it from a slight overhead-side angle as reference.
+Obstacles are **character cutouts**, registered in `src/config/obstacleSprites.js`
+(`OBSTACLE_SPRITES`). Each blocks exactly one row regardless of how tall the art is.
 
 General guidelines for good obstacle shapes:
-- Chunky, readable silhouette (avoid thin or tall objects — they're hard to read at small scale)
-- Wide base (so the drop shadow looks natural underneath)
-- Examples that work well: rocks, barrels, crates, stumps, bushes, sandbags
+- Readable silhouette at ~140 px tall on an 800×450 screen
+- Feet/base clearly on the ground, so the drop shadow looks natural underneath
+- Keep the body roughly as wide as the pose needs — the collision half-width (`hw`) is
+  tuned per image, and a wide pose blocks its row for longer
 
 ---
 
 ## Scale Reference (How the Game Uses Sprites)
 
-The game will automatically resize sprites depending on which depth row they appear in:
+The game automatically resizes sprites depending on which depth row they appear in
+(`ROW_SCALE_BACK` → `ROW_SCALE_FRONT` in `gameConfig.js`):
 
 | Row | Distance | Scale |
 |-----|----------|-------|
-| Row 1 (top) | Far | ~60% |
-| Row 2 (mid) | Mid | ~80% |
+| Row 1 (top) | Far | 90% |
+| Row 2 (mid) | Mid | 95% |
 | Row 3 (bottom) | Near | 100% |
 
-So a 256px sprite at 100% scale is the "closest to camera" size. Design at full size.
+Design at full (front-row) size.
 
 ---
 

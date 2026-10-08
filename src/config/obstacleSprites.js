@@ -16,7 +16,7 @@ export const OBSTACLE_SPRITES = [
             // scale applied to the sprite (width follows the image aspect)
     hw: 35, // collision AABB half-width AND spawn-timing distance — tuned
             // per image from its displayed half-width at this hh; collision
-            // height is still fixed to one row (see collisionHh)
+            // height is still fixed to one row (see COLLISION_HH)
   },
   {
     key: 'obs-kazuha-zombie',
