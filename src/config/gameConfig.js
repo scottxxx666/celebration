@@ -80,12 +80,12 @@ export const BEAT_SYNC_START_MS = 14896;
 // phrase starts on either grid below.
 export const TRACK_BPM = 150.55;
 export const TRACK_BEAT_MS = 60000 / TRACK_BPM;   // real track beat (~398.54 ms) — the unit of waves.js timeOffset
-export const BPM = TRACK_BPM / 2;   // half-time game beat (~797 ms) — obstacles land on beats and half-beats
-// export const BPM = TRACK_BPM;    // true-tempo game beat (~398 ms) — swap in to compare
+export const BPM = TRACK_BPM;   // true-tempo game beat (~398 ms) — one game beat per real track beat
+// export const BPM = TRACK_BPM / 2;    // half-time game beat (~797 ms) — swap in to compare (sections.js strobe/lightsOut values are authored for true tempo)
 export const BEAT_MS = 60000 / BPM;
 // Run-cycle frame steps per game beat, per character (GameScene multiplies by
 // the section's speedMult). The player's 3-frame cycle at 6 steps puts a foot
-// contact (frame 0) on every half game beat, i.e. every real track beat; the
+// contact (frame 0) on every half game beat (every real track beat at half-time BPM); the
 // enemy's 2-frame cycle steps on 8th notes. Also sets each character's
 // free-running pre-beat frame period (BEAT_MS / steps) in RunCycle, so a
 // character runs from the very first frame, before the beat clock starts.

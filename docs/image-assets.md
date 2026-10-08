@@ -252,7 +252,7 @@ Registration is a pair of config values per character in
   `PLAYER_HW`/`PLAYER_HH` or `ENEMY_HW`/`ENEMY_HH`.
 - `PLAYER_RUN_STEPS_PER_BEAT` / `ENEMY_RUN_STEPS_PER_BEAT` — frame steps per
   game beat. The player's 3-frame cycle at 6 steps lands a foot contact
-  (frame 0) on every real track beat; the enemy's 2-frame cycle steps on
+  (frame 0) every half game beat; the enemy's 2-frame cycle steps on
   8th notes (2).
 
 `src/config/runFrames.js` builds `PLAYER_FRAMES` and `ENEMY_FRAMES`
