@@ -6,17 +6,18 @@
 //
 // Note: height comes only from `hh` here. Since wall sections spawn two
 // obstacles per beat, a wide `hw` makes walls block a row for longer; if walls
-// feel unfair, lower `hw` toward 30 and let art trail past the hitbox (the
-// left, dangerous edge stays aligned).
+// feel unfair, lower OBSTACLE_HITBOX_SCALE (gameConfig.js) to narrow every
+// hitbox around its centre.
 export const OBSTACLE_SPRITES = [
   {
     key: 'obs-chaewon-flamingo',
     file: 'assets/sprites/obstacles/chaewon-flamingo.png',
     hh: 70, // logical half-height at front-row scale; drives the uniform
             // scale applied to the sprite (width follows the image aspect)
-    hw: 35, // collision AABB half-width AND spawn-timing distance — tuned
-            // per image from its displayed half-width at this hh; collision
-            // height is still fixed to one row (see COLLISION_HH)
+    hw: 35, // art half-width: art placement, shadow and spawn-timing
+            // distance — tuned per image from its displayed half-width at
+            // this hh. The collision AABB is this × OBSTACLE_HITBOX_SCALE;
+            // its height is still fixed to one row (see COLLISION_HH)
   },
   {
     key: 'obs-kazuha-zombie',

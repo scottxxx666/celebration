@@ -1,4 +1,4 @@
-import { GAME_WIDTH, PLAYER_X, MIN_SPEED, ROW_HEIGHT, PLAYER_HH, TRACK_BEAT_MS } from '../config/gameConfig.js';
+import { GAME_WIDTH, PLAYER_X, MIN_SPEED, ROW_HEIGHT, PLAYER_HH, TRACK_BEAT_MS, OBSTACLE_HITBOX_SCALE } from '../config/gameConfig.js';
 import { WAVES } from '../config/waves.js';
 import { OBSTACLE_SPRITES } from '../config/obstacleSprites.js';
 import { rowLayout, addShadow, styleShadow, styleSilhouette, fitSpriteScale } from '../rowLayout.js';
@@ -39,7 +39,7 @@ const MAX_TRAVEL_MS = ((GAME_WIDTH + MAX_HW - PLAYER_X) / MIN_SPEED) * 1000;
 export class ObstacleSpawner {
   constructor(scene) {
     this.scene = scene;
-    this.obstacles = []; // live { rect, shadow, sprite, x, y, hw, hh, depth }
+    this.obstacles = []; // live { rect, shadow, sprite, x, y, hw, hh, artHw, depth } — hw/hh are the collision AABB
     this.reveal = null; // lights-out dark beats: 'shadows' | 'silhouettes' | null (sections.js lightsOut.reveal)
 
     // Authored waves flattened once into arrival order, sprite/hitbox resolved
@@ -83,11 +83,11 @@ export class ObstacleSpawner {
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obs = this.obstacles[i];
       obs.x -= dx;
-      obs.rect.setX(obs.sprite ? obs.x - obs.hw : obs.x);
+      obs.rect.setX(obs.sprite ? obs.x - obs.artHw : obs.x);
       obs.shadow.setX(obs.x);
       styleShadow(obs.shadow, obs.depth, this.reveal === 'shadows', SHADOW_ALPHA);
       styleSilhouette(obs.rect, this.reveal === 'silhouettes');
-      if (obs.x + obs.hw < 0) {
+      if (obs.x + obs.artHw < 0) {
         obs.rect.destroy();
         obs.shadow.destroy();
         this.obstacles.splice(i, 1);
@@ -118,8 +118,8 @@ export class ObstacleSpawner {
 
     let rect;
     if (sprite) {
-      // Origin (0, 1): left edge on the collision box's left edge (x - hw),
-      // bottom edge on the feet line — same anchoring the shadow uses.
+      // Origin (0, 1): left edge at the full art half-width (x - hw), bottom
+      // edge on the feet line — same anchoring the shadow uses.
       rect = this.scene.add.image(x - hw, feetY, sprite.key).setOrigin(0, 1).setDepth(depth);
       rect.setScale(fitSpriteScale(rect, sprite.hh, scale));
     } else {
@@ -129,7 +129,9 @@ export class ObstacleSpawner {
         .setScale(scale)
         .setDepth(depth);
     }
-    this.obstacles.push({ rect, shadow, sprite, x, y, hw, hh: COLLISION_HH, depth });
+    // Collision is narrower than the art (OBSTACLE_HITBOX_SCALE), centred on
+    // the same x; `artHw` keeps the full width for art placement and culling.
+    this.obstacles.push({ rect, shadow, sprite, x, y, hw: hw * OBSTACLE_HITBOX_SCALE, hh: COLLISION_HH, artHw: hw, depth });
   }
 
   destroyAll() {

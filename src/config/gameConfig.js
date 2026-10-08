@@ -36,6 +36,12 @@ export const ROW_HEIGHT = (GAME_HEIGHT - WALK_ZONE_TOP) / NUM_ROWS; // 90
 export const ROW_SCALE_BACK = 0.9;
 export const ROW_SCALE_FRONT = 1.0;
 
+// Obstacle collision width as a fraction of each sprite's `hw`
+// (obstacleSprites.js), shrunk equally front and back around the same centre
+// so near-misses go the player's way. Collision only — art placement, shadow
+// and spawn timing keep the full `hw`. 1 = hitbox as wide as the art.
+export const OBSTACLE_HITBOX_SCALE = 0.75;
+
 // Touch controls — vertical drag distance (game px) from the pointer's down
 // position before a swipe fires a row change (see GameScene pointer handlers)
 export const SWIPE_THRESHOLD = 40;

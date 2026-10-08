@@ -28,7 +28,7 @@ h = `hh × 2`, from `gameConfig.js` / `OBSTACLE_SPRITES`):
 | Use | Logical box (px) | Notes |
 |---|---|---|
 | **Runner (player)** | collision 90 × 90, art `PLAYER_SPRITE_HH × 2` tall | `PLAYER_HW/HH = 45` for collision; art height comes from `PLAYER_SPRITE_HH` (`gameConfig.js`), width follows the source aspect; beat pulse squashes height to 85% |
-| Obstacle — character sprites | `hw × 2` wide × `hh × 2` tall, per entry in `OBSTACLE_SPRITES` | `hh` sets the art height (currently 62–70 → 124–140 px), `hw` the collision half-width; see below |
+| Obstacle — character sprites | `hw × 2` wide × `hh × 2` tall, per entry in `OBSTACLE_SPRITES` | `hh` sets the art height (currently 62–70 → 124–140 px), `hw` the art half-width (collision is `hw × OBSTACLE_HITBOX_SCALE`); see below |
 | **Chaser (enemy)** | collision 52 × 78, art `ENEMY_SPRITE_HH × 2` tall | `ENEMY_HW/HH = 26/39` for collision; art height comes from `ENEMY_SPRITE_HH` (`gameConfig.js`, defaults to matching collision height), width follows the source aspect |
 
 `waves.js` carries no sizes — an obstacle is only `{ timeOffset, row }`, and
@@ -90,14 +90,17 @@ picked by `ObstacleSpawner.spriteFor()`:
 - `hh` — logical half-height at front-row scale; the sprite's *display*
   scale is derived from `hh` (`(hh * 2 / textureHeight) * rowScale`), so
   width scales along with it to preserve the source aspect ratio.
-- `hw` — collision AABB half-width **and** the spawn-timing distance; tuned
-  per image to roughly match its displayed half-width at that `hh` (not
-  derived automatically, since art bleeds into transparent margins
-  differently per pose). Collision height is still fixed to one row
-  (`COLLISION_HH` in `ObstacleSpawner.js`).
-- Sprites render with origin `(0, 1)`: the left edge sits exactly on the
-  collision box's left edge (`x - hw`) and the bottom edge sits on the row's
-  feet line, matching the shadow anchor.
+- `hw` — the art half-width: art placement, shadow width **and** the
+  spawn-timing distance; tuned per image to roughly match its displayed
+  half-width at that `hh` (not derived automatically, since art bleeds into
+  transparent margins differently per pose). The collision AABB half-width
+  is `hw × OBSTACLE_HITBOX_SCALE` (`gameConfig.js`, 0.75), shrunk equally
+  front and back around the same centre. Collision height is still fixed to
+  one row (`COLLISION_HH` in `ObstacleSpawner.js`).
+- Sprites render with origin `(0, 1)`: the left edge sits at `x - hw`
+  (the collision box starts `hw × (1 − OBSTACLE_HITBOX_SCALE)` inside it)
+  and the bottom edge sits on the row's feet line, matching the shadow
+  anchor.
 
 Things to be aware of:
 
@@ -106,9 +109,8 @@ Things to be aware of:
   `ObstacleSpawner.js`, player half-height).
 - Wall sections spawn two obstacles per beat, so a wide sprite (e.g. the
   zombie at `hw: 61`) makes those walls block a row noticeably longer.
-  If walls feel unfair, lower the wide sprites' `hw`
-  toward 30 and accept some art trailing past the hitbox — the left
-  (dangerous) edge stays aligned regardless.
+  If walls feel unfair, lower `OBSTACLE_HITBOX_SCALE` to narrow every
+  hitbox around its centre.
 
 ## Run-cycle frames (player & enemy)
 
