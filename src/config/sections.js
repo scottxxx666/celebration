@@ -34,7 +34,7 @@ export const SECTIONS = [
   { name: 'dance_break2', startMs: 96198, endMs: 96995, speedMult: 1.5, lightsOut: { lit: 0.25, gap: 0.25, bursts: 3, dark: 2.75, strobe: true }, dim: true },
   { name: 'dance_break3', startMs: 96995, endMs: 98191, speedMult: 1.5, lightsOut: { lit: 0.25, gap: 0.25, bursts: 1, dark: 2.75, strobe: true }, dim: true },
   { name: 'blackout', startMs: 98191, endMs: 98589, speedMult: 1.5 },
-  { name: 'final_highlight', startMs: 123697, endMs: 136451, speedMult: 1, ...DISCO, rotate: true },
+  { name: 'final_highlight', startMs: 123697, endMs: 136451, speedMult: 1.5, ...DISCO, rotate: true },
 ].map(section => ({ ...NORMAL, ...section }));
 
 // SECTIONS is in time order: one forward and one backward pass give every dimmed
