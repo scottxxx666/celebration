@@ -7,7 +7,7 @@ import { Scenery } from '../objects/Scenery.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
-import { sectionAt, lightsOutAt } from '../config/sections.js';
+import { sectionAt } from '../config/sections.js';
 import { getStartMs, formatSongTime } from '../songTime.js';
 import { addDirectionKeys } from '../input.js';
 import {
@@ -34,6 +34,7 @@ import {
   DISCO_COLORS,
   STROBE_ALPHA,
   STROBE_DECAY,
+  LIGHTS_OUT_FADE_MS,
   LIGHTS_OUT_SILHOUETTE_BG,
   ZOOM_PUNCH_AMOUNT,
   ZOOM_PUNCH_BEATS,
@@ -194,9 +195,9 @@ export class GameScene extends Phaser.Scene {
       this.strobeOverlay.setAlpha(Math.max(0, this.strobeOverlay.alpha - STROBE_DECAY * (delta / 1000)));
     }
 
-    // Lights out — cycle anchored to the section start (lightsOutAt in
-    // sections.js): lit blinks that fade to black, the fade ending on the grid
-    // point where the dark begins, and snap back on.
+    // Lights out — cycle anchored to the section start: lightsOut.bursts lit
+    // blinks of lightsOut.lit beats, lightsOut.gap beats of black between them,
+    // then black for lightsOut.dark beats (quick fade in, snaps back on).
     // lightsOut.reveal picks what stays readable while dark: 'shadows' = drop
     // shadows glow above the black; 'silhouettes' = the overlay becomes a
     // near-black backdrop behind gameplay (depth −1, above the lights, below the
@@ -204,13 +205,22 @@ export class GameScene extends Phaser.Scene {
     let lightsOutAlpha = 0;
     let reveal = null;
     if (section.lightsOut) {
-      const state = lightsOutAt(section.lightsOut, songMs - section.startMs, this.conductor.beatMs);
-      lightsOutAlpha = state.alpha;
-      reveal = state.reveal;
-      if (section.lightsOut.strobe && state.litMs !== null) {
+      const { lit, dark, gap = 0, bursts = 1 } = section.lightsOut;
+      const { beatMs } = this.conductor;
+      const litMs = lit * beatMs;
+      const burstMs = (lit + gap) * beatMs; // one blink + the gap after it
+      const burstsMs = bursts * burstMs - gap * beatMs; // the last blink has no gap, the long dark follows
+      const phaseMs = (songMs - section.startMs) % (burstsMs + dark * beatMs);
+      // ms since the current (or last) blink began: lit while < litMs, black after
+      const sinceLitMs = phaseMs < burstsMs ? phaseMs % burstMs : phaseMs - burstsMs + litMs;
+      if (sinceLitMs >= litMs) {
+        // lit: 0 = dark throughout — no fade, or it would dip at every cycle wrap
+        lightsOutAlpha = lit > 0 ? Math.min(1, (sinceLitMs - litMs) / LIGHTS_OUT_FADE_MS) : 1;
+        reveal = section.lightsOut.reveal ?? null;
+      } else if (section.lightsOut.strobe) {
         // The lights come on with a strobe flash: same peak and decay as the
         // section strobe above, derived from time since the blink began
-        const litFlash = STROBE_ALPHA - STROBE_DECAY * (state.litMs / 1000);
+        const litFlash = STROBE_ALPHA - STROBE_DECAY * (sinceLitMs / 1000);
         this.strobeOverlay.setAlpha(Math.max(this.strobeOverlay.alpha, litFlash));
       }
     }

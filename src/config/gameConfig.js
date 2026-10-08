@@ -130,7 +130,7 @@ export const DISCO_COLORS = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff00, 0xff8800];
 export const STROBE_ALPHA = 0.4;  // peak white alpha of the strobe
 export const STROBE_DECAY = 12;    // alpha units/sec fade after the flash (~100ms tail)
 // Lights out — full-black overlay on the dark part of each cycle (lit/dark beat lengths are authored per-section, lightsOut in sections.js)
-export const LIGHTS_OUT_FADE_MS = 60;  // fade to black over the end of each lit part, reaching full black on the grid point where the dark begins (capped at the blink length); the lights snap back on
+export const LIGHTS_OUT_FADE_MS = 60;  // fade to black at the start of each dark part; the lights snap back on
 // lightsOut.reveal 'shadows': drop shadows glow above the black so rows and distances stay readable
 export const LIGHTS_OUT_SHADOW_COLOR = 0xffffff;
 export const LIGHTS_OUT_SHADOW_ALPHA = 0.85;
