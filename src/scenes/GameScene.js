@@ -195,8 +195,8 @@ export class GameScene extends Phaser.Scene {
       this.strobeOverlay.setAlpha(Math.max(0, this.strobeOverlay.alpha - STROBE_DECAY * (delta / 1000)));
     }
 
-    // Lights out — cycle anchored to the section start: black for lightsOut.dark beats,
-    // then lit for lightsOut.lit beats (quick fade in, snaps back on).
+    // Lights out — cycle anchored to the section start: lit for lightsOut.lit beats,
+    // then black for lightsOut.dark beats (quick fade in, snaps back on).
     // lightsOut.reveal picks what stays readable while dark: 'shadows' = drop
     // shadows glow above the black; 'silhouettes' = the overlay becomes a
     // near-black backdrop behind gameplay (depth −1, above the lights, below the
@@ -204,12 +204,17 @@ export class GameScene extends Phaser.Scene {
     let lightsOutAlpha = 0;
     let reveal = null;
     if (section.lightsOut) {
-      const darkMs = this.conductor.beatMs * section.lightsOut.dark;
-      const cycleMs = darkMs + this.conductor.beatMs * section.lightsOut.lit;
+      const litMs = this.conductor.beatMs * section.lightsOut.lit;
+      const cycleMs = litMs + this.conductor.beatMs * section.lightsOut.dark;
       const phaseMs = (songMs - section.startMs) % cycleMs;
-      if (phaseMs < darkMs) {
-        lightsOutAlpha = Math.min(1, phaseMs / LIGHTS_OUT_FADE_MS);
+      if (phaseMs >= litMs) {
+        lightsOutAlpha = Math.min(1, (phaseMs - litMs) / LIGHTS_OUT_FADE_MS);
         reveal = section.lightsOut.reveal ?? null;
+      } else if (section.lightsOut.strobe) {
+        // The lights come on with a strobe flash: same peak and decay as the
+        // section strobe above, derived from time since the lit part began
+        const litFlash = STROBE_ALPHA - STROBE_DECAY * (phaseMs / 1000);
+        this.strobeOverlay.setAlpha(Math.max(this.strobeOverlay.alpha, litFlash));
       }
     }
     const silhouettes = section.lightsOut?.reveal === 'silhouettes';

@@ -8,11 +8,12 @@
 // beatFlash = walk-zone flash on each beat (still waits for BEAT_SYNC_START_MS; colour/alpha follow lights).
 // dim = black overlay darkening the world; back-to-back dimmed sections fade as one span.
 // lights = DiscoLights beams/pools/lasers + zoom punch + disco-coloured beat flash.
-// lightsOut = { lit, dark } in beats, cycling from the section start: fully black for `dark` beats
-//   (hiding all gameplay), then lit for `lit` beats ({ lit: 1, dark: 1 } = 1 beat each; null/absent = off).
+// lightsOut = { lit, dark } in beats, cycling from the section start: lit for `lit` beats, then
+//   fully black for `dark` beats, hiding all gameplay ({ lit: 1, dark: 1 } = 1 beat each; null/absent = off).
+//   Optional `strobe: true` fires a white strobe flash each time the lights come on (including the section start).
 //   Optional `reveal` keeps something readable through the dark: 'shadows' = drop shadows glow on
 //   pure black; 'silhouettes' = sprites turn solid black on a near-black backdrop. Without it,
-//   author this section's obstacles to arrive while lit or right as the dark begins — never in the opening dark.
+//   author this section's obstacles to arrive while lit or right as the dark begins.
 // ...DISCO = preset for dim + lights together.
 const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, beatFlash: false, lightsOut: null };
 const DISCO = { dim: true, lights: true };
@@ -21,8 +22,10 @@ export const SECTIONS = [
   { name: 'highlight1', startMs: 14498, endMs: 26454, speedMult: 1, beatFlash: true },
   { name: 'highlight2', startMs: 65909, endMs: 78663, speedMult: 1, ...DISCO },
   { name: 'ready', startMs: 84641, endMs: 89822, speedMult: 1, strobe: 2 },
-  { name: 'blackout', startMs: 89822, endMs: 91814, speedMult: 1.5, dim: true },
-  { name: 'dance_break', startMs: 91814, endMs: 98589, speedMult: 1.5, lightsOut: { lit: 0.33, dark: 0.67, reveal: 'silhouettes' }, dim: true },
+  // { name: 'blackout', startMs: 89822, endMs: 91814, speedMult: 1.5, dim: true },
+  { name: 'blackout', startMs: 89822, endMs: 91814, speedMult: 1.5, lightsOut: { lit:0, dark: 2, reveal: 'silhouettes' }, dim: true },
+  // { name: 'dance_break', startMs: 91814, endMs: 98589, speedMult: 1.5, lightsOut: { lit: 0.33, dark: 0.67, strobe: true }, dim: true },
+  { name: 'dance_break', startMs: 91814, endMs: 98589, speedMult: 1.5, lightsOut: { lit: 0.165, dark: 0.335 }, dim: true },
   { name: 'final_highlight', startMs: 123299, endMs: 136052, speedMult: 1, ...DISCO, rotate: true },
 ].map(section => ({ ...NORMAL, ...section }));
 
