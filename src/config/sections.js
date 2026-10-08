@@ -24,9 +24,12 @@ export const SECTIONS = [
   { name: 'highlight1', startMs: 14498, endMs: 26454, speedMult: 1, beatFlash: true },
   { name: 'highlight2', startMs: 65909, endMs: 78663, speedMult: 1, ...DISCO },
   { name: 'ready', startMs: 84641, endMs: 89822, speedMult: 1, strobe: 2 },
-  { name: 'blackout', startMs: 89822, endMs: 90818, speedMult: 1.5, lightsOut: { lit:0, dark: 1, reveal: 'silhouettes' }, dim: true },
-  { name: 'blackout', startMs: 90818, endMs: 91814, speedMult: 1.5, lightsOut: { lit:0, dark: 1 }, dim: true },
-  { name: 'dance_break', startMs: 91814, endMs: 98589, speedMult: 1.5, lightsOut: { lit: 0.125, gap: 0.125, bursts: 3, dark: 1.375, strobe: true }, dim: true },
+  { name: 'blackout', startMs: 89822, endMs: 91017, speedMult: 1.5, lightsOut: { lit:0, dark: 1, reveal: 'silhouettes' }, dim: true },
+  { name: 'blackout2', startMs: 91017, endMs: 91814, speedMult: 1.5, lightsOut: { lit:0, dark: 1 }, dim: true },
+  { name: 'dance_break', startMs: 91814, endMs: 96198, speedMult: 1.5, lightsOut: { lit: 0.125, gap: 0.125, bursts: 2, dark: 0.625, strobe: true }, dim: true },
+  { name: 'dance_break2', startMs: 96198, endMs: 96995, speedMult: 1.5, lightsOut: { lit: 0.125, gap: 0.125, bursts: 3, dark: 1.375, strobe: true }, dim: true },
+  { name: 'dance_break3', startMs: 96995, endMs: 98191, speedMult: 1.5, lightsOut: { lit: 0.125, gap: 0.125, bursts: 1, dark: 1.375, strobe: true }, dim: true },
+  { name: 'blackout', startMs: 98191, endMs: 98589, speedMult: 1.5 },
   { name: 'final_highlight', startMs: 123299, endMs: 136052, speedMult: 1, ...DISCO, rotate: true },
 ].map(section => ({ ...NORMAL, ...section }));
 
