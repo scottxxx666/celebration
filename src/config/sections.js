@@ -23,7 +23,9 @@ const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe:
 const DISCO = { dim: true, lights: true };
 
 export const SECTIONS = [
-  { name: 'highlight1', startMs: 14498, endMs: 26454, speedMult: 1, beatFlash: true },
+  { name: 'highlight1', startMs: 14498, endMs: 26055, speedMult: 1, beatFlash: true },
+  // { name: 'chorus1b', startMs: 27650, endMs: 53156, speedMult: 1, beatFlash: true },
+  // { name: 'build2', startMs: 62721, endMs: 65909, speedMult: 1, strobe: [[4, 1], [2, 2], [2, 4]], strobeRamp: 0.25 },
   { name: 'highlight2', startMs: 65909, endMs: 78663, speedMult: 1, ...DISCO },
   { name: 'ready', startMs: 84641, endMs: 89822, speedMult: 1, strobe: [[6, 1], [3, 2], [3, 4], [1, 8]], strobeRamp: 0.25 },
   { name: 'blackout', startMs: 89822, endMs: 91017, speedMult: 1.5, lightsOut: { lit:0, dark: 2, reveal: 'silhouettes' }, dim: true },
@@ -32,7 +34,7 @@ export const SECTIONS = [
   { name: 'dance_break2', startMs: 96198, endMs: 96995, speedMult: 1.5, lightsOut: { lit: 0.25, gap: 0.25, bursts: 3, dark: 2.75, strobe: true }, dim: true },
   { name: 'dance_break3', startMs: 96995, endMs: 98191, speedMult: 1.5, lightsOut: { lit: 0.25, gap: 0.25, bursts: 1, dark: 2.75, strobe: true }, dim: true },
   { name: 'blackout', startMs: 98191, endMs: 98589, speedMult: 1.5 },
-  { name: 'final_highlight', startMs: 123299, endMs: 136052, speedMult: 1, ...DISCO, rotate: true },
+  { name: 'final_highlight', startMs: 123697, endMs: 136451, speedMult: 1, ...DISCO, rotate: true },
 ].map(section => ({ ...NORMAL, ...section }));
 
 // SECTIONS is in time order: one forward and one backward pass give every dimmed

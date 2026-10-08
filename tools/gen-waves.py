@@ -9,7 +9,9 @@ Track facts (measured 2026-09-18, treat as fact — see CLAUDE.md):
   public/assets/music.m4a, 139.52s, constant tempo 150.55 BPM.
   beat length = 60000 / 150.55 ≈ 398.54 ms.
   real beat n happens at song time `549 + n * 398.54` ms (beat 0 = 549ms is the
-  first downbeat). Every musical phrase boundary falls on a real beat ≡ 4 (mod 8).
+  first downbeat). Musical phrase boundaries fall on a real beat ≡ 4 (mod 8) up to
+  beat 244; a one-beat silence there shifts the bridge and final chorus by one
+  beat (245-309, 309-341).
 
 The song is divided into sections (in real beats) each with an authored obstacle
 density "profile" (sparse/light/normal/dense/none). For each section this script:
@@ -57,9 +59,9 @@ SECTIONS = [
     ('chorus2',   164, 196, 'wall'),
     ('post2',     196, 228, 'light'),
     ('bridgeA',   228, 244, 'normal'),
-    ('bridgeB',   244, 308, 'light'),
-    ('chorus3',   308, 340, 'wall'),
-    ('outro',     340, 350, 'none'),
+    ('bridgeB',   245, 309, 'light'),
+    ('chorus3',   309, 341, 'wall'),
+    ('outro',     341, 350, 'none'),
 ]
 
 PROFILES = {

@@ -74,8 +74,9 @@ export const OBSTACLE_TIMING_SWITCH_MS = 14896;  // real beat 36, when the enemy
 export const BEAT_SYNC_START_MS = 14896;
 
 // Music — public/assets/music.m4a, measured 2026-09-18 (see tools/gen-waves.py):
-// 150.55 BPM constant, real beat 0 (first downbeat) at 549 ms. Every phrase
-// boundary falls on a multiple of 8 real beats counted from real beat 4, so the
+// 150.55 BPM constant, real beat 0 (first downbeat) at 549 ms. Up to real beat
+// 244 every phrase boundary falls on a multiple of 8 real beats counted from real
+// beat 4 (a one-beat silence there shifts the bridge and final chorus by one), so the
 // game's beat 0 is anchored there and downbeats (beatIndex % 4 === 0) land on
 // phrase starts on either grid below.
 export const TRACK_BPM = 150.55;
