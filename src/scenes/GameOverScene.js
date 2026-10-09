@@ -3,6 +3,7 @@ import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, isDesktop } from '../config/ui.
 import { Confetti } from '../objects/Confetti.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { onDismiss } from '../input.js';
+import { DIFFICULTIES, getDifficulty } from '../difficulty.js';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -27,7 +28,7 @@ export class GameOverScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     const pct = Math.floor(this.progress * 100);
-    this.add.text(cx, cy + 10, `Song progress: ${pct}% · ${this.score}s`, {
+    this.add.text(cx, cy + 10, `Song progress: ${pct}% · ${this.score}s · ${DIFFICULTIES[getDifficulty()].label}`, {
       ...CAPTION_STYLE,
       fontSize: '22px',
     }).setOrigin(0.5);

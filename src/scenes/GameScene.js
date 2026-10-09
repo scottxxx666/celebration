@@ -10,6 +10,10 @@ import { Conductor } from '../Conductor.js';
 import { rotateTurns, sectionAt, strobeRate, strobeScale } from '../config/sections.js';
 import { getStartMs, formatSongTime } from '../songTime.js';
 import { addDirectionKeys } from '../input.js';
+import { isDebugMode } from '../debugMode.js';
+import { getDifficulty } from '../difficulty.js';
+import { WAVES } from '../config/waves.js';
+import { WAVES_HARD } from '../config/wavesHard.js';
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
@@ -107,10 +111,11 @@ export class GameScene extends Phaser.Scene {
       .setAlpha(0)
       .setDepth(9);
 
-    this.player = new Player(this, PLAYER_X);
+    const difficulty = getDifficulty();
+    this.player = new Player(this, PLAYER_X, { autoRun: isDebugMode() || difficulty === 'easy' });
     this.player.attachTouch(this);
     this.keys = addDirectionKeys(this);
-    this.spawner = new ObstacleSpawner(this);
+    this.spawner = new ObstacleSpawner(this, difficulty === 'hard' ? WAVES_HARD : WAVES);
     if (startMs > 0) this.spawner.skipTo(startMs);
     this.enemy = new Enemy(this, ENEMY_START_X);
     this.disco = new DiscoLights(this);

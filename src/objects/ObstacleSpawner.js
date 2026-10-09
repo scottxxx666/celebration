@@ -37,7 +37,7 @@ const MAX_HW = Math.max(FALLBACK_HW, ...OBSTACLE_SPRITES.map(s => s.hw));
 const MAX_TRAVEL_MS = ((GAME_WIDTH + MAX_HW - PLAYER_X) / MIN_SPEED) * 1000;
 
 export class ObstacleSpawner {
-  constructor(scene) {
+  constructor(scene, waves = WAVES) {
     this.scene = scene;
     this.obstacles = []; // live { rect, shadow, sprite, x, y, hw, hh, artHw, depth } — hw/hh are the collision AABB
     this.reveal = null; // lights-out dark beats: 'shadows' | 'silhouettes' | null (sections.js lightsOut.reveal)
@@ -45,7 +45,7 @@ export class ObstacleSpawner {
     // Authored waves flattened once into arrival order, sprite/hitbox resolved
     // up front; `next` is the first entry that hasn't spawned yet.
     this.pending = [];
-    WAVES.forEach((wave, wi) => {
+    waves.forEach((wave, wi) => {
       wave.obstacles.forEach((obs, oi) => {
         const sprite = spriteFor(wi, oi);
         this.pending.push({

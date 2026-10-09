@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ObstacleSpawner } from '../src/objects/ObstacleSpawner.js';
+import { WAVES } from '../src/config/waves.js';
 import { OBSTACLE_SPRITES } from '../src/config/obstacleSprites.js';
 import { GAME_WIDTH, OBSTACLE_HITBOX_SCALE } from '../src/config/gameConfig.js';
 
@@ -59,4 +60,19 @@ test('an obstacle is kept until its art, not just its hitbox, has left the scree
   spawner.update(-Infinity, 0, 16, 1);
   assert.equal(spawner.obstacles.length, 0);
   assert.ok(obs.rect.destroyed);
+});
+
+test('the spawner flattens the waves it is given into arrival-sorted pending, defaulting to WAVES', () => {
+  const custom = [
+    { name: 'b', songTime: 5000, obstacles: [{ row: 0, timeOffset: 1 }] },
+    { name: 'a', songTime: 1000, obstacles: [{ row: 2, timeOffset: 0 }, { row: 1, timeOffset: 2 }] },
+  ];
+  const spawner = new ObstacleSpawner(fakeScene(), custom);
+  assert.equal(spawner.pending.length, 3);
+  const arrivals = spawner.pending.map(p => p.arrivalMs);
+  assert.deepEqual(arrivals, [...arrivals].sort((x, y) => x - y));
+  assert.equal(arrivals[0], 1000);
+
+  const total = WAVES.reduce((n, w) => n + w.obstacles.length, 0);
+  assert.equal(new ObstacleSpawner(fakeScene()).pending.length, total);
 });

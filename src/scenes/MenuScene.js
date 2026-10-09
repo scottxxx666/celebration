@@ -1,12 +1,14 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
-import { TITLE_STYLE, HINT_STYLE, isDesktop } from '../config/ui.js';
+import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, isDesktop } from '../config/ui.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { hasSeenHowToPlay } from '../seenHowToPlay.js';
 import { getStartMs } from '../songTime.js';
 import { onDirectionKey } from '../input.js';
+import { DIFFICULTIES, getDifficulty, setDifficulty, stepDifficulty } from '../difficulty.js';
 
-const OPTIONS = ['Start', 'How to Play'];
+const OPTIONS = ['Start', 'How to Play', ''];
+const DIFFICULTY_ROW = 2; // label is set by refreshDifficulty()
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -53,17 +55,22 @@ export class MenuScene extends Phaser.Scene {
     if (this.isDesktop) {
       this.cursor = this.add.text(0, 0, '▶', { fontSize: '26px', color: '#ffffff' }).setOrigin(1, 0.5);
     }
-    this.highlight();
+    this.difficultyCaption = this.add
+      .text(cx, this.optionTexts[DIFFICULTY_ROW].y + 30, '', { ...CAPTION_STYLE, fontSize: '14px' })
+      .setOrigin(0.5);
+    this.refreshDifficulty();
 
     this.add.text(
       cx,
       GAME_HEIGHT - 30,
-      this.isDesktop ? '↑/↓ select · SPACE confirm' : 'Tap an option',
+      this.isDesktop ? '↑/↓ select · ←/→ difficulty · SPACE confirm' : 'Tap an option',
       HINT_STYLE
     ).setOrigin(0.5);
 
     onDirectionKey(this, 'up', () => this.move(-1));
     onDirectionKey(this, 'down', () => this.move(1));
+    onDirectionKey(this, 'left', () => this.cycleDifficulty(-1));
+    onDirectionKey(this, 'right', () => this.cycleDifficulty(1));
     this.input.keyboard.on('keydown-ENTER', () => this.confirm());
     this.input.keyboard.on('keydown-SPACE', () => this.confirm());
 
@@ -81,6 +88,20 @@ export class MenuScene extends Phaser.Scene {
     this.cursor.setPosition(label.getLeftCenter().x - 12, label.y);
   }
 
+  // Relabels the Difficulty row and its caption from the stored value; the label
+  // width changes, so the cursor has to be re-placed (highlight()).
+  refreshDifficulty() {
+    const { label, caption } = DIFFICULTIES[getDifficulty()];
+    this.optionTexts[DIFFICULTY_ROW].setText(`Difficulty  ◀ ${label} ▶`);
+    this.difficultyCaption.setText(caption);
+    this.highlight();
+  }
+
+  cycleDifficulty(dir) {
+    setDifficulty(stepDifficulty(getDifficulty(), dir));
+    this.refreshDifficulty();
+  }
+
   move(dir) {
     this.selected = Phaser.Math.Wrap(this.selected + dir, 0, OPTIONS.length);
     this.highlight();
@@ -89,6 +110,8 @@ export class MenuScene extends Phaser.Scene {
   confirm() {
     if (this.selected === 0) {
       this.startGame();
+    } else if (this.selected === DIFFICULTY_ROW) {
+      this.cycleDifficulty(1);
     } else {
       // `next` must be passed explicitly: Phaser keeps the previous settings.data
       // when scene.start is called without any, so omitting it here would leave a

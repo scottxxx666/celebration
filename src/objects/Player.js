@@ -18,14 +18,14 @@ import { PLAYER_FRAMES } from '../config/runFrames.js';
 import { rowLayout } from '../rowLayout.js';
 import { bindPointer, anyJustDown } from '../input.js';
 import { RunCycle } from './RunCycle.js';
-import { isDebugMode } from '../debugMode.js';
 
 
 export class Player {
-  constructor(scene, x) {
+  // autoRun (`?debug` and Easy difficulty): speed pinned at the chaser's max, taps ignored
+  constructor(scene, x, { autoRun = false } = {}) {
     this.x = x;
-    this.debug = isDebugMode(); // `?debug`: speed pinned at the chaser's max
-    this.speed = this.debug ? ENEMY_CRUISE_SPEED : MIN_SPEED; // world scroll speed (px/s)
+    this.autoRun = autoRun;
+    this.speed = this.autoRun ? ENEMY_CRUISE_SPEED : MIN_SPEED; // world scroll speed (px/s)
     this.lastKey = null; // 'left' | 'right' — alternating-tap state
 
     this.runCycle = new RunCycle(scene, PLAYER_FRAMES, {
@@ -34,8 +34,8 @@ export class Player {
       hh: PLAYER_HH,
       fallbackColor: 0x00ff88,
       stepsPerBeat: PLAYER_RUN_STEPS_PER_BEAT,
-      // `?debug` ignores taps, so it keeps the beat-locked cycle
-      tapIdleMs: this.debug ? 0 : PLAYER_TAP_RUN_IDLE_MS,
+      // autoRun ignores taps, so it keeps the beat-locked cycle
+      tapIdleMs: this.autoRun ? 0 : PLAYER_TAP_RUN_IDLE_MS,
     });
     this._setRow(Math.floor(NUM_ROWS / 2)); // start in middle row
   }
@@ -45,8 +45,8 @@ export class Player {
     if (anyJustDown(keys.left)) this.tap('left');
     if (anyJustDown(keys.right)) this.tap('right');
 
-    // Natural deceleration toward MIN_SPEED (skipped when debug pins the speed)
-    if (!this.debug) this.speed = Math.max(MIN_SPEED, this.speed - DECEL_PER_SEC * (delta / 1000));
+    // Natural deceleration toward MIN_SPEED (skipped when autoRun pins the speed)
+    if (!this.autoRun) this.speed = Math.max(MIN_SPEED, this.speed - DECEL_PER_SEC * (delta / 1000));
 
     // Vertical movement — snap to row on each key press
     if (anyJustDown(keys.up)) {
@@ -90,7 +90,7 @@ export class Player {
   // Shared by keyboard and touch input.
   tap(side) {
     if (this.lastKey === side) return;
-    if (!this.debug) this.speed = Math.min(this.speed + ACCEL_STEP, MAX_SPEED);
+    if (!this.autoRun) this.speed = Math.min(this.speed + ACCEL_STEP, MAX_SPEED);
     this.lastKey = side;
     this.runCycle.step();
   }

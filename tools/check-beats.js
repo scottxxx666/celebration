@@ -1,12 +1,14 @@
 // Verifies every live section time (sections.js) and every wave/obstacle time
-// (waves.js) sits on a real track beat. Obstacle timeOffset is in real track
-// beats and may subdivide the beat down to 1/WAVE_BEAT_DIVISIONS. Usage: yarn check:beats [--fix]
+// (waves.js, plus the frozen wavesHard.js, which is only reported, never fixed)
+// sits on a real track beat. Obstacle timeOffset is in real track beats and may
+// subdivide the beat down to 1/WAVE_BEAT_DIVISIONS. Usage: yarn check:beats [--fix]
 // --fix snaps off-grid section times (sections.js) and wave times (waves.js)
 // in place to the nearest real track beat. Regenerating waves.js with
 // tools/gen-waves.py overwrites such edits.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { SECTIONS } from '../src/config/sections.js';
 import { WAVES } from '../src/config/waves.js';
+import { WAVES_HARD } from '../src/config/wavesHard.js';
 import { snapToTrackBeat, trackBeatOf } from '../src/Conductor.js';
 
 const TOLERANCE_MS = 1;
@@ -50,42 +52,50 @@ if (!changes.length) {
   console.log(`\n${changes.length} off-grid section time(s). Run \`yarn fix:beats\` to rewrite them.`);
 }
 
-let waveTimes = 0;
-let waveFailures = 0;
-const waveChanges = [];
-function checkWaveTime(label, ms, to) {
-  waveTimes++;
-  const target = snapToTrackBeat(ms);
-  if (Math.abs(target - ms) <= WAVE_TOLERANCE_MS) return;
-  waveFailures++;
-  const arrow = fix ? ` → ${to}` : '';
-  console.log(`✗ ${label} ${ms}${arrow} (nearest beat ${trackBeatOf(ms)}, off ${(ms - target).toFixed(1)} ms)`);
+function checkWaves(prefix, waves, track) {
+  let times = 0;
+  let failures = 0;
+  const changes = [];
+  function checkWaveTime(label, ms, to) {
+    times++;
+    const target = snapToTrackBeat(ms);
+    if (Math.abs(target - ms) <= WAVE_TOLERANCE_MS) return;
+    failures++;
+    const arrow = track && fix ? ` → ${to}` : '';
+    console.log(`✗ ${label} ${ms}${arrow} (nearest beat ${trackBeatOf(ms)}, off ${(ms - target).toFixed(1)} ms)`);
+  }
+  console.log('');
+  for (const wave of waves) {
+    const songTime = wave.songTime;
+    const songOff = Math.abs(snapToTrackBeat(songTime) - songTime) > WAVE_TOLERANCE_MS;
+    const newSongTime = songOff ? Math.round(snapToTrackBeat(songTime)) : songTime;
+    if (newSongTime !== songTime) changes.push({ name: wave.name, kind: 'songTime', from: songTime, to: newSongTime });
+    checkWaveTime(`${prefix}.${wave.name}.songTime`, songTime, newSongTime);
+    // Obstacle offsets are in real track beats from the wave start, so the wave
+    // start carries the grid: an offset only has to sit on a beat subdivision.
+    wave.obstacles.forEach((o, i) => {
+      times++;
+      const to = Math.round(o.timeOffset * WAVE_BEAT_DIVISIONS) / WAVE_BEAT_DIVISIONS;
+      if (to === o.timeOffset) return;
+      failures++;
+      changes.push({ name: wave.name, kind: 'timeOffset', index: i, from: o.timeOffset, to });
+      const arrow = track && fix ? ` → ${to}` : '';
+      console.log(`✗ ${prefix}.${wave.name}.obstacles[${i}].timeOffset ${o.timeOffset}${arrow} (not a 1/${WAVE_BEAT_DIVISIONS}-beat step)`);
+    });
+  }
+  if (!failures) {
+    console.log(`✓ ${prefix}: ${times} times on the track beat grid`);
+  } else if (!track) {
+    console.log(`\n${failures} off-grid ${prefix} time(s). ${prefix}.js is a frozen snapshot and is not auto-fixed.`);
+  } else if (!fix) {
+    console.log(`\n${failures} off-grid wave time(s). Run \`yarn fix:beats\` to snap them in place.`);
+    console.log('Regenerating with `uv run --with librosa --with numpy python tools/gen-waves.py` overwrites hand edits.');
+  }
+  return { failures, changes };
 }
-console.log('');
-for (const wave of WAVES) {
-  const songTime = wave.songTime;
-  const songOff = Math.abs(snapToTrackBeat(songTime) - songTime) > WAVE_TOLERANCE_MS;
-  const newSongTime = songOff ? Math.round(snapToTrackBeat(songTime)) : songTime;
-  if (newSongTime !== songTime) waveChanges.push({ name: wave.name, kind: 'songTime', from: songTime, to: newSongTime });
-  checkWaveTime(`waves.${wave.name}.songTime`, songTime, newSongTime);
-  // Obstacle offsets are in real track beats from the wave start, so the wave
-  // start carries the grid: an offset only has to sit on a beat subdivision.
-  wave.obstacles.forEach((o, i) => {
-    waveTimes++;
-    const to = Math.round(o.timeOffset * WAVE_BEAT_DIVISIONS) / WAVE_BEAT_DIVISIONS;
-    if (to === o.timeOffset) return;
-    waveFailures++;
-    waveChanges.push({ name: wave.name, kind: 'timeOffset', index: i, from: o.timeOffset, to });
-    const arrow = fix ? ` → ${to}` : '';
-    console.log(`✗ waves.${wave.name}.obstacles[${i}].timeOffset ${o.timeOffset}${arrow} (not a 1/${WAVE_BEAT_DIVISIONS}-beat step)`);
-  });
-}
-if (!waveFailures) {
-  console.log(`✓ waves: ${waveTimes} times on the track beat grid`);
-} else if (!fix) {
-  console.log(`\n${waveFailures} off-grid wave time(s). Run \`yarn fix:beats\` to snap them in place.`);
-  console.log('Regenerating with `uv run --with librosa --with numpy python tools/gen-waves.py` overwrites hand edits.');
-}
+
+const { failures: waveFailures, changes: waveChanges } = checkWaves('waves', WAVES, true);
+const { failures: hardFailures } = checkWaves('wavesHard', WAVES_HARD, false);
 
 function fail(msg) {
   console.error(`${msg}; nothing written.`);
@@ -159,4 +169,4 @@ if (fix) {
   }
   process.exit(0);
 }
-process.exit(waveFailures || changes.length ? 1 : 0);
+process.exit(waveFailures || hardFailures || changes.length ? 1 : 0);
