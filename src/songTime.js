@@ -13,7 +13,7 @@ export function formatSongTime(ms) {
 // Dev/testing deep-link: `?t=` starts a run at an arbitrary song time. Accepts
 // plain seconds (`65`, `65.5`) or `m:ss`/`m:ss.mmm` (`1:05`, `1:05.500`). The
 // URL never changes at runtime, so this is computed once and cached, same
-// shape as userVolume.js / seenHowToPlay.js.
+// shape as userVolume.js.
 let cached = null;
 
 function parse(raw) {

@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
 import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, KEYCAP_DARK, KEYCAP_MID, addKeycap, isDesktop } from '../config/ui.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
-import { markHowToPlaySeen } from '../seenHowToPlay.js';
 import { onDismiss } from '../input.js';
 import { getDifficulty } from '../difficulty.js';
 
@@ -24,8 +23,8 @@ export class HowToPlayScene extends Phaser.Scene {
     super('HowToPlayScene');
   }
 
-  // Reached two ways: from the menu (back to the menu), or as the one-time
-  // first-run gate MenuScene inserts between Start and the intro video
+  // Reached two ways: from the menu (back to the menu), or as the gate
+  // MenuScene inserts between Start and the intro video on every Start
   // (on to IntroScene).
   // Both callers must pass `next` explicitly — Phaser keeps the previous
   // settings.data when scene.start is called without any, so an omitted `next`
@@ -42,10 +41,6 @@ export class HowToPlayScene extends Phaser.Scene {
     // Derived from "not the menu" rather than naming the gate's target, so it
     // survives the gate being moved around the boot flow.
     const isGate = this.next !== 'MenuScene';
-
-    // Seeing the screen at all counts, however it was reached: a player who
-    // reads the controls from the menu isn't shown the gate on their first run.
-    markHowToPlaySeen();
 
     this.add.text(cx, 40, 'HOW TO PLAY', { ...TITLE_STYLE, fontSize: '28px' }).setOrigin(0.5);
 
@@ -66,8 +61,8 @@ export class HowToPlayScene extends Phaser.Scene {
 
     // Every exit goes to the same target, so ESC needs no special-casing: it
     // means "back" from the menu and "skip ahead" in the gate, matching IntroScene.
-    // onDismiss's fresh-press guards matter here because the gate is only ever
-    // shown once: the input that confirmed Start must not also spend it.
+    // onDismiss's fresh-press guards matter here: the input that confirmed Start
+    // must not also dismiss the gate before it can be read.
     const leave = () => this.scene.start(this.next);
     onDismiss(this, { keys: { ESC: leave, ENTER: leave, SPACE: leave }, tap: leave });
 

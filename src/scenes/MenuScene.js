@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
 import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, isDesktop } from '../config/ui.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
-import { hasSeenHowToPlay } from '../seenHowToPlay.js';
 import { getStartMs } from '../songTime.js';
 import { onDirectionKey } from '../input.js';
 import { DIFFICULTIES, getDifficulty, setDifficulty, stepDifficulty } from '../difficulty.js';
@@ -109,7 +108,7 @@ export class MenuScene extends Phaser.Scene {
     } else {
       // `next` must be passed explicitly: Phaser keeps the previous settings.data
       // when scene.start is called without any, so omitting it here would leave a
-      // stale 'GameScene' from the first-run gate and send the player into the game.
+      // stale 'IntroScene' from the Start gate and send the player into the game.
       this.scene.start('HowToPlayScene', { next: 'MenuScene' });
     }
   }
@@ -130,12 +129,8 @@ export class MenuScene extends Phaser.Scene {
       this.scene.start('GameScene');
       return;
     }
-    // First run only: teach the controls before anything else, so Start leads
-    // straight to them rather than into the video.
-    if (hasSeenHowToPlay()) {
-      this.scene.start('IntroScene');
-    } else {
-      this.scene.start('HowToPlayScene', { next: 'IntroScene' });
-    }
+    // Always teach the controls first: they differ by difficulty (Easy auto-runs),
+    // so a remembered "already seen" would go stale when the player switches.
+    this.scene.start('HowToPlayScene', { next: 'IntroScene' });
   }
 }
