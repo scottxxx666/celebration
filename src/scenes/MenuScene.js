@@ -63,7 +63,7 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(
       cx,
       GAME_HEIGHT - 30,
-      this.isDesktop ? '↑/↓ select · ←/→ difficulty · SPACE confirm' : 'Tap an option',
+      this.isDesktop ? '↑/↓ select · ←/→ mode · SPACE confirm' : 'Tap an option',
       HINT_STYLE
     ).setOrigin(0.5);
 
@@ -92,7 +92,7 @@ export class MenuScene extends Phaser.Scene {
   // width changes, so the cursor has to be re-placed (highlight()).
   refreshDifficulty() {
     const { label, caption } = DIFFICULTIES[getDifficulty()];
-    this.optionTexts[DIFFICULTY_ROW].setText(`Difficulty  ◀ ${label} ▶`);
+    this.optionTexts[DIFFICULTY_ROW].setText(`◀ ${label} ▶`);
     this.difficultyCaption.setText(caption);
     this.highlight();
   }
