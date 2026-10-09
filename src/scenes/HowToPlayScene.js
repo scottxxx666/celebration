@@ -4,6 +4,7 @@ import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, KEYCAP_DARK, KEYCAP_MID, addKey
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { markHowToPlaySeen } from '../seenHowToPlay.js';
 import { onDismiss } from '../input.js';
+import { getDifficulty } from '../difficulty.js';
 
 // Desktop layout: two keycap demo columns side by side
 const LEFT_X = 250;   // run-demo column center
@@ -14,6 +15,9 @@ const DEMO_Y = 160;
 const PHONE_W = 320;
 const PHONE_H = 170;
 const SWIPE_MARGIN = 30; // swipe dot travel stops this far from the phone edge
+
+// Easy auto-runs (Player autoRun), so the run demo is dimmed and its caption swapped
+const EASY_RUN_DEMO_ALPHA = 0.25;
 
 export class HowToPlayScene extends Phaser.Scene {
   constructor() {
@@ -34,6 +38,7 @@ export class HowToPlayScene extends Phaser.Scene {
   create() {
     const cx = GAME_WIDTH / 2;
     this.isDesktop = isDesktop(this);
+    this.autoRun = getDifficulty() === 'easy';
     // Derived from "not the menu" rather than naming the gate's target, so it
     // survives the gate being moved around the boot flow.
     const isGate = this.next !== 'MenuScene';
@@ -70,7 +75,7 @@ export class HowToPlayScene extends Phaser.Scene {
   }
 
   caption(x, y, text) {
-    return this.add.text(x, y, text, CAPTION_STYLE).setOrigin(0.5);
+    return this.add.text(x, y, text, { ...CAPTION_STYLE, align: 'center' }).setOrigin(0.5);
   }
 
   // Expanding tap ripple inside `container` at (x, y)
@@ -84,7 +89,7 @@ export class HowToPlayScene extends Phaser.Scene {
 
   createDesktop() {
     const cx = GAME_WIDTH / 2;
-    this.runDemo = this.add.container(LEFT_X, DEMO_Y);
+    this.runDemo = this.add.container(LEFT_X, DEMO_Y).setAlpha(this.autoRun ? EASY_RUN_DEMO_ALPHA : 1);
     this.rowsDemo = this.add.container(RIGHT_X, DEMO_Y);
 
     this.runPads = [-1, 1].map((side) => {
@@ -103,8 +108,9 @@ export class HowToPlayScene extends Phaser.Scene {
       return pad;
     });
 
-    this.caption(LEFT_X, DEMO_Y + 110, 'Alternate ← → (A D) to run faster');
-    this.caption(RIGHT_X, DEMO_Y + 110, 'Press ↑ ↓ (W S) to change rows');
+    // Two lines each: on one line the captions are wider than the column spacing and collide
+    this.caption(LEFT_X, DEMO_Y + 110, this.autoRun ? 'Easy mode:\nyou run automatically' : 'Alternate ← → (A D)\nto run faster');
+    this.caption(RIGHT_X, DEMO_Y + 110, 'Press ↑ ↓ (W S)\nto change rows');
     this.caption(cx, 320, 'Dodge the obstacles');
     this.caption(cx, 345, "Don't let the chaser catch you");
 
@@ -154,9 +160,12 @@ export class HowToPlayScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0);
     this.phone.add(this.chevron);
+    // Tap fingers/ripples get their own layer so Easy can dim them without the swipe
+    this.tapLayer = this.add.container(0, 0).setAlpha(this.autoRun ? EASY_RUN_DEMO_ALPHA : 1);
+    this.phone.add(this.tapLayer);
 
     // Captions stacked full-width so the long monospace lines can't collide
-    this.caption(cx, 272, 'Tap left / right alternately to run faster');
+    this.caption(cx, 272, this.autoRun ? 'Easy mode: you run automatically' : 'Tap left / right alternately to run faster');
     this.caption(cx, 300, 'Swipe up / down to change rows');
     this.caption(cx, 344, 'Dodge the obstacles');
     this.caption(cx, 370, "Don't let the chaser catch you");
@@ -180,8 +189,8 @@ export class HowToPlayScene extends Phaser.Scene {
   mobileTap(side) {
     const x = side === 0 ? -PHONE_W / 4 : PHONE_W / 4;
     const finger = this.add.circle(x, 0, 8, 0xdddddd, 0.9);
-    this.phone.add(finger);
-    this.ripple(this.phone, x, 0);
+    this.tapLayer.add(finger);
+    this.ripple(this.tapLayer, x, 0);
     this.tweens.add({ targets: finger, scale: 1.3, alpha: 0, duration: 220, onComplete: () => finger.destroy() });
   }
 
