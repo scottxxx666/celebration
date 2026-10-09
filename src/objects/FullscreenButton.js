@@ -81,7 +81,7 @@ export function addFullscreenButton(scene) {
   zone.on('pointerout', () => parts.forEach((part) => part.setAlpha(HUD_ALPHA_DIM)));
   // stopPropagation is mandatory on both handlers: without it a tap here also
   // reaches scene-level listeners — the player's touch tap/swipe tracking,
-  // IntroScene's skip, GameOverScene's restart chain.
+  // IntroScene's skip, HowToPlayScene's back.
   zone.on('pointerdown', (pointer, localX, localY, event) => event.stopPropagation());
   zone.on('pointerup', (pointer, localX, localY, event) => {
     event.stopPropagation();
