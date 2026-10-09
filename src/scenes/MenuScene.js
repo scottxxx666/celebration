@@ -7,8 +7,9 @@ import { getStartMs } from '../songTime.js';
 import { onDirectionKey } from '../input.js';
 import { DIFFICULTIES, getDifficulty, setDifficulty, stepDifficulty } from '../difficulty.js';
 
-const OPTIONS = ['Start', 'How to Play', ''];
-const DIFFICULTY_ROW = 2; // label is set by refreshDifficulty()
+const OPTIONS = ['Start', '', 'How to Play'];
+const DIFFICULTY_ROW = 1; // label is set by refreshDifficulty()
+const CAPTION_GAP = 24; // extra space below the difficulty row for its caption
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -25,7 +26,7 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(cx, cy - 110, 'CELEBRATION', { ...TITLE_STYLE, fontSize: '56px' }).setOrigin(0.5);
 
     this.optionTexts = OPTIONS.map((label, i) => {
-      const text = this.add.text(cx, cy + i * 45, label, {
+      const text = this.add.text(cx, cy + i * 45 + (i > DIFFICULTY_ROW ? CAPTION_GAP : 0), label, {
         fontSize: '26px',
         color: this.isDesktop ? '#666666' : '#ffffff',
       })
@@ -52,13 +53,11 @@ export class MenuScene extends Phaser.Scene {
       return text;
     });
 
-    if (this.isDesktop) {
-      this.cursor = this.add.text(0, 0, '▶', { fontSize: '26px', color: '#ffffff' }).setOrigin(1, 0.5);
-    }
     this.difficultyCaption = this.add
       .text(cx, this.optionTexts[DIFFICULTY_ROW].y + 30, '', { ...CAPTION_STYLE, fontSize: '14px' })
       .setOrigin(0.5);
     this.refreshDifficulty();
+    this.highlight();
 
     this.add.text(
       cx,
@@ -83,18 +82,13 @@ export class MenuScene extends Phaser.Scene {
     this.optionTexts.forEach((text, i) => {
       text.setColor(i === this.selected ? '#ffffff' : '#666666');
     });
-
-    const label = this.optionTexts[this.selected];
-    this.cursor.setPosition(label.getLeftCenter().x - 12, label.y);
   }
 
-  // Relabels the Difficulty row and its caption from the stored value; the label
-  // width changes, so the cursor has to be re-placed (highlight()).
+  // Relabels the Difficulty row and its caption from the stored value.
   refreshDifficulty() {
     const { label, caption } = DIFFICULTIES[getDifficulty()];
     this.optionTexts[DIFFICULTY_ROW].setText(`◀ ${label} ▶`);
     this.difficultyCaption.setText(caption);
-    this.highlight();
   }
 
   cycleDifficulty(dir) {
