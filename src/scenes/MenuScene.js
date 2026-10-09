@@ -5,10 +5,10 @@ import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { getStartMs } from '../songTime.js';
 import { onDirectionKey } from '../input.js';
 import { DIFFICULTIES, getDifficulty, setDifficulty, stepDifficulty } from '../difficulty.js';
+import { menuRowLayout, MENU_CAPTION_OFFSET, MENU_TOUCH_WIDTH } from '../menuLayout.js';
 
 const OPTIONS = ['Start', '', 'How to Play'];
 const DIFFICULTY_ROW = 1; // label is set by refreshDifficulty()
-const CAPTION_GAP = 24; // extra space below the difficulty row for its caption
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -25,25 +25,31 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(cx, cy - 110, 'CELEBRATION', { ...TITLE_STYLE, fontSize: '56px' }).setOrigin(0.5);
 
     this.optionTexts = OPTIONS.map((label, i) => {
-      const text = this.add.text(cx, cy + i * 45 + (i > DIFFICULTY_ROW ? CAPTION_GAP : 0), label, {
+      const { y, zoneY, zoneHeight } = menuRowLayout(i, DIFFICULTY_ROW);
+      const text = this.add.text(cx, y, label, {
         fontSize: '26px',
         color: this.isDesktop ? '#666666' : '#ffffff',
-      })
-        .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true });
+      }).setOrigin(0.5);
+
+      // Mobile taps land on an invisible zone much larger than the glyphs (the
+      // text alone is under a fingertip tall once the canvas is scaled down);
+      // desktop keeps the text itself so hover selects only over the label.
+      const target = this.isDesktop
+        ? text.setInteractive({ useHandCursor: true })
+        : this.add.zone(cx, zoneY, MENU_TOUCH_WIDTH, zoneHeight).setInteractive();
 
       if (this.isDesktop) {
-        text.on('pointerover', () => {
+        target.on('pointerover', () => {
           this.selected = i;
           this.highlight();
         });
       } else {
-        text
+        target
           .on('pointerdown', () => text.setAlpha(0.6))
           .on('pointerout', () => text.setAlpha(1));
       }
 
-      text.on('pointerup', () => {
+      target.on('pointerup', () => {
         text.setAlpha(1);
         this.selected = i;
         this.confirm();
@@ -53,7 +59,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     this.difficultyCaption = this.add
-      .text(cx, this.optionTexts[DIFFICULTY_ROW].y + 30, '', { ...CAPTION_STYLE, fontSize: '14px' })
+      .text(cx, this.optionTexts[DIFFICULTY_ROW].y + MENU_CAPTION_OFFSET, '', { ...CAPTION_STYLE, fontSize: '14px' })
       .setOrigin(0.5);
     this.refreshDifficulty();
     this.highlight();
