@@ -4,6 +4,7 @@ import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, KEYCAP_DARK, KEYCAP_MID, addKey
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { onDismiss } from '../input.js';
 import { getDifficulty } from '../difficulty.js';
+import { mobileDemoAction } from '../howToPlayDemo.js';
 
 // Desktop layout: two keycap demo columns side by side
 const LEFT_X = 250;   // run-demo column center
@@ -15,7 +16,7 @@ const PHONE_W = 320;
 const PHONE_H = 170;
 const SWIPE_MARGIN = 30; // swipe dot travel stops this far from the phone edge
 
-// Easy auto-runs (Player autoRun), so the run demo is dimmed and its caption swapped
+// Easy auto-runs (Player autoRun), so the desktop run demo is dimmed and its caption swapped
 const EASY_RUN_DEMO_ALPHA = 0.25;
 
 export class HowToPlayScene extends Phaser.Scene {
@@ -141,23 +142,22 @@ export class HowToPlayScene extends Phaser.Scene {
   }
 
   // ---- Mobile: one landscape phone mock, sequenced like real play ----
-  // Six alternating half-beat taps, then one swipe along the divider (direction
+  // Six alternating half-beat taps, then one swipe on a thumb side (direction
   // alternates per cycle), then a rest tick while the swipe finishes — all
-  // driven by a single 350ms clock so the demo reads as one continuous play loop
+  // driven by a single 350ms clock so the demo reads as one continuous play loop.
+  // Easy auto-runs, so its loop is the swipe alone and the tap-halves divider is
+  // hidden (sequence in mobileDemoAction)
 
   createMobile() {
     const cx = GAME_WIDTH / 2;
     this.phone = this.add.container(cx, 150);
     this.phone.add(this.add.rectangle(0, 0, PHONE_W, PHONE_H, 0x000000, 0).setStrokeStyle(2, KEYCAP_MID));
-    this.divider = this.add.rectangle(0, 0, 2, PHONE_H, KEYCAP_MID);
+    this.divider = this.add.rectangle(0, 0, 2, PHONE_H, KEYCAP_MID).setVisible(!this.autoRun);
     this.phone.add(this.divider);
     this.chevron = this.add.text(PHONE_W / 2 + 24, 0, '▲', { fontSize: '22px', color: '#88aa66' })
       .setOrigin(0.5)
       .setAlpha(0);
     this.phone.add(this.chevron);
-    // Tap fingers/ripples get their own layer so Easy can dim them without the swipe
-    this.tapLayer = this.add.container(0, 0).setAlpha(this.autoRun ? EASY_RUN_DEMO_ALPHA : 1);
-    this.phone.add(this.tapLayer);
 
     // Captions stacked full-width so the long monospace lines can't collide
     this.caption(cx, 272, this.autoRun ? 'Easy mode: you run automatically' : 'Tap left / right alternately to run faster');
@@ -171,21 +171,16 @@ export class HowToPlayScene extends Phaser.Scene {
   }
 
   mobileTick() {
-    const step = this.step % 8;
-    this.step++;
-    if (step < 6) {
-      this.mobileTap(step % 2);
-    } else if (step === 6) {
-      this.mobileSwipe();
-    }
-    // step 7: rest — the swipe finishes during it
+    const action = mobileDemoAction(this.step++, this.autoRun);
+    if (action === 'swipe') this.mobileSwipe();
+    else if (action !== 'rest') this.mobileTap(action === 'tapLeft' ? 0 : 1);
   }
 
   mobileTap(side) {
     const x = side === 0 ? -PHONE_W / 4 : PHONE_W / 4;
     const finger = this.add.circle(x, 0, 8, 0xdddddd, 0.9);
-    this.tapLayer.add(finger);
-    this.ripple(this.tapLayer, x, 0);
+    this.phone.add(finger);
+    this.ripple(this.phone, x, 0);
     this.tweens.add({ targets: finger, scale: 1.3, alpha: 0, duration: 220, onComplete: () => finger.destroy() });
   }
 
