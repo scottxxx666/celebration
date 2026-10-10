@@ -3,6 +3,7 @@ import { Player } from '../objects/Player.js';
 import { ObstacleSpawner } from '../objects/ObstacleSpawner.js';
 import { Enemy } from '../objects/Enemy.js';
 import { DiscoLights } from '../objects/DiscoLights.js';
+import { Afterimages } from '../objects/Afterimages.js';
 import { Scenery } from '../objects/Scenery.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
@@ -51,6 +52,7 @@ import {
   GHOST_COUNT,
   GHOST_ALPHA,
   GHOST_SWAY_BEATS,
+  TRAIL_DRIFT,
   WIN_MS,
 } from '../config/gameConfig.js';
 
@@ -134,6 +136,9 @@ export class GameScene extends Phaser.Scene {
 
     // Fullscreen button first: it returns where the slider's right edge goes.
     addVolumeSlider(this, addFullscreenButton(this));
+
+    this.afterimages = new Afterimages(this);
+    this.trailSources = [];
 
     // Ghost cameras last, so they draw every object above; each skips the HUD (the
     // debug readout plus everything the HUD helpers put at HUD_DEPTH) to keep it single.
@@ -270,7 +275,8 @@ export class GameScene extends Phaser.Scene {
     this.spawner.reveal = reveal;
 
     // Scroll background — global world multiplier from the current section
-    this.scenery.scroll(this.player.speed * section.speedMult * (delta / 1000));
+    const worldDx = this.player.speed * section.speedMult * (delta / 1000);
+    this.scenery.scroll(worldDx);
 
     this.enemy.trackRow(this.player.row, this.conductor.beatCrossed, beatSyncOn);
     this.enemy.update(delta / 1000, this.player.speed, songMs, section.speedMult);
@@ -281,6 +287,15 @@ export class GameScene extends Phaser.Scene {
       (songMs >= OBSTACLE_TIMING_SWITCH_MS ? OBSTACLE_TIMING_SPEED : this.player.speed) *
       section.speedMult;
     this.spawner.update(songMs, this.player.speed * section.speedMult, delta, timingSpeed);
+
+    // Trails — afterimages stamped from this frame's positions and run-cycle frames
+    const sources = this.trailSources;
+    sources.length = 0;
+    if (section.trails) {
+      sources.push(this.player.runCycle.sprite, this.enemy.runCycle.sprite);
+      for (const obs of this.spawner.obstacles) sources.push(obs.rect);
+    }
+    this.afterimages.update(delta, section.trails, sources, worldDx * TRAIL_DRIFT);
 
     // Continuous camera spin during the final highlight — visual only, collision/rows untouched.
     // Negative camera.rotation makes the world spin counterclockwise on screen — the direction
@@ -360,6 +375,7 @@ export class GameScene extends Phaser.Scene {
     this.enemy.destroy();
     this.spawner.destroyAll();
     this.disco.destroy();
+    this.afterimages.destroy();
     this.scene.start('GameOverScene', { won, score: Math.floor(songMs / 1000), progress });
   }
 }

@@ -20,8 +20,10 @@
 //   author this section's obstacles to arrive while lit or right as the dark begins.
 // ghost = "double vision": extra translucent copies of the whole world (not the HUD) sway around the beat,
 //   fading in/out over GHOST_FADE_MS at the section edges. Don't combine with lightsOut (the copies show through the black).
+// trails = afterimages: player, chaser and obstacles leave short fading coloured copies of themselves
+//   (TRAIL_* in gameConfig). Independent of ghost; like it, not meant for lightsOut sections.
 // ...DISCO = preset for dim + lights together.
-const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, strobeRamp: 1, beatFlash: false, lightsOut: null, ghost: false };
+const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, strobeRamp: 1, beatFlash: false, lightsOut: null, ghost: false, trails: false };
 const DISCO = { dim: true, lights: true };
 
 export const SECTIONS = [

@@ -182,6 +182,16 @@ export const GHOST_ZOOM_STEP = 0.02;      // extra zoom per ghost index (1st = +
 export const GHOST_SWAY_BEATS = 4;        // beats per full orbit
 export const GHOST_FADE_MS = 400;         // fade in after section start / out before its end
 
+// Trails — afterimages: every TRAIL_STAMP_MS the player, chaser and obstacles drop a
+// tinted copy of themselves that slides left at TRAIL_DRIFT × world speed while fading
+// out over TRAIL_LIFE_MS. Purely visual, gated on section.trails.
+export const TRAIL_STAMP_MS = 60;         // time between stamp rounds
+export const TRAIL_LIFE_MS = 320;         // lifetime of one stamp
+export const TRAIL_ALPHA = 0.45;          // stamp opacity when dropped
+export const TRAIL_DRIFT = 0.5;           // fraction of world scroll the stamps follow
+export const TRAIL_DEPTH_OFFSET = 0.25;   // behind the source, above its drop shadow (row − 0.5)
+export const TRAIL_COLORS = [0xff4fd8, 0x4fd8ff, 0xfff04f, 0x7dff6b]; // one per stamp round, cycled
+
 // Confetti cannon — one-shot pop fired on a clear/win to celebrate (GameOverScene).
 // Pooled rectangles launched up-and-inward from the bottom corners, falling under
 // gravity/drag; purely visual.
