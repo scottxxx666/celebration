@@ -18,8 +18,10 @@
 //   Optional `reveal` keeps something readable through the dark: 'shadows' = drop shadows glow on
 //   pure black; 'silhouettes' = sprites turn solid black on a near-black backdrop. Without it,
 //   author this section's obstacles to arrive while lit or right as the dark begins.
+// ghost = "double vision": extra translucent copies of the whole world (not the HUD) sway around the beat,
+//   fading in/out over GHOST_FADE_MS at the section edges. Don't combine with lightsOut (the copies show through the black).
 // ...DISCO = preset for dim + lights together.
-const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, strobeRamp: 1, beatFlash: false, lightsOut: null };
+const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, strobeRamp: 1, beatFlash: false, lightsOut: null, ghost: false };
 const DISCO = { dim: true, lights: true };
 
 export const SECTIONS = [

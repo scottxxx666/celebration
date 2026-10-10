@@ -170,6 +170,18 @@ export const ZOOM_PUNCH_AMOUNT = 0.02;    // peak extra zoom (1.02 = +2%) at the
 export const ZOOM_PUNCH_BEATS = 4;        // beats between punches (4 = per-bar downbeat, 1 = per beat)
 export const ZOOM_PUNCH_DECAY_MS = 350;   // linear decay time from peak back to base (~half a beat)
 
+// Ghost double vision — extra translucent cameras redraw the whole world (not the HUD)
+// slightly offset, each orbiting an ellipse once per GHOST_SWAY_BEATS beats. Composes
+// with rotate/zoom punch (offsets are camera scroll/zoom on top of the main camera).
+// Purely visual, gated on section.ghost / song time.
+export const GHOST_COUNT = 2;             // extra cameras (duplicate worlds)
+export const GHOST_ALPHA = 0.25;          // each ghost's opacity at full fade-in
+export const GHOST_OFFSET_X = 14;         // horizontal orbit radius in px
+export const GHOST_OFFSET_Y = 6;          // vertical orbit radius in px
+export const GHOST_ZOOM_STEP = 0.02;      // extra zoom per ghost index (1st = +2%, 2nd = +4%)
+export const GHOST_SWAY_BEATS = 4;        // beats per full orbit
+export const GHOST_FADE_MS = 400;         // fade in after section start / out before its end
+
 // Confetti cannon — one-shot pop fired on a clear/win to celebrate (GameOverScene).
 // Pooled rectangles launched up-and-inward from the bottom corners, falling under
 // gravity/drag; purely visual.

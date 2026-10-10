@@ -7,7 +7,9 @@ import { Scenery } from '../objects/Scenery.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
+import { ghostFade, ghostOffset } from '../ghostWorld.js';
 import { rotateTurns, sectionAt, strobeRate, strobeScale } from '../config/sections.js';
+import { HUD_DEPTH } from '../config/ui.js';
 import { getStartMs, formatSongTime } from '../songTime.js';
 import { addDirectionKeys } from '../input.js';
 import { isDebugMode } from '../debugMode.js';
@@ -46,6 +48,9 @@ import {
   ZOOM_PUNCH_AMOUNT,
   ZOOM_PUNCH_BEATS,
   ZOOM_PUNCH_DECAY_MS,
+  GHOST_COUNT,
+  GHOST_ALPHA,
+  GHOST_SWAY_BEATS,
   WIN_MS,
 } from '../config/gameConfig.js';
 
@@ -129,6 +134,17 @@ export class GameScene extends Phaser.Scene {
 
     // Fullscreen button first: it returns where the slider's right edge goes.
     addVolumeSlider(this, addFullscreenButton(this));
+
+    // Ghost cameras last, so they draw every object above; each skips the HUD (the
+    // debug readout plus everything the HUD helpers put at HUD_DEPTH) to keep it single.
+    // inputEnabled off: only the main camera takes part in pointer hit-testing/worldX.
+    const hud = [this.speedText, ...this.children.list.filter(child => child.depth >= HUD_DEPTH)];
+    this.ghostCams = Array.from({ length: GHOST_COUNT }, () => {
+      const ghostCam = this.cameras.add(0, 0, GAME_WIDTH, GAME_HEIGHT).setVisible(false);
+      ghostCam.inputEnabled = false;
+      ghostCam.ignore(hud);
+      return ghostCam;
+    });
   }
 
   update(time, delta) {
@@ -286,6 +302,25 @@ export class GameScene extends Phaser.Scene {
       zoomPunch = 1 + ZOOM_PUNCH_AMOUNT * decay;
     }
     cam.setZoom(baseZoom * zoomPunch);
+
+    // Ghost double vision — extra translucent cameras copy the main camera, each offset
+    // on an orbit. Stateless: fade and orbit phase both derive from song time.
+    const fade = ghostFade(section, songMs);
+    if (fade > 0) {
+      const swayMs = this.conductor.beatMs * GHOST_SWAY_BEATS;
+      const phase = this.conductor.phaseMs(GHOST_SWAY_BEATS) / swayMs;
+      this.ghostCams.forEach((ghostCam, i) => {
+        const offset = ghostOffset(i, GHOST_COUNT, phase);
+        ghostCam
+          .setVisible(true)
+          .setAlpha(GHOST_ALPHA * fade)
+          .setRotation(cam.rotation)
+          .setZoom(cam.zoom * (1 + offset.zoom * fade))
+          .setScroll(offset.x * fade, offset.y * fade);
+      });
+    } else {
+      this.ghostCams.forEach(ghostCam => ghostCam.setVisible(false));
+    }
 
     // Collision
     if (this.player.overlaps(this.enemy)) {
