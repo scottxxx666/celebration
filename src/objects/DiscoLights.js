@@ -43,7 +43,7 @@ export class DiscoLights {
         .triangle(0, 0, 0, 0, 0, GAME_HEIGHT, 0, GAME_HEIGHT, 0xffffff)
         .setOrigin(0, 0)
         .setBlendMode(Phaser.BlendModes.ADD)
-        .setAlpha(0.18)
+        .setAlpha(0.24)
         .setDepth(-4)
         .setVisible(false)
     );
@@ -53,7 +53,7 @@ export class DiscoLights {
       scene.add
         .ellipse(0, 0, POOL_WIDTH, POOL_HEIGHT, 0xffffff)
         .setBlendMode(Phaser.BlendModes.ADD)
-        .setAlpha(0.22)
+        .setAlpha(0.31)
         .setDepth(-4)
         .setVisible(false)
     );
@@ -109,9 +109,9 @@ export class DiscoLights {
       const x1 = x0 + Math.cos(angle) * LASER_LEN;
       const y1 = y0 + Math.sin(angle) * LASER_LEN;
       const color = DISCO_COLORS[(colorIndex + i) % DISCO_COLORS.length];
-      this.lasers.lineStyle(LASER_GLOW_WIDTH, color, 0.15);
+      this.lasers.lineStyle(LASER_GLOW_WIDTH, color, 0.2);
       this.lasers.lineBetween(x0, y0, x1, y1);
-      this.lasers.lineStyle(LASER_CORE_WIDTH, color, 0.5);
+      this.lasers.lineStyle(LASER_CORE_WIDTH, color, 0.7);
       this.lasers.lineBetween(x0, y0, x1, y1);
     }
   }
