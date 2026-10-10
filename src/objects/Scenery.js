@@ -5,7 +5,6 @@ import {
   ROTATE_ZOOM,
   SCENERY_THEME,
   DIM_ROW_LINE_ALPHA,
-  DIM_ROW_LINE_PULSE_ALPHA,
   DIM_ROW_LINE_THICKNESS,
   DIM_ROW_LINE_DASH,
   DIM_ROW_LINE_GAP,
@@ -97,10 +96,10 @@ export class Scenery {
   }
 
   // fade: 0–1 share of the dim currently applied (GameScene's dim ramp), so the
-  // lines come and go with the darkness they compensate for. pulse: 0–1 beat-flash
-  // level, lifting the lines from their resting alpha to the pulse peak.
-  setRowLines(fade, color, pulse) {
-    const alpha = fade * (DIM_ROW_LINE_ALPHA + (DIM_ROW_LINE_PULSE_ALPHA - DIM_ROW_LINE_ALPHA) * pulse);
+  // lines come and go with the darkness they compensate for. shown: the blink's
+  // current state (hard cut, no fade).
+  setRowLines(fade, color, shown) {
+    const alpha = shown ? DIM_ROW_LINE_ALPHA * fade : 0;
     for (const line of this.rowLines) line.setTint(color).setAlpha(alpha);
   }
 
