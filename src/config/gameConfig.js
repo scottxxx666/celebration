@@ -135,10 +135,13 @@ export const ROTATE_ZOOM = 0.49;
 export const DISCO_DIM_ALPHA = 0.55;    // black overlay alpha during disco — darkens world so beams/lasers pop
 export const DISCO_DIM_FADE_MS = 700;  // beat-aligned fade in/out ramp (~1 beats) at disco section start/end
 // Dashed lane-line row dividers redrawn above the dim (the road art's own lines sit under it and
-// vanish); fade in/out with the dim and scroll with the road. With `lights` they take the
-// base disco hue and blink on the beat grid: shown, then hidden, in equal spans; without
-// (lights-out sections) they stay on
-export const DIM_ROW_LINE_COLOR = 0xffffff;  // without `lights`
+// vanish); fade in/out with the dim and scroll with the road. With `lights` they blink
+// on the beat grid: shown, then hidden, in equal spans; without (lights-out sections) they
+// stay on
+export const DIM_ROW_LINE_COLOR = 0xe8e4d8;  // without `lights`
+// With `lights`: a fixed pastel road-paint cream, deliberately outside the saturated
+// DISCO_COLORS so the lines never blend into a beam or the beat flash
+export const DISCO_ROW_LINE_COLOR = 0xe8e4d8;
 export const DIM_ROW_LINE_ALPHA = 0.6;       // alpha while shown
 export const DIM_ROW_LINE_BLINK_BEATS = 1;   // beats shown, then the same hidden (0.5 = on/off within each beat)
 export const DIM_ROW_LINE_THICKNESS = 3;
