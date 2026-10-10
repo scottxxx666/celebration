@@ -1,4 +1,16 @@
-import { GAME_WIDTH, GAME_HEIGHT, WALK_ZONE_TOP, ROTATE_ZOOM, SCENERY_THEME } from '../config/gameConfig.js';
+import {
+  GAME_WIDTH,
+  GAME_HEIGHT,
+  WALK_ZONE_TOP,
+  ROTATE_ZOOM,
+  SCENERY_THEME,
+  DIM_ROW_LINE_COLOR,
+  DIM_ROW_LINE_ALPHA,
+  DIM_ROW_LINE_THICKNESS,
+  DIM_ROW_LINE_DASH,
+  DIM_ROW_LINE_GAP,
+} from '../config/gameConfig.js';
+import { rowBoundaryYs } from '../rowLayout.js';
 
 // Theme table — a road+background pair swaps as a set (docs/image-assets.md
 // "Road & background"). BootScene reads `road`/`scenery` to preload; this is
@@ -23,6 +35,9 @@ const SOURCE_SCALE = 0.5;
 // reveals black outside the art (docs/image-assets.md "Handling the rotate section").
 const HALF_SPAN = Math.hypot(GAME_WIDTH / ROTATE_ZOOM, GAME_HEIGHT / ROTATE_ZOOM) / 2;
 
+// One dash + gap, tiled along each row line; generated rather than loaded
+const ROW_LINE_KEY = 'dim-row-line';
+
 export class Scenery {
   constructor(scene) {
     const theme = SCENERY_THEMES[SCENERY_THEME];
@@ -46,6 +61,27 @@ export class Scenery {
       .setTileScale(SOURCE_SCALE, SOURCE_SCALE)
       .setDepth(-10);
 
+    // Dashed lane-line row dividers for dim sections — over the road art's own lines,
+    // above the disco dim (-6) so they stay readable, below the beat flash (-5)
+    // and lights (-4). Hidden until setRowLineFade(); same x widening as the road.
+    // The texture outlives the scene (restart), so it is only generated once.
+    if (!scene.textures.exists(ROW_LINE_KEY)) {
+      scene.make
+        .graphics({ add: false })
+        .fillStyle(0xffffff)
+        .fillRect(0, 0, DIM_ROW_LINE_DASH, DIM_ROW_LINE_THICKNESS)
+        .generateTexture(ROW_LINE_KEY, DIM_ROW_LINE_DASH + DIM_ROW_LINE_GAP, DIM_ROW_LINE_THICKNESS)
+        .destroy();
+    }
+    this.rowLines = rowBoundaryYs().map(y =>
+      scene.add
+        .tileSprite(left, y, width, DIM_ROW_LINE_THICKNESS, ROW_LINE_KEY)
+        .setOrigin(0, 0.5)
+        .setTint(DIM_ROW_LINE_COLOR)
+        .setAlpha(0)
+        .setDepth(-5.5),
+    );
+
     // Sky fill — above the scenery strip, out to the swept circle
     const skyTop = GAME_HEIGHT / 2 - HALF_SPAN;
     scene.add
@@ -61,10 +97,19 @@ export class Scenery {
       .setDepth(-11);
   }
 
+  // fade: 0–1 share of the dim currently applied (GameScene's dim ramp), so the
+  // lines come and go with the darkness they compensate for.
+  setRowLineFade(fade) {
+    const alpha = DIM_ROW_LINE_ALPHA * fade;
+    for (const line of this.rowLines) line.setAlpha(alpha);
+  }
+
   // dxWorldPx: world pixels to scroll the road left this frame. tilePositionX is in
   // *texture* pixels, so it must be divided by SOURCE_SCALE to move by logical pixels;
   // Phaser wraps tilePositionX itself, no manual bookkeeping needed.
   scroll(dxWorldPx) {
     this.road.tilePositionX += dxWorldPx / SOURCE_SCALE;
+    // Row-line texture is at logical size, so it moves by world pixels directly
+    for (const line of this.rowLines) line.tilePositionX += dxWorldPx;
   }
 }

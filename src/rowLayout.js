@@ -23,6 +23,14 @@ export function rowLayout(row) {
   return LAYOUTS[row];
 }
 
+// y of each divider between adjacent rows (NUM_ROWS − 1 of them), back to front —
+// where the road art draws its lane lines. Read-only, like the layouts.
+const BOUNDARY_YS = Array.from({ length: NUM_ROWS - 1 }, (_, i) => WALK_ZONE_TOP + ROW_HEIGHT * (i + 1));
+
+export function rowBoundaryYs() {
+  return BOUNDARY_YS;
+}
+
 // Uniform scale that fits an image's texture height to a logical half-height
 // `hh` at front-row size, then applies the row's fake-3D scale.
 export function fitSpriteScale(image, hh, rowScale) {

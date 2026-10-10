@@ -178,12 +178,13 @@ export class GameScene extends Phaser.Scene {
 
     // Dim — beat-aligned fade in/out across the contiguous dimmed span (back-to-back
     // dimmed sections fade as one), gated purely on song time
-    let dimAlpha = 0;
+    let dimFade = 0;
     if (section.dim) {
       const edgeMs = Math.min(songMs - section.dimStartMs, section.dimEndMs - songMs);
-      dimAlpha = DISCO_DIM_ALPHA * Phaser.Math.Clamp(edgeMs / DISCO_DIM_FADE_MS, 0, 1);
+      dimFade = Phaser.Math.Clamp(edgeMs / DISCO_DIM_FADE_MS, 0, 1);
     }
-    this.discoDim.setAlpha(dimAlpha);
+    this.discoDim.setAlpha(DISCO_DIM_ALPHA * dimFade);
+    this.scenery.setRowLineFade(dimFade);
 
     // Strobe — flash white section.strobe times per beat during the section (may be
     // sub-beat, and stepped over the section: strobeRate), aligned to the beat grid,

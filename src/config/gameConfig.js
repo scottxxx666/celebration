@@ -134,6 +134,13 @@ export const ROTATE_BEATS_PER_TURN = 16;      // one full camera revolution per 
 export const ROTATE_ZOOM = 0.49;
 export const DISCO_DIM_ALPHA = 0.55;    // black overlay alpha during disco — darkens world so beams/lasers pop
 export const DISCO_DIM_FADE_MS = 700;  // beat-aligned fade in/out ramp (~1 beats) at disco section start/end
+// Dashed lane-line row dividers redrawn above the dim (the road art's own lines sit under it and
+// vanish); fade in/out with the dim and scroll with the road
+export const DIM_ROW_LINE_COLOR = 0xffffff;
+export const DIM_ROW_LINE_ALPHA = 0.3;
+export const DIM_ROW_LINE_THICKNESS = 3;
+export const DIM_ROW_LINE_DASH = 48; // px drawn per dash
+export const DIM_ROW_LINE_GAP = 72;  // px skipped between dashes (road-style: gap longer than dash)
 export const DISCO_HUE_BEATS = 4; // beats the shared disco hue is held before advancing (4 = per bar)
 // Saturated palette for disco: beat flash uses the base index; DiscoLights spread
 // beams/pools/lasers across it by element index. The whole set advances per bar.
