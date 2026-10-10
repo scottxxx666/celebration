@@ -202,14 +202,19 @@ export const WAVES = [
     obstacles: [
       // 2.75, 4.75, 6.75, 8.75, 10.75, 12.75, 13.75, 14.75, 15.75 and 3.25, 5.25, 7.25, 9.25, 11.25, 13.25, 14.25.
       { timeOffset: 2.75, row: 0 },
+      { timeOffset: 3, row: 0 },
       { timeOffset: 4.75, row: 1 },
+      { timeOffset: 5, row: 1 },
       { timeOffset: 6.75, row: 2 },
+      { timeOffset: 7, row: 2 },
       { timeOffset: 8.75, row: 1 },
+      { timeOffset: 9, row: 1 },
       { timeOffset: 10.75, row: 2 },
+      { timeOffset: 11, row: 2 },
       { timeOffset: 12.75, row: 0 },
-      { timeOffset: 13.75, row: 1 },
-      { timeOffset: 15.8, row: 0 },
-      { timeOffset: 15.8, row: 2 },
+      { timeOffset: 13, row: 0 },
+      { timeOffset: 14.75, row: 1 },
+      { timeOffset: 15, row: 1 },
     ],
   },
   {
