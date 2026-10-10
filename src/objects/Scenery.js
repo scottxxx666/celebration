@@ -4,8 +4,8 @@ import {
   WALK_ZONE_TOP,
   ROTATE_ZOOM,
   SCENERY_THEME,
-  DIM_ROW_LINE_COLOR,
   DIM_ROW_LINE_ALPHA,
+  DIM_ROW_LINE_PULSE_ALPHA,
   DIM_ROW_LINE_THICKNESS,
   DIM_ROW_LINE_DASH,
   DIM_ROW_LINE_GAP,
@@ -63,7 +63,7 @@ export class Scenery {
 
     // Dashed lane-line row dividers for dim sections — over the road art's own lines,
     // above the disco dim (-6) so they stay readable, below the beat flash (-5)
-    // and lights (-4). Hidden until setRowLineFade(); same x widening as the road.
+    // and lights (-4). Hidden until setRowLines(); same x widening as the road.
     // The texture outlives the scene (restart), so it is only generated once.
     if (!scene.textures.exists(ROW_LINE_KEY)) {
       scene.make
@@ -77,7 +77,6 @@ export class Scenery {
       scene.add
         .tileSprite(left, y, width, DIM_ROW_LINE_THICKNESS, ROW_LINE_KEY)
         .setOrigin(0, 0.5)
-        .setTint(DIM_ROW_LINE_COLOR)
         .setAlpha(0)
         .setDepth(-5.5),
     );
@@ -98,10 +97,11 @@ export class Scenery {
   }
 
   // fade: 0–1 share of the dim currently applied (GameScene's dim ramp), so the
-  // lines come and go with the darkness they compensate for.
-  setRowLineFade(fade) {
-    const alpha = DIM_ROW_LINE_ALPHA * fade;
-    for (const line of this.rowLines) line.setAlpha(alpha);
+  // lines come and go with the darkness they compensate for. pulse: 0–1 beat-flash
+  // level, lifting the lines from their resting alpha to the pulse peak.
+  setRowLines(fade, color, pulse) {
+    const alpha = fade * (DIM_ROW_LINE_ALPHA + (DIM_ROW_LINE_PULSE_ALPHA - DIM_ROW_LINE_ALPHA) * pulse);
+    for (const line of this.rowLines) line.setTint(color).setAlpha(alpha);
   }
 
   // dxWorldPx: world pixels to scroll the road left this frame. tilePositionX is in

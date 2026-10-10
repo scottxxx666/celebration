@@ -33,6 +33,7 @@ import {
   ROTATE_BEATS_PER_TURN,
   ROTATE_ZOOM,
   DISCO_DIM_ALPHA,
+  DIM_ROW_LINE_COLOR,
   DISCO_DIM_FADE_MS,
   DISCO_HUE_BEATS,
   DISCO_COLORS,
@@ -184,7 +185,14 @@ export class GameScene extends Phaser.Scene {
       dimFade = Phaser.Math.Clamp(edgeMs / DISCO_DIM_FADE_MS, 0, 1);
     }
     this.discoDim.setAlpha(DISCO_DIM_ALPHA * dimFade);
-    this.scenery.setRowLineFade(dimFade);
+    // Row lines ride the beat flash: its hue under `lights`, and its current level
+    // (as a share of this section's flash peak) as their pulse
+    const flashPeak = section.lights ? DISCO_FLASH_ALPHA : BEAT_FLASH_ALPHA;
+    this.scenery.setRowLines(
+      dimFade,
+      section.lights ? discoColor : DIM_ROW_LINE_COLOR,
+      Math.min(1, this.beatOverlay.alpha / flashPeak),
+    );
 
     // Strobe — flash white section.strobe times per beat during the section (may be
     // sub-beat, and stepped over the section: strobeRate), aligned to the beat grid,
