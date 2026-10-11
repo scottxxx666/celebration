@@ -14,7 +14,7 @@ guidance lives in `docs/art-brief.md`; this doc is the sizing spec.
 - Sprites are drawn at their logical (front-row) size, then scaled **down**
   by the fake-3D row scale (0.9 back row → 1.0 front row, `ROW_SCALE_BACK`/
   `ROW_SCALE_FRONT`, applied in `rowLayout.js`).
-- The only scale-ups ever applied are trivial: the `lights` zoom punch (×1.02)
+- The only scale-ups ever applied are trivial: the `zoomPunch` section zoom punch (×1.02)
   and the CSS stretch above. The rotate section zooms **out** (×0.49).
 - Collision boxes never change with art — the player is always a 90×90 AABB,
   obstacles always block exactly one row (`COLLISION_HH` in

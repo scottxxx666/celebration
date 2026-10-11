@@ -34,7 +34,7 @@ export const ROW_HEIGHT = (GAME_HEIGHT - WALK_ZONE_TOP) / NUM_ROWS; // 90
 
 // Fake-3D depth (docs/art-brief.md): visual scale from back row (0) to front row
 export const ROW_SCALE_BACK = 0.9;
-export const ROW_SCALE_FRONT = 1.0;
+export const ROW_SCALE_FRONT = 1.1;
 
 // Obstacle collision width as a fraction of each sprite's `hw`
 // (obstacleSprites.js), shrunk equally front and back around the same centre
@@ -163,9 +163,9 @@ export const LIGHTS_OUT_SHADOW_DEPTH = 9.5;  // above the lights-out overlay (9)
 // lightsOut.reveal 'silhouettes': the overlay drops behind gameplay as a near-black backdrop and sprites tint solid black
 export const LIGHTS_OUT_SILHOUETTE_BG = 0x161616;  // backdrop colour — lighter = outlines read more easily, darker = closer to full dark
 
-// Camera zoom punch — subtle zoom pulse during lights sections, decaying over the beat.
+// Camera zoom punch — subtle zoom pulse during zoomPunch sections, decaying over the beat.
 // Multiplies the base zoom (1, or ROTATE_ZOOM when rotate is on), so it composes
-// with the rotate section. Purely visual, gated on section.lights / song time.
+// with the rotate section. Purely visual, gated on section.zoomPunch / song time.
 export const ZOOM_PUNCH_AMOUNT = 0.02;    // peak extra zoom (1.02 = +2%) at the punch instant
 export const ZOOM_PUNCH_BEATS = 4;        // beats between punches (4 = per-bar downbeat, 1 = per beat)
 export const ZOOM_PUNCH_DECAY_MS = 350;   // linear decay time from peak back to base (~half a beat)

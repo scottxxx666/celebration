@@ -312,7 +312,7 @@ export class GameScene extends Phaser.Scene {
     // base zoom so it composes with ROTATE_ZOOM. Stateless: derived from beat phase.
     const baseZoom = section.rotate ? ROTATE_ZOOM : 1;
     let zoomPunch = 1;
-    if (section.lights) {
+    if (section.zoomPunch) {
       const decay = Math.max(0, 1 - this.conductor.phaseMs(ZOOM_PUNCH_BEATS) / ZOOM_PUNCH_DECAY_MS);
       zoomPunch = 1 + ZOOM_PUNCH_AMOUNT * decay;
     }

@@ -9,7 +9,8 @@
 // strobeRamp = strobe peak at the section start as a fraction of STROBE_ALPHA, rising linearly to full at the section end (1/absent = no ramp).
 // beatFlash = walk-zone flash on each beat (still waits for BEAT_SYNC_START_MS; colour/alpha follow lights).
 // dim = black overlay darkening the world; back-to-back dimmed sections fade as one span.
-// lights = DiscoLights beams/pools/lasers + zoom punch + disco-coloured beat flash.
+// lights = DiscoLights beams/pools/lasers + disco-coloured beat flash.
+// zoomPunch = subtle camera zoom pulse every ZOOM_PUNCH_BEATS beats (ZOOM_PUNCH_* in gameConfig). Independent of lights.
 // lightsOut = { lit, dark } in beats, cycling from the section start: lit for `lit` beats, then
 //   fully black for `dark` beats, hiding all gameplay ({ lit: 1, dark: 1 } = 1 beat each; null/absent = off).
 //   Optional `bursts` + `gap` blink the lit part: `bursts` lit blinks of `lit` beats with `gap` beats of
@@ -22,12 +23,13 @@
 //   fading in/out over GHOST_FADE_MS at the section edges. Don't combine with lightsOut (the copies show through the black).
 // trails = afterimages: player, chaser and obstacles leave short fading coloured copies of themselves
 //   (TRAIL_* in gameConfig). Independent of ghost; like it, not meant for lightsOut sections.
-// ...DISCO = preset for dim + lights together.
-const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, strobeRamp: 1, beatFlash: false, lightsOut: null, ghost: false, trails: false };
-const DISCO = { dim: true, lights: true };
+// ...DISCO = preset for dim + lights + zoomPunch together.
+const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, strobeRamp: 1,
+  beatFlash: false, lightsOut: null, ghost: false, trails: false, zoomPunch: false };
+const DISCO = { dim: true, lights: true, zoomPunch: true };
 
 export const SECTIONS = [
-  { name: 'highlight1', startMs: 14498, endMs: 26055, speedMult: 1, beatFlash: true },
+  { name: 'highlight1', startMs: 14498, endMs: 26055, speedMult: 1, beatFlash: true, zoomPunch: true },
   { name: 'trail1', startMs: 37214, endMs: 37613, speedMult: 1, trails: true },
   { name: 'trail2', startMs: 41598, endMs: 42794, speedMult: 1, trails: true },
   { name: 'highlight2', startMs: 65909, endMs: 78663, speedMult: 1, ...DISCO },
