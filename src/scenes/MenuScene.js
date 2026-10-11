@@ -7,7 +7,7 @@ import { onDirectionKey } from '../input.js';
 import { DIFFICULTIES, getDifficulty, setDifficulty, stepDifficulty } from '../difficulty.js';
 import { menuRowLayout, MENU_CAPTION_OFFSET, MENU_TOUCH_WIDTH } from '../menuLayout.js';
 
-const OPTIONS = ['Start', '', 'How to Play'];
+const OPTIONS = ['Start', ''];
 const DIFFICULTY_ROW = 1; // label is set by refreshDifficulty()
 
 export class MenuScene extends Phaser.Scene {
@@ -109,13 +109,8 @@ export class MenuScene extends Phaser.Scene {
   confirm() {
     if (this.selected === 0) {
       this.startGame();
-    } else if (this.selected === DIFFICULTY_ROW) {
-      this.cycleDifficulty(1);
     } else {
-      // `next` must be passed explicitly: Phaser keeps the previous settings.data
-      // when scene.start is called without any, so omitting it here would leave a
-      // stale 'IntroScene' from the Start gate and send the player into the game.
-      this.scene.start('HowToPlayScene', { next: 'MenuScene' });
+      this.cycleDifficulty(1);
     }
   }
 
@@ -137,6 +132,6 @@ export class MenuScene extends Phaser.Scene {
     }
     // Always teach the controls first: they differ by difficulty (Easy auto-runs),
     // so a remembered "already seen" would go stale when the player switches.
-    this.scene.start('HowToPlayScene', { next: 'IntroScene' });
+    this.scene.start('HowToPlayScene');
   }
 }

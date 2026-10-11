@@ -24,24 +24,12 @@ export class HowToPlayScene extends Phaser.Scene {
     super('HowToPlayScene');
   }
 
-  // Reached two ways: from the menu (back to the menu), or as the gate
-  // MenuScene inserts between Start and the intro video on every Start
-  // (on to IntroScene).
-  // Both callers must pass `next` explicitly — Phaser keeps the previous
-  // settings.data when scene.start is called without any, so an omitted `next`
-  // reads as the last one used, not as undefined. The default is only a
-  // fallback for a first entry that never set it.
-  init(data) {
-    this.next = data?.next ?? 'MenuScene';
-  }
-
+  // The gate MenuScene inserts between Start and the intro video on every Start;
+  // there is no other way in, and every exit goes on to IntroScene.
   create() {
     const cx = GAME_WIDTH / 2;
     this.isDesktop = isDesktop(this);
     this.autoRun = getDifficulty() === 'easy';
-    // Derived from "not the menu" rather than naming the gate's target, so it
-    // survives the gate being moved around the boot flow.
-    const isGate = this.next !== 'MenuScene';
 
     this.add.text(cx, 40, 'HOW TO PLAY', { ...TITLE_STYLE, fontSize: '28px' }).setOrigin(0.5);
 
@@ -51,20 +39,14 @@ export class HowToPlayScene extends Phaser.Scene {
       this.createMobile();
     }
 
-    let hint;
-    if (isGate) {
-      // "continue", not "play": the press leads to the intro video, not gameplay
-      hint = this.isDesktop ? 'SPACE / tap to continue' : 'Tap to continue';
-    } else {
-      hint = this.isDesktop ? 'ESC / SPACE / tap to go back' : 'Tap anywhere to go back';
-    }
+    // "continue", not "play": the press leads to the intro video, not gameplay
+    const hint = this.isDesktop ? 'SPACE / tap to continue' : 'Tap to continue';
     this.add.text(cx, GAME_HEIGHT - 30, hint, HINT_STYLE).setOrigin(0.5);
 
-    // Every exit goes to the same target, so ESC needs no special-casing: it
-    // means "back" from the menu and "skip ahead" in the gate, matching IntroScene.
+    // ESC skips ahead like the other keys, matching IntroScene.
     // onDismiss's fresh-press guards matter here: the input that confirmed Start
     // must not also dismiss the gate before it can be read.
-    const leave = () => this.scene.start(this.next);
+    const leave = () => this.scene.start('IntroScene');
     onDismiss(this, { keys: { ESC: leave, ENTER: leave, SPACE: leave }, tap: leave });
 
     addFullscreenButton(this);

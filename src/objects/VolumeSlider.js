@@ -147,7 +147,7 @@ export function addVolumeSlider(scene, rightEdge = HUD_CORNER_X) {
 
   // stopPropagation is mandatory on both handlers: without it a tap here also
   // reaches scene-level listeners — the player's touch tap/swipe tracking,
-  // IntroScene's skip, HowToPlayScene's back.
+  // IntroScene's skip, HowToPlayScene's continue.
   zone.on('pointerdown', (pointer, localX, localY, event) => {
     event.stopPropagation();
     dragId = pointer.id;
