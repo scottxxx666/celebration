@@ -76,13 +76,15 @@ export const WAVES = [
       { timeOffset: 13.5, row: 2 },
       { timeOffset: 15, row: 1 },
       { timeOffset: 16.5, row: 0 },
-      { timeOffset: 16.5, row: 2 },
 
       { timeOffset: 21, row: 1 },
+      { timeOffset: 23, row: 0 },
       { timeOffset: 23, row: 2 },
-      { timeOffset: 25, row: 0 },
+      { timeOffset: 24.5, row: 1 },
+      { timeOffset: 26, row: 0 },
+      { timeOffset: 26, row: 2 },
 
-      { timeOffset: 27, row: 1 },
+      { timeOffset: 28, row: 1 },
       { timeOffset: 30, row: 2 },
 
       { timeOffset: 32, row: 1 },
