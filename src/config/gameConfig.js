@@ -170,6 +170,19 @@ export const ZOOM_PUNCH_AMOUNT = 0.02;    // peak extra zoom (1.02 = +2%) at the
 export const ZOOM_PUNCH_BEATS = 4;        // beats between punches (4 = per-bar downbeat, 1 = per beat)
 export const ZOOM_PUNCH_DECAY_MS = 350;   // linear decay time from peak back to base (~half a beat)
 
+// Camera dance — during dance sections the camera snaps to a random left/right tilt on
+// every step and shakes on each snap, like a crazy random dance (src/cameraDance.js).
+// The tilt adds to the rotate spin and the zoom punch still multiplies on top. Purely
+// visual, gated on section.dance / song time; pseudo-random but the same every run.
+export const DANCE_STEPS_PER_BEAT = 1;    // new pose per beat (2 = every half-beat, 0.5 = every 2 beats)
+export const DANCE_TILT_MIN_DEG = 3;      // smallest tilt of a pose, either side
+export const DANCE_TILT_MAX_DEG = 9;      // largest tilt of a pose, either side
+export const DANCE_SNAP_MS = 90;          // ease-out time from the previous pose to the new one (0 = hard cut)
+export const DANCE_SHAKE_PX = 10;         // shake offset (per axis) at the snap instant
+export const DANCE_SHAKE_DECAY_MS = 220;  // linear decay of the shake after each snap
+export const DANCE_SHAKE_JITTER_MS = 30;  // the shake offset is re-rolled this often
+export const DANCE_ZOOM = 0.92;           // base zoom while dancing, so the tilted corners crop less (1 = no zoom-out; ignored when rotate is on)
+
 // Ghost double vision — extra translucent cameras redraw the whole world (not the HUD)
 // slightly offset, each orbiting an ellipse once per GHOST_SWAY_BEATS beats. Composes
 // with rotate/zoom punch (offsets are camera scroll/zoom on top of the main camera).
@@ -181,7 +194,7 @@ export const GHOST_OFFSET_X = 14;         // horizontal orbit radius in px
 export const GHOST_OFFSET_Y = 6;          // vertical orbit radius in px
 export const GHOST_ZOOM_STEP = 0.02;      // extra zoom per ghost index (1st = +2%, 2nd = +4%)
 export const GHOST_SWAY_BEATS = 4;        // beats per full orbit
-export const GHOST_ON_BEATS = 2;          // beats of double vision per pulse (from the section start)...
+export const GHOST_ON_BEATS = 1.5;          // beats of double vision per pulse (from the section start)...
 export const GHOST_OFF_BEATS = 0.5;         // ...then this many beats clear, repeating (0 = ghost the whole section)
 export const GHOST_FADE_MS = 50;         // fade in after each pulse's start / out before its end
 

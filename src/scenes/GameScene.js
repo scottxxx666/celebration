@@ -9,6 +9,7 @@ import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
 import { ghostFade, ghostOffset } from '../ghostWorld.js';
+import { dancePose } from '../cameraDance.js';
 import { rotateTurns, sectionAt, strobeRate, strobeScale } from '../config/sections.js';
 import { HUD_DEPTH } from '../config/ui.js';
 import { getStartMs, formatSongTime } from '../songTime.js';
@@ -49,6 +50,7 @@ import {
   ZOOM_PUNCH_AMOUNT,
   ZOOM_PUNCH_BEATS,
   ZOOM_PUNCH_DECAY_MS,
+  DANCE_ZOOM,
   GHOST_COUNT,
   GHOST_ALPHA,
   GHOST_SWAY_BEATS,
@@ -301,16 +303,20 @@ export class GameScene extends Phaser.Scene {
     // Negative camera.rotation makes the world spin counterclockwise on screen — the direction
     // we want (confirmed by play-testing); after each half turn it reverses (rotateTurns).
     const cam = this.cameras.main;
+    let rotation = 0;
     if (section.rotate) {
       const turnMs = this.conductor.beatMs * ROTATE_BEATS_PER_TURN;
-      cam.setRotation(-rotateTurns(section, songMs, turnMs) * Math.PI * 2);
-    } else {
-      cam.setRotation(0);
+      rotation = -rotateTurns(section, songMs, turnMs) * Math.PI * 2;
     }
+
+    // Camera dance — a random left/right tilt snapped on each beat plus a shake, added on
+    // top of the spin. Stateless: the pose derives from song time (all 0 outside dance sections).
+    const dance = dancePose(section, songMs, this.conductor.beatMs);
+    cam.setRotation(rotation + dance.rotation).setScroll(dance.x, dance.y);
 
     // Zoom punch — subtle pulse on the (down)beat that decays, multiplied onto the
     // base zoom so it composes with ROTATE_ZOOM. Stateless: derived from beat phase.
-    const baseZoom = section.rotate ? ROTATE_ZOOM : 1;
+    const baseZoom = section.rotate ? ROTATE_ZOOM : section.dance ? DANCE_ZOOM : 1;
     let zoomPunch = 1;
     if (section.zoomPunch) {
       const decay = Math.max(0, 1 - this.conductor.phaseMs(ZOOM_PUNCH_BEATS) / ZOOM_PUNCH_DECAY_MS);
@@ -331,7 +337,7 @@ export class GameScene extends Phaser.Scene {
           .setAlpha(GHOST_ALPHA * fade)
           .setRotation(cam.rotation)
           .setZoom(cam.zoom * (1 + offset.zoom * fade))
-          .setScroll(offset.x * fade, offset.y * fade);
+          .setScroll(cam.scrollX + offset.x * fade, cam.scrollY + offset.y * fade);
       });
     } else {
       this.ghostCams.forEach(ghostCam => ghostCam.setVisible(false));
