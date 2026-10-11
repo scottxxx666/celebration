@@ -67,7 +67,7 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(
       cx,
       GAME_HEIGHT - 30,
-      this.isDesktop ? '↑/↓ select · ←/→ mode · SPACE confirm' : 'Tap an option',
+      this.isDesktop ? '↑/↓ select · ←/→ mode · SPACE start' : 'Tap an option',
       HINT_STYLE
     ).setOrigin(0.5);
 
@@ -75,8 +75,10 @@ export class MenuScene extends Phaser.Scene {
     onDirectionKey(this, 'down', () => this.move(1));
     onDirectionKey(this, 'left', () => this.cycleDifficulty(-1));
     onDirectionKey(this, 'right', () => this.cycleDifficulty(1));
-    this.input.keyboard.on('keydown-ENTER', () => this.confirm());
-    this.input.keyboard.on('keydown-SPACE', () => this.confirm());
+    // Keys start from either row: ←/→ already cycle the difficulty, so SPACE on
+    // that row means "play this one". Only a click/tap on the row cycles.
+    this.input.keyboard.on('keydown-ENTER', () => this.startGame());
+    this.input.keyboard.on('keydown-SPACE', () => this.startGame());
 
     addFullscreenButton(this);
   }
