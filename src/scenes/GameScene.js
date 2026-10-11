@@ -141,6 +141,8 @@ export class GameScene extends Phaser.Scene {
 
     this.afterimages = new Afterimages(this);
     this.trailSources = [];
+    // Rolled once per run (so also per restart): every run gets a different camera dance
+    this.danceSeed = Math.random() * 1000;
 
     // Ghost cameras last, so they draw every object above; each skips the HUD (the
     // debug readout plus everything the HUD helpers put at HUD_DEPTH) to keep it single.
@@ -309,9 +311,9 @@ export class GameScene extends Phaser.Scene {
       rotation = -rotateTurns(section, songMs, turnMs) * Math.PI * 2;
     }
 
-    // Camera dance — a random left/right tilt snapped on each beat plus a shake, added on
-    // top of the spin. Stateless: the pose derives from song time (all 0 outside dance sections).
-    const dance = dancePose(section, songMs, this.conductor.beatMs);
+    // Camera dance — a random left/right tilt and sideways slide snapped on each beat plus a shake, added on
+    // top of the spin. Stateless within a run: the pose derives from song time and the run's seed (all 0 outside dance sections).
+    const dance = dancePose(section, songMs, this.conductor.beatMs, this.danceSeed);
     cam.setRotation(rotation + dance.rotation).setScroll(dance.x, dance.y);
 
     // Zoom punch — subtle pulse on the (down)beat that decays, multiplied onto the

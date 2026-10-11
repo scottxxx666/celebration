@@ -170,13 +170,15 @@ export const ZOOM_PUNCH_AMOUNT = 0.02;    // peak extra zoom (1.02 = +2%) at the
 export const ZOOM_PUNCH_BEATS = 4;        // beats between punches (4 = per-bar downbeat, 1 = per beat)
 export const ZOOM_PUNCH_DECAY_MS = 350;   // linear decay time from peak back to base (~half a beat)
 
-// Camera dance — during dance sections the camera snaps to a random left/right tilt on
-// every step and shakes on each snap, like a crazy random dance (src/cameraDance.js).
+// Camera dance — during dance sections the camera snaps to a random left/right tilt and a
+// random left/right slide on every step and shakes on each snap, like a crazy random dance (src/cameraDance.js).
 // The tilt adds to the rotate spin and the zoom punch still multiplies on top. Purely
-// visual, gated on section.dance / song time; pseudo-random but the same every run.
+// visual, gated on section.dance / song time; the moves differ every run (GameScene rolls a seed).
 export const DANCE_STEPS_PER_BEAT = 1;    // new pose per beat (2 = every half-beat, 0.5 = every 2 beats)
-export const DANCE_TILT_MIN_DEG = 3;      // smallest tilt of a pose, either side
-export const DANCE_TILT_MAX_DEG = 9;      // largest tilt of a pose, either side
+export const DANCE_TILT_MIN_DEG = 0.5;      // smallest tilt of a pose, either side
+export const DANCE_TILT_MAX_DEG = 5;      // largest tilt of a pose, either side
+export const DANCE_SHIFT_MIN_PX = 5;     // smallest sideways slide of a pose, either side (its side is rolled separately from the tilt's)
+export const DANCE_SHIFT_MAX_PX = 25;     // largest sideways slide of a pose, either side (0 for both = tilt only)
 export const DANCE_SNAP_MS = 90;          // ease-out time from the previous pose to the new one (0 = hard cut)
 export const DANCE_SHAKE_PX = 10;         // shake offset (per axis) at the snap instant
 export const DANCE_SHAKE_DECAY_MS = 220;  // linear decay of the shake after each snap
