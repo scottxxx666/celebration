@@ -16,9 +16,6 @@ const PHONE_W = 320;
 const PHONE_H = 170;
 const SWIPE_MARGIN = 30; // swipe dot travel stops this far from the phone edge
 
-// Easy auto-runs (Player autoRun), so the desktop run demo is dimmed and its caption swapped
-const EASY_RUN_DEMO_ALPHA = 0.25;
-
 export class HowToPlayScene extends Phaser.Scene {
   constructor() {
     super('HowToPlayScene');
@@ -67,15 +64,19 @@ export class HowToPlayScene extends Phaser.Scene {
 
   createDesktop() {
     const cx = GAME_WIDTH / 2;
-    this.runDemo = this.add.container(LEFT_X, DEMO_Y).setAlpha(this.autoRun ? EASY_RUN_DEMO_ALPHA : 1);
-    this.rowsDemo = this.add.container(RIGHT_X, DEMO_Y);
+    // Easy auto-runs, so there is no run demo: the rows column takes the centre
+    const rowsX = this.autoRun ? cx : RIGHT_X;
+    this.rowsDemo = this.add.container(rowsX, DEMO_Y);
 
-    this.runPads = [-1, 1].map((side) => {
-      const pad = this.buildKeycap(side < 0 ? '←' : '→');
-      pad.setPosition(side * 30, 0);
-      this.runDemo.add(pad);
-      return pad;
-    });
+    if (!this.autoRun) {
+      this.runDemo = this.add.container(LEFT_X, DEMO_Y);
+      this.runPads = [-1, 1].map((side) => {
+        const pad = this.buildKeycap(side < 0 ? '←' : '→');
+        pad.setPosition(side * 30, 0);
+        this.runDemo.add(pad);
+        return pad;
+      });
+    }
     this.rowPads = [
       { y: -32, label: '↑' },
       { y: 32, label: '↓' },
@@ -87,15 +88,22 @@ export class HowToPlayScene extends Phaser.Scene {
     });
 
     // Two lines each: on one line the captions are wider than the column spacing and collide
-    this.caption(LEFT_X, DEMO_Y + 110, this.autoRun ? 'Easy mode:\nyou run automatically' : 'Alternate ← → (A D)\nto run faster');
-    this.caption(RIGHT_X, DEMO_Y + 110, 'Press ↑ ↓ (W S)\nto change rows');
-    this.caption(cx, 320, 'Dodge the obstacles');
-    this.caption(cx, 345, "Don't let the chaser catch you");
+    this.caption(rowsX, DEMO_Y + 110, 'Press ↑ ↓ (W S)\nto change rows');
+    if (this.autoRun) {
+      // The run line joins the full-width captions, which close up to fit a third
+      this.caption(cx, 312, 'Easy mode: you run automatically');
+      this.caption(cx, 337, 'Dodge the obstacles');
+      this.caption(cx, 362, "Don't let the chaser catch you");
+    } else {
+      this.caption(LEFT_X, DEMO_Y + 110, 'Alternate ← → (A D)\nto run faster');
+      this.caption(cx, 320, 'Dodge the obstacles');
+      this.caption(cx, 345, "Don't let the chaser catch you");
+    }
 
     this.add.text(cx, 385, 'F — fullscreen', HINT_STYLE).setOrigin(0.5);
 
     // Half-beat tap cadence (~350ms); rows keys press once per beat (~700ms)
-    this.startPressLoop(350, this.runDemo, this.runPads);
+    if (!this.autoRun) this.startPressLoop(350, this.runDemo, this.runPads);
     this.startPressLoop(700, this.rowsDemo, this.rowPads);
   }
 
