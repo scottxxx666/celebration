@@ -20,7 +20,7 @@
 //   pure black; 'silhouettes' = sprites turn solid black on a near-black backdrop. Without it,
 //   author this section's obstacles to arrive while lit or right as the dark begins.
 // ghost = "double vision": extra translucent copies of the whole world (not the HUD) sway around the beat,
-//   fading in/out over GHOST_FADE_MS at the section edges. Don't combine with lightsOut (the copies show through the black).
+//   pulsing from the section start — GHOST_ON_BEATS ghosted, then GHOST_OFF_BEATS clear (each pulse fades in/out over GHOST_FADE_MS). Don't combine with lightsOut (the copies show through the black).
 // trails = afterimages: player, chaser and obstacles leave short fading coloured copies of themselves
 //   (TRAIL_* in gameConfig). Independent of ghost; like it, not meant for lightsOut sections.
 // ...DISCO = preset for dim + lights + zoomPunch together.
@@ -40,7 +40,8 @@ export const SECTIONS = [
   { name: 'dance_break2', startMs: 96198, endMs: 96995, speedMult: 1.5, lightsOut: { lit: 0.25, gap: 0.25, bursts: 3, dark: 2.75, strobe: true }, dim: true },
   { name: 'dance_break3', startMs: 96995, endMs: 98191, speedMult: 1.5, lightsOut: { lit: 0.25, gap: 0.25, bursts: 1, dark: 2.75, strobe: true }, dim: true },
   { name: 'blackout', startMs: 98191, endMs: 98589, speedMult: 1.5 },
-  { name: 'final_highlight', startMs: 123697, endMs: 136451, speedMult: 1.5, ...DISCO, rotate: true },
+  { name: 'final_highlight', startMs: 123697, endMs: 130074, speedMult: 1.5, ...DISCO, rotate: true },
+  { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, ghost: true },
 ].map(section => ({ ...NORMAL, ...section }));
 
 // SECTIONS is in time order: one forward and one backward pass give every dimmed

@@ -320,7 +320,7 @@ export class GameScene extends Phaser.Scene {
 
     // Ghost double vision — extra translucent cameras copy the main camera, each offset
     // on an orbit. Stateless: fade and orbit phase both derive from song time.
-    const fade = ghostFade(section, songMs);
+    const fade = ghostFade(section, songMs, this.conductor.beatMs);
     if (fade > 0) {
       const swayMs = this.conductor.beatMs * GHOST_SWAY_BEATS;
       const phase = this.conductor.phaseMs(GHOST_SWAY_BEATS) / swayMs;

@@ -173,14 +173,17 @@ export const ZOOM_PUNCH_DECAY_MS = 350;   // linear decay time from peak back to
 // Ghost double vision — extra translucent cameras redraw the whole world (not the HUD)
 // slightly offset, each orbiting an ellipse once per GHOST_SWAY_BEATS beats. Composes
 // with rotate/zoom punch (offsets are camera scroll/zoom on top of the main camera).
-// Purely visual, gated on section.ghost / song time.
+// Purely visual, gated on section.ghost / song time. It pulses rather than holding:
+// GHOST_ON_BEATS of double vision, then GHOST_OFF_BEATS clear, from the section start.
 export const GHOST_COUNT = 2;             // extra cameras (duplicate worlds)
 export const GHOST_ALPHA = 0.25;          // each ghost's opacity at full fade-in
 export const GHOST_OFFSET_X = 14;         // horizontal orbit radius in px
 export const GHOST_OFFSET_Y = 6;          // vertical orbit radius in px
 export const GHOST_ZOOM_STEP = 0.02;      // extra zoom per ghost index (1st = +2%, 2nd = +4%)
 export const GHOST_SWAY_BEATS = 4;        // beats per full orbit
-export const GHOST_FADE_MS = 400;         // fade in after section start / out before its end
+export const GHOST_ON_BEATS = 2;          // beats of double vision per pulse (from the section start)...
+export const GHOST_OFF_BEATS = 0.5;         // ...then this many beats clear, repeating (0 = ghost the whole section)
+export const GHOST_FADE_MS = 50;         // fade in after each pulse's start / out before its end
 
 // Trails — afterimages: every TRAIL_STAMP_MS the player, chaser and obstacles drop a
 // tinted copy of themselves that slides left at TRAIL_DRIFT × world speed while fading

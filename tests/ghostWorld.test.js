@@ -1,39 +1,49 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ghostFade, ghostOffset } from '../src/ghostWorld.js';
-import { GHOST_FADE_MS, GHOST_OFFSET_X, GHOST_OFFSET_Y } from '../src/config/gameConfig.js';
+import { GHOST_FADE_MS, GHOST_OFFSET_X, GHOST_OFFSET_Y, GHOST_ON_BEATS, GHOST_OFF_BEATS } from '../src/config/gameConfig.js';
 
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} !== ${expected}`);
 
-const section = { ghost: true, startMs: 10000, endMs: 20000 };
+const BEAT_MS = 500;
+const ON_MS = GHOST_ON_BEATS * BEAT_MS;
+const CYCLE_MS = ON_MS + GHOST_OFF_BEATS * BEAT_MS;
+const section = { ghost: true, startMs: 10000, endMs: 10000 + CYCLE_MS * 4 };
+const fadeAt = (songMs, s = section) => ghostFade(s, songMs, BEAT_MS);
 
 test('a non-ghost section has no fade anywhere', () => {
-  assert.equal(ghostFade({ ghost: false, startMs: 0, endMs: 10000 }, 5000), 0);
+  assert.equal(fadeAt(5000, { ghost: false, startMs: 0, endMs: 10000 }), 0);
 });
 
-test('fade ramps in from the section start', () => {
-  assert.equal(ghostFade(section, 10000), 0);
-  near(ghostFade(section, 10000 + GHOST_FADE_MS / 2), 0.5);
-  assert.equal(ghostFade(section, 10000 + GHOST_FADE_MS), 1);
+test('fade is 0 before the section and ramps in from its start', () => {
+  assert.equal(fadeAt(9000), 0);
+  assert.equal(fadeAt(10000), 0);
+  near(fadeAt(10000 + GHOST_FADE_MS / 2), 0.5);
+  assert.equal(fadeAt(10000 + GHOST_FADE_MS), 1);
 });
 
-test('fade holds at 1 in the middle', () => {
-  assert.equal(ghostFade(section, 15000), 1);
-});
-
-test('fade ramps out over the last GHOST_FADE_MS and is 0 at/after the end', () => {
-  near(ghostFade(section, 20000 - GHOST_FADE_MS / 2), 0.5);
-  assert.equal(ghostFade(section, 20000), 0);
-  assert.equal(ghostFade(section, 25000), 0);
-});
-
-test('a section shorter than two ramps never exceeds the smaller ramp', () => {
-  const short = { ghost: true, startMs: 0, endMs: GHOST_FADE_MS };
-  for (let t = 0; t <= short.endMs; t += 10) {
-    const limit = Math.min(t, short.endMs - t) / GHOST_FADE_MS;
-    assert.ok(ghostFade(short, t) <= limit + 1e-9, `t=${t}`);
+test('each pulse holds at 1, ramps out, then stays clear until the next one', () => {
+  for (let pulse = 0; pulse < 4; pulse++) {
+    const start = section.startMs + pulse * CYCLE_MS;
+    assert.equal(fadeAt(start + ON_MS / 2), 1, `pulse ${pulse} middle`);
+    near(fadeAt(start + ON_MS - GHOST_FADE_MS / 2), 0.5);
+    assert.equal(fadeAt(start + ON_MS), 0, `pulse ${pulse} end`);
+    assert.equal(fadeAt(start + ON_MS + (CYCLE_MS - ON_MS) / 2), 0, `pulse ${pulse} clear`);
   }
-  near(ghostFade(short, GHOST_FADE_MS / 2), 0.5);
+});
+
+test('fade is 0 at/after the section end', () => {
+  assert.equal(fadeAt(section.endMs), 0);
+  assert.equal(fadeAt(section.endMs + 5000), 0);
+});
+
+test('a section ending mid-pulse ramps out before its end', () => {
+  const cut = { ghost: true, startMs: 0, endMs: ON_MS / 2 };
+  for (let t = 0; t <= cut.endMs; t += 10) {
+    const limit = Math.min(t, cut.endMs - t) / GHOST_FADE_MS;
+    assert.ok(fadeAt(t, cut) <= limit + 1e-9, `t=${t}`);
+  }
+  near(fadeAt(cut.endMs - GHOST_FADE_MS / 2, cut), 0.5);
 });
 
 test('ghosts are evenly spaced in angle around the orbit', () => {
