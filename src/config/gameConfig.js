@@ -175,15 +175,31 @@ export const ZOOM_PUNCH_DECAY_MS = 350;   // linear decay time from peak back to
 // The tilt adds to the rotate spin and the zoom punch still multiplies on top. Purely
 // visual, gated on section.dance / song time; the moves differ every run (GameScene rolls a seed).
 export const DANCE_STEPS_PER_BEAT = 1;    // new pose per beat (2 = every half-beat, 0.5 = every 2 beats)
-export const DANCE_TILT_MIN_DEG = 0.5;      // smallest tilt of a pose, either side
-export const DANCE_TILT_MAX_DEG = 5;      // largest tilt of a pose, either side
+export const DANCE_TILT_MIN_DEG = 7.5;      // smallest tilt of a pose, either side
+export const DANCE_TILT_MAX_DEG = 9;      // largest tilt of a pose, either side
 export const DANCE_SHIFT_MIN_PX = 5;     // smallest sideways slide of a pose, either side (its side is rolled separately from the tilt's)
 export const DANCE_SHIFT_MAX_PX = 25;     // largest sideways slide of a pose, either side (0 for both = tilt only)
 export const DANCE_SNAP_MS = 90;          // ease-out time from the previous pose to the new one (0 = hard cut)
 export const DANCE_SHAKE_PX = 10;         // shake offset (per axis) at the snap instant
 export const DANCE_SHAKE_DECAY_MS = 220;  // linear decay of the shake after each snap
 export const DANCE_SHAKE_JITTER_MS = 30;  // the shake offset is re-rolled this often
-export const DANCE_ZOOM = 0.92;           // base zoom while dancing, so the tilted corners crop less (1 = no zoom-out; ignored when rotate is on)
+// dance: 'headshake' — instead of holding a pose, each step is one whole head shake: the camera
+// swings side to side around upright and settles, sliding the way it leans. Its first side and
+// its size are rolled per step from the DANCE_TILT / DANCE_SHIFT bounds above; no jitter.
+export const DANCE_HEAD_SWINGS = 2;       // side-to-side swings per shake (3 = left-right-left, each smaller than the last)
+export const DANCE_HEAD_SPAN = 0.8;       // fraction of the step the shake lasts before resting upright (1 = fills the step)
+export const DANCE_ZOOM = 0.92;           // base zoom of the two modes above, so the tilted corners crop less (1 = no zoom-out; ignored when rotate is on)
+// dance: 'handheld' — one move spanning the whole section, like a handheld camera pulling back
+// from a close-up: it cuts in close and rolled over, pulls back fast then slower to a wide shot,
+// rocking from side to side and wandering as it goes, and steadies to level before the section ends.
+export const DANCE_HAND_ZOOM_FROM = 1.2;  // zoom at the section start (above 1 crops the field edges: less lookahead on the right)
+export const DANCE_HAND_ZOOM_TO = 0.7;    // zoom at the section end (below 1 = wider than the normal view; ignored when rotate is on)
+export const DANCE_HAND_TILT_DEG = 12;    // largest roll of a rock, either side (each rock is 50–100% of it, alternating sides)
+export const DANCE_HAND_SWAY_BEATS = 2;   // beats from one side of a rock to the other
+export const DANCE_HAND_DRIFT_X = 30;     // horizontal wander in px, either side
+export const DANCE_HAND_DRIFT_Y = 18;     // vertical wander in px, either side
+export const DANCE_HAND_DRIFT_BEATS = 1;  // beats between the wander's random targets (smaller = jumpier)
+export const DANCE_HAND_CALM = 0.75;      // fraction of the section by which the rock and wander have died out (1 = only at the very end)
 
 // Ghost double vision — extra translucent cameras redraw the whole world (not the HUD)
 // slightly offset, each orbiting an ellipse once per GHOST_SWAY_BEATS beats. Composes

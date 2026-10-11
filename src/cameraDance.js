@@ -1,9 +1,12 @@
 import {
   DANCE_STEPS_PER_BEAT, DANCE_TILT_MIN_DEG, DANCE_TILT_MAX_DEG, DANCE_SHIFT_MIN_PX, DANCE_SHIFT_MAX_PX, DANCE_SNAP_MS,
-  DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS, DANCE_SHAKE_JITTER_MS,
+  DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS, DANCE_SHAKE_JITTER_MS, DANCE_HEAD_SWINGS, DANCE_HEAD_SPAN, DANCE_ZOOM,
+  DANCE_HAND_ZOOM_FROM, DANCE_HAND_ZOOM_TO, DANCE_HAND_TILT_DEG, DANCE_HAND_SWAY_BEATS,
+  DANCE_HAND_DRIFT_X, DANCE_HAND_DRIFT_Y, DANCE_HAND_DRIFT_BEATS, DANCE_HAND_CALM,
 } from './config/gameConfig.js';
 
-const STILL = Object.freeze({ rotation: 0, x: 0, y: 0 });
+const STILL = Object.freeze({ rotation: 0, x: 0, y: 0, zoom: 1 });
+const REST = Object.freeze({ ...STILL, zoom: DANCE_ZOOM }); // upright, mid-dance
 
 // Deterministic 0..1 pseudo-random from a number: within a run the dance is stateless
 // from song time; the caller's per-run seed is what makes each run dance differently.
@@ -31,18 +34,75 @@ function stepPose(section, step, runSeed) {
 
 const UPRIGHT = Object.freeze({ tilt: 0, shift: 0 });
 
+// -1..1 swing of a head shake `progress` (0..1) of the way through it: DANCE_HEAD_SWINGS
+// half-waves, alternating sides, under an envelope that falls linearly to 0 at the end.
+function headSwing(progress) {
+  if (progress >= 1) return 0;
+  return Math.sin(Math.PI * DANCE_HEAD_SWINGS * progress) * (1 - progress);
+}
+
+const smoothstep = t => t * t * (3 - 2 * t);
+
+// Smooth -1..1 wander: random targets at every integer `t`, eased between.
+function wander(seed, t) {
+  const i = Math.floor(t);
+  const a = rand(seed + i) * 2 - 1;
+  const b = rand(seed + i + 1) * 2 - 1;
+  return a + (b - a) * smoothstep(t - i);
+}
+
+// `dance: 'handheld'` — one move over the whole section rather than a step per beat: the zoom
+// pulls back from DANCE_HAND_ZOOM_FROM to DANCE_HAND_ZOOM_TO (fast, then slower), the camera
+// rocks continuously between rolls on alternating sides (a new one every DANCE_HAND_SWAY_BEATS,
+// starting rolled over) and wanders in x/y, and the rock and wander shrink linearly to nothing
+// by DANCE_HAND_CALM of the way through, leaving a steady level pull-back.
+function handheldPose(section, songMs, beatMs, runSeed) {
+  const elapsed = songMs - section.startMs;
+  const progress = elapsed / (section.endMs - section.startMs);
+  const energy = Math.max(0, 1 - progress / DANCE_HAND_CALM);
+  const seed = section.startMs + runSeed;
+
+  const firstSide = rand(seed) < 0.5 ? -1 : 1;
+  const rollAt = rock => (rock % 2 ? -firstSide : firstSide) * (0.5 + 0.5 * rand(seed + 1 + rock));
+  const rocks = elapsed / (beatMs * DANCE_HAND_SWAY_BEATS);
+  const rock = Math.floor(rocks);
+  const roll = rollAt(rock) + (rollAt(rock + 1) - rollAt(rock)) * smoothstep(rocks - rock);
+
+  const drift = elapsed / (beatMs * DANCE_HAND_DRIFT_BEATS);
+  const pulled = 1 - (1 - progress) * (1 - progress);
+  return {
+    rotation: roll * DANCE_HAND_TILT_DEG * Math.PI / 180 * energy,
+    x: wander(seed + 0.25, drift) * DANCE_HAND_DRIFT_X * energy,
+    y: wander(seed + 0.75, drift) * DANCE_HAND_DRIFT_Y * energy,
+    zoom: DANCE_HAND_ZOOM_FROM * (DANCE_HAND_ZOOM_TO / DANCE_HAND_ZOOM_FROM) ** pulled,
+  };
+}
+
 // Camera pose at songMs for a `dance` section: every 1/DANCE_STEPS_PER_BEAT beats from the
 // section start the camera snaps (ease-out over DANCE_SNAP_MS) from the previous step's tilt
 // and sideways slide to new random ones, and each snap kicks a shake — a random scroll offset re-rolled every
 // DANCE_SHAKE_JITTER_MS, shrinking to nothing over DANCE_SHAKE_DECAY_MS. The first step
 // snaps from upright and centred. `runSeed` picks the dance: the same seed gives the same moves,
-// so GameScene rolls one per run. Returns { rotation, x, y } (radians, scroll px); all 0 outside the section.
+// so GameScene rolls one per run. With `dance: 'headshake'` each step is instead one head shake:
+// the step's rolled tilt swings side to side around upright (headSwing) over DANCE_HEAD_SPAN of the
+// step, the slide follows the lean as if pivoting on a neck below the screen, and there is no jitter;
+// `dance: 'handheld'` is handheldPose above. Returns { rotation, x, y, zoom } (radians, scroll px, base zoom);
+// upright at zoom 1 outside the section.
 export function dancePose(section, songMs, beatMs, runSeed = 0) {
   if (!section.dance || songMs < section.startMs || songMs >= section.endMs) return STILL;
+  if (section.dance === 'handheld') return handheldPose(section, songMs, beatMs, runSeed);
   const stepMs = beatMs / DANCE_STEPS_PER_BEAT;
   const elapsed = songMs - section.startMs;
   const step = Math.floor(elapsed / stepMs);
   const sinceMs = elapsed - step * stepMs;
+
+  if (section.dance === 'headshake') {
+    const swing = headSwing(sinceMs / (stepMs * DANCE_HEAD_SPAN));
+    if (swing === 0) return REST;
+    const { tilt, shift } = stepPose(section, step, runSeed);
+    // World leaning clockwise (positive tilt) slides right (negative scroll)
+    return { rotation: tilt * swing, x: -Math.sign(tilt) * Math.abs(shift) * swing, y: 0, zoom: DANCE_ZOOM };
+  }
 
   const from = step === 0 ? UPRIGHT : stepPose(section, step - 1, runSeed);
   const to = stepPose(section, step, runSeed);
@@ -55,5 +115,6 @@ export function dancePose(section, songMs, beatMs, runSeed = 0) {
     rotation: from.tilt + (to.tilt - from.tilt) * eased,
     x: from.shift + (to.shift - from.shift) * eased + (rand(jitter + 0.25) * 2 - 1) * amp,
     y: (rand(jitter + 1.25) * 2 - 1) * amp,
+    zoom: DANCE_ZOOM,
   };
 }

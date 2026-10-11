@@ -50,7 +50,6 @@ import {
   ZOOM_PUNCH_AMOUNT,
   ZOOM_PUNCH_BEATS,
   ZOOM_PUNCH_DECAY_MS,
-  DANCE_ZOOM,
   GHOST_COUNT,
   GHOST_ALPHA,
   GHOST_SWAY_BEATS,
@@ -317,8 +316,8 @@ export class GameScene extends Phaser.Scene {
     cam.setRotation(rotation + dance.rotation).setScroll(dance.x, dance.y);
 
     // Zoom punch — subtle pulse on the (down)beat that decays, multiplied onto the
-    // base zoom so it composes with ROTATE_ZOOM. Stateless: derived from beat phase.
-    const baseZoom = section.rotate ? ROTATE_ZOOM : section.dance ? DANCE_ZOOM : 1;
+    // base zoom (1, the dance's own zoom, or ROTATE_ZOOM) so it composes. Stateless: derived from beat phase.
+    const baseZoom = section.rotate ? ROTATE_ZOOM : dance.zoom;
     let zoomPunch = 1;
     if (section.zoomPunch) {
       const decay = Math.max(0, 1 - this.conductor.phaseMs(ZOOM_PUNCH_BEATS) / ZOOM_PUNCH_DECAY_MS);
