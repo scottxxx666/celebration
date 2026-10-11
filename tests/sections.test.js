@@ -69,27 +69,28 @@ test('the ready strobe steps fill the section and only speed up', () => {
 
 const spin = { startMs: 1000 };
 
-test('rotate spins forward through the first turn', () => {
+test('rotate spins forward through the first half turn, to upside-down', () => {
   near(rotateTurns(spin, 1000, 400), 0);
   near(rotateTurns(spin, 1100, 400), 0.25);
-  near(rotateTurns(spin, 1400, 400), 1);
+  near(rotateTurns(spin, 1200, 400), 0.5);
 });
 
-test('rotate runs in reverse through the second turn, back to upright', () => {
-  near(rotateTurns(spin, 1500, 400), 0.75);
+test('rotate runs in reverse through the second half turn, back to upright', () => {
+  near(rotateTurns(spin, 1250, 400), 0.375);
+  near(rotateTurns(spin, 1300, 400), 0.25);
+  near(rotateTurns(spin, 1400, 400), 0);
+});
+
+test('rotate keeps alternating direction on later half turns', () => {
+  near(rotateTurns(spin, 1500, 400), 0.25);
+  near(rotateTurns(spin, 1600, 400), 0.5);
   near(rotateTurns(spin, 1700, 400), 0.25);
-  near(rotateTurns(spin, 1800, 400), 0);
 });
 
-test('rotate keeps alternating direction on later turns', () => {
-  near(rotateTurns(spin, 1900, 400), 0.25);
-  near(rotateTurns(spin, 2300, 400), 0.75);
-});
-
-test('the final highlight is one turn out and one turn back, ending upright', () => {
+test('the final highlight is one half-turn swing out and back, ending upright', () => {
   const final = sectionAt(123697);
   const turnMs = TRACK_BEAT_MS * ROTATE_BEATS_PER_TURN;
   assert.ok(final.rotate);
-  assert.ok(Math.abs((final.endMs - final.startMs) / turnMs - 2) < 0.01);
+  assert.ok(Math.abs((final.endMs - final.startMs) / turnMs - 1) < 0.01);
   assert.ok(rotateTurns(final, final.endMs - 1, turnMs) < 0.01);
 });

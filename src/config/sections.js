@@ -86,10 +86,10 @@ export function strobeRate(section, songMs, beatMs) {
   return strobe[strobe.length - 1][1];
 }
 
-// Camera turns away from upright at songMs for a `rotate` section: one full turn forward,
-// then the same turn played back in reverse, repeating (a ping-pong, so the spin is stateless
-// and returns to upright every two turns).
+// Camera turns away from upright at songMs for a `rotate` section: half a turn forward (to
+// upside-down), then the same half turn played back in reverse, repeating (a ping-pong, so the
+// spin is stateless and returns to upright every turnMs). turnMs is the time a full turn would take.
 export function rotateTurns(section, songMs, turnMs) {
-  const lap = ((songMs - section.startMs) / turnMs) % 2;
-  return lap <= 1 ? lap : 2 - lap;
+  const lap = ((songMs - section.startMs) / turnMs) % 1;
+  return lap <= 0.5 ? lap : 1 - lap;
 }

@@ -299,7 +299,7 @@ export class GameScene extends Phaser.Scene {
 
     // Continuous camera spin during the final highlight — visual only, collision/rows untouched.
     // Negative camera.rotation makes the world spin counterclockwise on screen — the direction
-    // we want (confirmed by play-testing); after each full turn it reverses (rotateTurns).
+    // we want (confirmed by play-testing); after each half turn it reverses (rotateTurns).
     const cam = this.cameras.main;
     if (section.rotate) {
       const turnMs = this.conductor.beatMs * ROTATE_BEATS_PER_TURN;
