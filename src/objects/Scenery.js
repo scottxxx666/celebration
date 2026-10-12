@@ -4,6 +4,7 @@ import {
   WALK_ZONE_TOP,
   ROTATE_ZOOM,
   SCENERY_THEME,
+  SCENERY_PARALLAX,
   DIM_ROW_LINE_ALPHA,
   DIM_ROW_LINE_THICKNESS,
   DIM_ROW_LINE_DASH,
@@ -44,7 +45,7 @@ export class Scenery {
     const left = GAME_WIDTH / 2 - HALF_SPAN;
     const width = 2 * HALF_SPAN;
 
-    // Scenery strip (static, no parallax — matches today's behaviour). Only
+    // Scenery strip — scrolled by scroll() below at SCENERY_PARALLAX. Only
     // widened in x (rotate can swing far-off-screen x into view at this y
     // band) — its logical height (WALK_ZONE_TOP) is unchanged.
     this.scenery = scene.add
@@ -103,11 +104,13 @@ export class Scenery {
     for (const line of this.rowLines) line.setTint(color).setAlpha(alpha);
   }
 
-  // dxWorldPx: world pixels to scroll the road left this frame. tilePositionX is in
+  // dxWorldPx: world pixels to scroll the road left this frame; the scenery follows
+  // at SCENERY_PARALLAX of that, so it reads as further away. tilePositionX is in
   // *texture* pixels, so it must be divided by SOURCE_SCALE to move by logical pixels;
   // Phaser wraps tilePositionX itself, no manual bookkeeping needed.
   scroll(dxWorldPx) {
     this.road.tilePositionX += dxWorldPx / SOURCE_SCALE;
+    this.scenery.tilePositionX += (dxWorldPx * SCENERY_PARALLAX) / SOURCE_SCALE;
     // Row-line texture is at logical size, so it moves by world pixels directly
     for (const line of this.rowLines) line.tilePositionX += dxWorldPx;
   }

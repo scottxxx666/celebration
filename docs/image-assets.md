@@ -194,7 +194,7 @@ active theme's image pair:
 | Layer | Position | Logical box | Scrolls? |
 |---|---|---|---|
 | **Road** (walk zone) | `y = WALK_ZONE_TOP` → bottom | **800 × 270** | yes, left, wraps every 800px |
-| **Background** (scenery strip) | `y = 0` → `WALK_ZONE_TOP` | **800 × 180** | no (static) |
+| **Background** (scenery strip) | `y = 0` → `WALK_ZONE_TOP` | **800 × 180** | yes, left, at `SCENERY_PARALLAX` (0.2) of the road's speed |
 
 Both sit at depth −10, under everything. Export at **2×** like the sprites:
 road **1600 × 540**, background **1600 × 360**. Opaque PNG (no alpha needed).
@@ -334,5 +334,6 @@ Everything lives under `public/assets/` alongside `intro.mp4` / `music.m4a`:
 `BootScene` loads the active theme's pair via the `SCENERY_THEMES` table in
 `src/objects/Scenery.js`, which owns both layers. The road and the background
 are **both** `add.tileSprite` (not `add.image`) — the background needs one too
-because of the rotate-section oversizing above, even though it never scrolls;
-the road scrolls via its `tilePositionX` (`Scenery.scroll`).
+because of the rotate-section oversizing above and its own slow scroll; both
+scroll via `tilePositionX` (`Scenery.scroll`), the background at
+`SCENERY_PARALLAX` of the road's distance.
