@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { dancePose } from '../src/cameraDance.js';
 import {
   DANCE_STEPS_PER_BEAT, DANCE_TILT_MIN_DEG, DANCE_TILT_MAX_DEG, DANCE_SHIFT_MIN_PX, DANCE_SHIFT_MAX_PX, DANCE_SNAP_MS,
-  DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS, DANCE_HEAD_SWINGS, DANCE_HEAD_SPAN,
+  DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS,
   DANCE_COMBO_START, DANCE_COMBO_SWINGS, DANCE_COMBO_TILT_DEG, DANCE_COMBO_SHIFT_PX,
   DANCE_ZOOM,
 } from '../src/config/gameConfig.js';
@@ -88,51 +88,6 @@ test('a different run seed gives a different dance, within the same bounds', () 
   assert.ok(a.some(t => t < 0) && a.some(t => t > 0) && b.some(t => t < 0) && b.some(t => t > 0));
 });
 
-// dance: 'headshake'
-const headSection = { ...section, dance: 'headshake' };
-const HEAD_MS = STEP_MS * DANCE_HEAD_SPAN;
-const headAt = (step, ms) => poseAt(headSection.startMs + step * STEP_MS + ms, headSection);
-
-test('headshake: every step starts upright and rests upright after its span', () => {
-  for (let step = 0; step < STEPS; step++) {
-    assert.ok(Math.abs(headAt(step, 0).rotation) < 1e-9);
-    if (DANCE_HEAD_SPAN < 1) assert.deepEqual(headAt(step, (HEAD_MS + STEP_MS) / 2), { rotation: 0, x: 0, y: 0, zoom: DANCE_ZOOM });
-  }
-});
-
-test('headshake: each shake swings to both sides, each swing smaller than the last', () => {
-  for (let step = 0; step < STEPS; step++) {
-    // Peak of each half-wave, sampled at its middle
-    const peaks = Array.from({ length: DANCE_HEAD_SWINGS }, (_, i) =>
-      headAt(step, HEAD_MS * (i + 0.5) / DANCE_HEAD_SWINGS).rotation);
-    for (let i = 1; i < peaks.length; i++) {
-      assert.ok(peaks[i] * peaks[i - 1] < 0, `step ${step}: swing ${i} is on the other side`);
-      assert.ok(Math.abs(peaks[i]) < Math.abs(peaks[i - 1]), `step ${step}: swing ${i} is smaller`);
-    }
-  }
-});
-
-test('headshake: stays within the tilt and slide bounds, slides the way it leans, never jitters', () => {
-  for (let step = 0; step < STEPS; step++) {
-    for (let ms = 0; ms < STEP_MS; ms += 9) {
-      const pose = headAt(step, ms);
-      assert.ok(Math.abs(deg(pose.rotation)) <= DANCE_TILT_MAX_DEG + 1e-9);
-      assert.ok(Math.abs(pose.x) <= DANCE_SHIFT_MAX_PX + 1e-9);
-      assert.ok(pose.x * pose.rotation <= 0, 'clockwise lean slides the world right (negative scroll)');
-      assert.equal(pose.y, 0);
-    }
-  }
-});
-
-test('headshake: the first side is random per step and differs between runs', () => {
-  const firstSides = seed => Array.from({ length: STEPS }, (_, step) => Math.sign(
-    dancePose(headSection, headSection.startMs + step * STEP_MS + HEAD_MS / (2 * DANCE_HEAD_SWINGS), BEAT_MS, seed).rotation));
-  const a = firstSides(12.34);
-  const b = firstSides(567.8);
-  assert.ok(a.includes(-1) && a.includes(1));
-  assert.ok(a.some((side, i) => side !== b[i]));
-});
-
 // dance: 'combo'
 const comboSection = { ...section, dance: 'combo' };
 const COMBO_START_MS = STEP_MS * DANCE_COMBO_START;
@@ -183,5 +138,5 @@ test('combo: settles back onto the pose, so the next snap starts from it', () =>
 
 test('every mode holds DANCE_ZOOM', () => {
   assert.equal(settled(3).zoom, DANCE_ZOOM);
-  assert.equal(headAt(3, 20).zoom, DANCE_ZOOM);
+  assert.equal(comboAt(3, 20).zoom, DANCE_ZOOM);
 });

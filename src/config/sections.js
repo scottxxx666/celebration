@@ -24,7 +24,6 @@
 // trails = afterimages: player, chaser and obstacles leave short fading coloured copies of themselves
 //   (TRAIL_* in gameConfig). Independent of ghost; like it, not meant for lightsOut sections.
 // dance = camera "crazy dance": true = on every beat it snaps to a random left/right tilt and sideways slide, and shakes;
-//   'headshake' = on every beat it shakes like a head saying no — swings side to side around upright and settles (DANCE_HEAD_*);
 //   'combo' = the `true` dance plus a small head shake around the held pose late in each beat (DANCE_COMBO_*);
 //   (DANCE_* in gameConfig). Adds to rotate; composes with zoomPunch and ghost.
 // ...DISCO = preset for dim + lights + zoomPunch together.
@@ -45,8 +44,6 @@ export const SECTIONS = [
   { name: 'dance_break3', startMs: 96995, endMs: 98191, speedMult: 1.5, lightsOut: { lit: 0.25, gap: 0.25, bursts: 1, dark: 2.75, strobe: true }, dim: true },
   { name: 'blackout', startMs: 98191, endMs: 98589, speedMult: 1.5 },
   { name: 'final_highlight', startMs: 123697, endMs: 130074, speedMult: 1.5, ...DISCO, rotate: true },
-  // { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: 'handheld', beatFlash: true },
-  // { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: 'headshake', beatFlash: true },
   { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: 'combo', beatFlash: true },
   // { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: true, beatFlash: true },
 ].map(section => ({ ...NORMAL, ...section }));

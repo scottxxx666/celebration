@@ -1,11 +1,10 @@
 import {
   DANCE_STEPS_PER_BEAT, DANCE_TILT_MIN_DEG, DANCE_TILT_MAX_DEG, DANCE_SHIFT_MIN_PX, DANCE_SHIFT_MAX_PX, DANCE_SNAP_MS,
-  DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS, DANCE_SHAKE_JITTER_MS, DANCE_HEAD_SWINGS, DANCE_HEAD_SPAN, DANCE_ZOOM,
+  DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS, DANCE_SHAKE_JITTER_MS, DANCE_ZOOM,
   DANCE_COMBO_START, DANCE_COMBO_SWINGS, DANCE_COMBO_TILT_DEG, DANCE_COMBO_SHIFT_PX,
 } from './config/gameConfig.js';
 
 const STILL = Object.freeze({ rotation: 0, x: 0, y: 0, zoom: 1 });
-const REST = Object.freeze({ ...STILL, zoom: DANCE_ZOOM }); // upright, mid-dance
 
 // Deterministic 0..1 pseudo-random from a number: within a run the dance is stateless
 // from song time; the caller's per-run seed is what makes each run dance differently.
@@ -33,18 +32,13 @@ function stepPose(section, step, runSeed) {
 
 const UPRIGHT = Object.freeze({ tilt: 0, shift: 0 });
 
-// -1..1 swing of a head shake `progress` (0..1) of the way through it: `swings` half-waves,
-// alternating sides, under an envelope that falls linearly to 0 at the end.
-function headSwing(progress, swings = DANCE_HEAD_SWINGS) {
-  if (progress >= 1) return 0;
-  return Math.sin(Math.PI * swings * progress) * (1 - progress);
-}
-
 // -1..1 swing of the `dance: 'combo'` head shake `stepProgress` (0..1) of the way through a step:
-// nothing until DANCE_COMBO_START, then one shake filling the rest of the step.
+// nothing until DANCE_COMBO_START, then DANCE_COMBO_SWINGS half-waves on alternating sides filling
+// the rest of the step, under an envelope that falls linearly to 0 at its end.
 function comboSwing(stepProgress) {
   if (stepProgress <= DANCE_COMBO_START) return 0;
-  return headSwing((stepProgress - DANCE_COMBO_START) / (1 - DANCE_COMBO_START), DANCE_COMBO_SWINGS);
+  const progress = (stepProgress - DANCE_COMBO_START) / (1 - DANCE_COMBO_START);
+  return Math.sin(Math.PI * DANCE_COMBO_SWINGS * progress) * (1 - progress);
 }
 
 // Camera pose at songMs for a `dance` section: every 1/DANCE_STEPS_PER_BEAT beats from the
@@ -52,10 +46,7 @@ function comboSwing(stepProgress) {
 // and sideways slide to new random ones, and each snap kicks a shake — a random scroll offset re-rolled every
 // DANCE_SHAKE_JITTER_MS, shrinking to nothing over DANCE_SHAKE_DECAY_MS. The first step
 // snaps from upright and centred. `runSeed` picks the dance: the same seed gives the same moves,
-// so GameScene rolls one per run. With `dance: 'headshake'` each step is instead one head shake:
-// the step's rolled tilt swings side to side around upright (headSwing) over DANCE_HEAD_SPAN of the
-// step, the slide follows the lean as if pivoting on a neck below the screen, and there is no jitter;
-// with `dance: 'combo'` the snapped pose also gets a small head shake around it late in the step
+// so GameScene rolls one per run. With `dance: 'combo'` the snapped pose also gets a small head shake around it late in the step
 // (comboSwing), leaning further first and settling back onto the pose before the next snap.
 // Returns { rotation, x, y, zoom } (radians, scroll px, base zoom);
 // upright at zoom 1 outside the section.
@@ -65,14 +56,6 @@ export function dancePose(section, songMs, beatMs, runSeed = 0) {
   const elapsed = songMs - section.startMs;
   const step = Math.floor(elapsed / stepMs);
   const sinceMs = elapsed - step * stepMs;
-
-  if (section.dance === 'headshake') {
-    const swing = headSwing(sinceMs / (stepMs * DANCE_HEAD_SPAN));
-    if (swing === 0) return REST;
-    const { tilt, shift } = stepPose(section, step, runSeed);
-    // World leaning clockwise (positive tilt) slides right (negative scroll)
-    return { rotation: tilt * swing, x: -Math.sign(tilt) * Math.abs(shift) * swing, y: 0, zoom: DANCE_ZOOM };
-  }
 
   const from = step === 0 ? UPRIGHT : stepPose(section, step - 1, runSeed);
   const to = stepPose(section, step, runSeed);

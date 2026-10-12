@@ -186,18 +186,13 @@ export const DANCE_SNAP_MS = 90;          // ease-out time from the previous pos
 export const DANCE_SHAKE_PX = 10;         // shake offset (per axis) at the snap instant
 export const DANCE_SHAKE_DECAY_MS = 220;  // linear decay of the shake after each snap
 export const DANCE_SHAKE_JITTER_MS = 30;  // the shake offset is re-rolled this often
-// dance: 'headshake' — instead of holding a pose, each step is one whole head shake: the camera
-// swings side to side around upright and settles, sliding the way it leans. Its first side and
-// its size are rolled per step from the DANCE_TILT / DANCE_SHIFT bounds above; no jitter.
-export const DANCE_HEAD_SWINGS = 2;       // side-to-side swings per shake (3 = left-right-left, each smaller than the last)
-export const DANCE_HEAD_SPAN = 0.8;       // fraction of the step the shake lasts before resting upright (1 = fills the step)
 // dance: 'combo' — the `true` dance (snap to a pose, jitter) with a small head shake around the
 // held pose in the back of each step, settling back onto the pose before the next snap.
 export const DANCE_COMBO_START = 0.55;    // fraction of the step at which the head shake begins (keep it past the snap and the jitter)
 export const DANCE_COMBO_SWINGS = 1;      // side-to-side swings of that shake, each smaller than the last
 export const DANCE_COMBO_TILT_DEG = 6;    // size of the shake's first swing, added onto the pose's tilt (it leans further first)
 export const DANCE_COMBO_SHIFT_PX = 8;    // sideways slide at that swing, following the lean
-export const DANCE_ZOOM = 0.92;           // base zoom of the three modes above, so the tilted corners crop less (1 = no zoom-out; ignored when rotate is on)
+export const DANCE_ZOOM = 0.92;           // base zoom during a dance, so the tilted corners crop less (1 = no zoom-out; ignored when rotate is on)
 
 // Ghost double vision — extra translucent cameras redraw the whole world (not the HUD)
 // slightly offset, each orbiting an ellipse once per GHOST_SWAY_BEATS beats. Composes
