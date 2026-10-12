@@ -198,17 +198,6 @@ export const DANCE_COMBO_SWINGS = 1;      // side-to-side swings of that shake, 
 export const DANCE_COMBO_TILT_DEG = 6;    // size of the shake's first swing, added onto the pose's tilt (it leans further first)
 export const DANCE_COMBO_SHIFT_PX = 8;    // sideways slide at that swing, following the lean
 export const DANCE_ZOOM = 0.92;           // base zoom of the three modes above, so the tilted corners crop less (1 = no zoom-out; ignored when rotate is on)
-// dance: 'handheld' — one move spanning the whole section, like a handheld camera pulling back
-// from a close-up: it cuts in close and rolled over, pulls back fast then slower to a wide shot,
-// rocking from side to side and wandering as it goes, and steadies to level before the section ends.
-export const DANCE_HAND_ZOOM_FROM = 1.2;  // zoom at the section start (above 1 crops the field edges: less lookahead on the right)
-export const DANCE_HAND_ZOOM_TO = 0.7;    // zoom at the section end (below 1 = wider than the normal view; ignored when rotate is on)
-export const DANCE_HAND_TILT_DEG = 12;    // largest roll of a rock, either side (each rock is 50–100% of it, alternating sides)
-export const DANCE_HAND_SWAY_BEATS = 2;   // beats from one side of a rock to the other
-export const DANCE_HAND_DRIFT_X = 30;     // horizontal wander in px, either side
-export const DANCE_HAND_DRIFT_Y = 18;     // vertical wander in px, either side
-export const DANCE_HAND_DRIFT_BEATS = 1;  // beats between the wander's random targets (smaller = jumpier)
-export const DANCE_HAND_CALM = 0.75;      // fraction of the section by which the rock and wander have died out (1 = only at the very end)
 
 // Ghost double vision — extra translucent cameras redraw the whole world (not the HUD)
 // slightly offset, each orbiting an ellipse once per GHOST_SWAY_BEATS beats. Composes

@@ -2,8 +2,6 @@ import {
   DANCE_STEPS_PER_BEAT, DANCE_TILT_MIN_DEG, DANCE_TILT_MAX_DEG, DANCE_SHIFT_MIN_PX, DANCE_SHIFT_MAX_PX, DANCE_SNAP_MS,
   DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS, DANCE_SHAKE_JITTER_MS, DANCE_HEAD_SWINGS, DANCE_HEAD_SPAN, DANCE_ZOOM,
   DANCE_COMBO_START, DANCE_COMBO_SWINGS, DANCE_COMBO_TILT_DEG, DANCE_COMBO_SHIFT_PX,
-  DANCE_HAND_ZOOM_FROM, DANCE_HAND_ZOOM_TO, DANCE_HAND_TILT_DEG, DANCE_HAND_SWAY_BEATS,
-  DANCE_HAND_DRIFT_X, DANCE_HAND_DRIFT_Y, DANCE_HAND_DRIFT_BEATS, DANCE_HAND_CALM,
 } from './config/gameConfig.js';
 
 const STILL = Object.freeze({ rotation: 0, x: 0, y: 0, zoom: 1 });
@@ -49,43 +47,6 @@ function comboSwing(stepProgress) {
   return headSwing((stepProgress - DANCE_COMBO_START) / (1 - DANCE_COMBO_START), DANCE_COMBO_SWINGS);
 }
 
-const smoothstep = t => t * t * (3 - 2 * t);
-
-// Smooth -1..1 wander: random targets at every integer `t`, eased between.
-function wander(seed, t) {
-  const i = Math.floor(t);
-  const a = rand(seed + i) * 2 - 1;
-  const b = rand(seed + i + 1) * 2 - 1;
-  return a + (b - a) * smoothstep(t - i);
-}
-
-// `dance: 'handheld'` — one move over the whole section rather than a step per beat: the zoom
-// pulls back from DANCE_HAND_ZOOM_FROM to DANCE_HAND_ZOOM_TO (fast, then slower), the camera
-// rocks continuously between rolls on alternating sides (a new one every DANCE_HAND_SWAY_BEATS,
-// starting rolled over) and wanders in x/y, and the rock and wander shrink linearly to nothing
-// by DANCE_HAND_CALM of the way through, leaving a steady level pull-back.
-function handheldPose(section, songMs, beatMs, runSeed) {
-  const elapsed = songMs - section.startMs;
-  const progress = elapsed / (section.endMs - section.startMs);
-  const energy = Math.max(0, 1 - progress / DANCE_HAND_CALM);
-  const seed = section.startMs + runSeed;
-
-  const firstSide = rand(seed) < 0.5 ? -1 : 1;
-  const rollAt = rock => (rock % 2 ? -firstSide : firstSide) * (0.5 + 0.5 * rand(seed + 1 + rock));
-  const rocks = elapsed / (beatMs * DANCE_HAND_SWAY_BEATS);
-  const rock = Math.floor(rocks);
-  const roll = rollAt(rock) + (rollAt(rock + 1) - rollAt(rock)) * smoothstep(rocks - rock);
-
-  const drift = elapsed / (beatMs * DANCE_HAND_DRIFT_BEATS);
-  const pulled = 1 - (1 - progress) * (1 - progress);
-  return {
-    rotation: roll * DANCE_HAND_TILT_DEG * Math.PI / 180 * energy,
-    x: wander(seed + 0.25, drift) * DANCE_HAND_DRIFT_X * energy,
-    y: wander(seed + 0.75, drift) * DANCE_HAND_DRIFT_Y * energy,
-    zoom: DANCE_HAND_ZOOM_FROM * (DANCE_HAND_ZOOM_TO / DANCE_HAND_ZOOM_FROM) ** pulled,
-  };
-}
-
 // Camera pose at songMs for a `dance` section: every 1/DANCE_STEPS_PER_BEAT beats from the
 // section start the camera snaps (ease-out over DANCE_SNAP_MS) from the previous step's tilt
 // and sideways slide to new random ones, and each snap kicks a shake — a random scroll offset re-rolled every
@@ -95,12 +56,11 @@ function handheldPose(section, songMs, beatMs, runSeed) {
 // the step's rolled tilt swings side to side around upright (headSwing) over DANCE_HEAD_SPAN of the
 // step, the slide follows the lean as if pivoting on a neck below the screen, and there is no jitter;
 // with `dance: 'combo'` the snapped pose also gets a small head shake around it late in the step
-// (comboSwing), leaning further first and settling back onto the pose before the next snap;
-// `dance: 'handheld'` is handheldPose above. Returns { rotation, x, y, zoom } (radians, scroll px, base zoom);
+// (comboSwing), leaning further first and settling back onto the pose before the next snap.
+// Returns { rotation, x, y, zoom } (radians, scroll px, base zoom);
 // upright at zoom 1 outside the section.
 export function dancePose(section, songMs, beatMs, runSeed = 0) {
   if (!section.dance || songMs < section.startMs || songMs >= section.endMs) return STILL;
-  if (section.dance === 'handheld') return handheldPose(section, songMs, beatMs, runSeed);
   const stepMs = beatMs / DANCE_STEPS_PER_BEAT;
   const elapsed = songMs - section.startMs;
   const step = Math.floor(elapsed / stepMs);

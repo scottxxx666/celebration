@@ -26,8 +26,6 @@
 // dance = camera "crazy dance": true = on every beat it snaps to a random left/right tilt and sideways slide, and shakes;
 //   'headshake' = on every beat it shakes like a head saying no — swings side to side around upright and settles (DANCE_HEAD_*);
 //   'combo' = the `true` dance plus a small head shake around the held pose late in each beat (DANCE_COMBO_*);
-//   'handheld' = one move over the whole section: cuts in close and rolled over, pulls back to a wide shot while rocking
-//   side to side and wandering, steadying before the end (DANCE_HAND_*) — the section length is the length of the move
 //   (DANCE_* in gameConfig). Adds to rotate; composes with zoomPunch and ghost.
 // ...DISCO = preset for dim + lights + zoomPunch together.
 const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, strobeRamp: 1,
