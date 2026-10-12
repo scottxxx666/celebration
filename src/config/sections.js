@@ -23,7 +23,11 @@
 //   pulsing from the section start — GHOST_ON_BEATS ghosted, then GHOST_OFF_BEATS clear (each pulse fades in/out over GHOST_FADE_MS). Don't combine with lightsOut (the copies show through the black).
 // trails = afterimages: player, chaser and obstacles leave short fading coloured copies of themselves
 //   (TRAIL_* in gameConfig). Independent of ghost; like it, not meant for lightsOut sections.
-// dance = camera "crazy dance": on every beat it snaps to a random left/right tilt and sideways slide, and shakes
+// dance = camera "crazy dance": true = on every beat it snaps to a random left/right tilt and sideways slide, and shakes;
+//   'headshake' = on every beat it shakes like a head saying no — swings side to side around upright and settles (DANCE_HEAD_*);
+//   'combo' = the `true` dance plus a small head shake around the held pose late in each beat (DANCE_COMBO_*);
+//   'handheld' = one move over the whole section: cuts in close and rolled over, pulls back to a wide shot while rocking
+//   side to side and wandering, steadying before the end (DANCE_HAND_*) — the section length is the length of the move
 //   (DANCE_* in gameConfig). Adds to rotate; composes with zoomPunch and ghost.
 // ...DISCO = preset for dim + lights + zoomPunch together.
 const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, strobeRamp: 1,
@@ -43,7 +47,10 @@ export const SECTIONS = [
   { name: 'dance_break3', startMs: 96995, endMs: 98191, speedMult: 1.5, lightsOut: { lit: 0.25, gap: 0.25, bursts: 1, dark: 2.75, strobe: true }, dim: true },
   { name: 'blackout', startMs: 98191, endMs: 98589, speedMult: 1.5 },
   { name: 'final_highlight', startMs: 123697, endMs: 130074, speedMult: 1.5, ...DISCO, rotate: true },
-  { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: true, beatFlash: true },
+  // { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: 'handheld', beatFlash: true },
+  // { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: 'headshake', beatFlash: true },
+  { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: 'combo', beatFlash: true },
+  // { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: true, beatFlash: true },
 ].map(section => ({ ...NORMAL, ...section }));
 
 // SECTIONS is in time order: one forward and one backward pass give every dimmed

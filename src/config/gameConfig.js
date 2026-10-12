@@ -178,8 +178,8 @@ export const ZOOM_PUNCH_DECAY_MS = 350;   // linear decay time from peak back to
 // The tilt adds to the rotate spin and the zoom punch still multiplies on top. Purely
 // visual, gated on section.dance / song time; the moves differ every run (GameScene rolls a seed).
 export const DANCE_STEPS_PER_BEAT = 1;    // new pose per beat (2 = every half-beat, 0.5 = every 2 beats)
-export const DANCE_TILT_MIN_DEG = 7.5;      // smallest tilt of a pose, either side
-export const DANCE_TILT_MAX_DEG = 9;      // largest tilt of a pose, either side
+export const DANCE_TILT_MIN_DEG = 3;      // smallest tilt of a pose, either side
+export const DANCE_TILT_MAX_DEG = 6;      // largest tilt of a pose, either side
 export const DANCE_SHIFT_MIN_PX = 5;     // smallest sideways slide of a pose, either side (its side is rolled separately from the tilt's)
 export const DANCE_SHIFT_MAX_PX = 25;     // largest sideways slide of a pose, either side (0 for both = tilt only)
 export const DANCE_SNAP_MS = 90;          // ease-out time from the previous pose to the new one (0 = hard cut)
@@ -191,7 +191,13 @@ export const DANCE_SHAKE_JITTER_MS = 30;  // the shake offset is re-rolled this 
 // its size are rolled per step from the DANCE_TILT / DANCE_SHIFT bounds above; no jitter.
 export const DANCE_HEAD_SWINGS = 2;       // side-to-side swings per shake (3 = left-right-left, each smaller than the last)
 export const DANCE_HEAD_SPAN = 0.8;       // fraction of the step the shake lasts before resting upright (1 = fills the step)
-export const DANCE_ZOOM = 0.92;           // base zoom of the two modes above, so the tilted corners crop less (1 = no zoom-out; ignored when rotate is on)
+// dance: 'combo' — the `true` dance (snap to a pose, jitter) with a small head shake around the
+// held pose in the back of each step, settling back onto the pose before the next snap.
+export const DANCE_COMBO_START = 0.55;    // fraction of the step at which the head shake begins (keep it past the snap and the jitter)
+export const DANCE_COMBO_SWINGS = 1;      // side-to-side swings of that shake, each smaller than the last
+export const DANCE_COMBO_TILT_DEG = 6;    // size of the shake's first swing, added onto the pose's tilt (it leans further first)
+export const DANCE_COMBO_SHIFT_PX = 8;    // sideways slide at that swing, following the lean
+export const DANCE_ZOOM = 0.92;           // base zoom of the three modes above, so the tilted corners crop less (1 = no zoom-out; ignored when rotate is on)
 // dance: 'handheld' — one move spanning the whole section, like a handheld camera pulling back
 // from a close-up: it cuts in close and rolled over, pulls back fast then slower to a wide shot,
 // rocking from side to side and wandering as it goes, and steadies to level before the section ends.

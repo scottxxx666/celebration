@@ -4,6 +4,7 @@ import { dancePose } from '../src/cameraDance.js';
 import {
   DANCE_STEPS_PER_BEAT, DANCE_TILT_MIN_DEG, DANCE_TILT_MAX_DEG, DANCE_SHIFT_MIN_PX, DANCE_SHIFT_MAX_PX, DANCE_SNAP_MS,
   DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS, DANCE_HEAD_SWINGS, DANCE_HEAD_SPAN,
+  DANCE_COMBO_START, DANCE_COMBO_SWINGS, DANCE_COMBO_TILT_DEG, DANCE_COMBO_SHIFT_PX,
   DANCE_ZOOM, DANCE_HAND_ZOOM_FROM, DANCE_HAND_ZOOM_TO, DANCE_HAND_TILT_DEG, DANCE_HAND_SWAY_BEATS,
   DANCE_HAND_DRIFT_X, DANCE_HAND_DRIFT_Y, DANCE_HAND_CALM,
 } from '../src/config/gameConfig.js';
@@ -131,6 +132,54 @@ test('headshake: the first side is random per step and differs between runs', ()
   const b = firstSides(567.8);
   assert.ok(a.includes(-1) && a.includes(1));
   assert.ok(a.some((side, i) => side !== b[i]));
+});
+
+// dance: 'combo'
+const comboSection = { ...section, dance: 'combo' };
+const COMBO_START_MS = STEP_MS * DANCE_COMBO_START;
+const comboAt = (step, ms) => poseAt(comboSection.startMs + step * STEP_MS + ms, comboSection);
+const poseModeAt = (step, ms) => poseAt(section.startMs + step * STEP_MS + ms);
+
+test('combo: the head shake starts after the snap and the jitter', () => {
+  assert.ok(COMBO_START_MS >= SETTLED_MS);
+});
+
+test('combo: identical to the pose dance until the head shake starts', () => {
+  for (let step = 0; step < STEPS; step++) {
+    for (let ms = 0; ms <= COMBO_START_MS; ms += 7) assert.deepEqual(comboAt(step, ms), poseModeAt(step, ms));
+  }
+});
+
+test('combo: the shake swings around the held pose, further into its lean first, each swing smaller', () => {
+  const shakeMs = STEP_MS - COMBO_START_MS;
+  for (let step = 0; step < STEPS; step++) {
+    const held = poseModeAt(step, SETTLED_MS);
+    // Offset from the held pose at the middle of each swing
+    const swings = Array.from({ length: DANCE_COMBO_SWINGS }, (_, i) => {
+      const pose = comboAt(step, COMBO_START_MS + shakeMs * (i + 0.5) / DANCE_COMBO_SWINGS);
+      assert.ok((pose.x - held.x) * (pose.rotation - held.rotation) <= 0, 'slides the way it leans');
+      assert.ok(Math.abs(pose.x - held.x) <= DANCE_COMBO_SHIFT_PX + 1e-9);
+      assert.ok(pose.y === 0, 'no jitter left');
+      return deg(pose.rotation - held.rotation);
+    });
+    assert.ok(swings[0] * held.rotation > 0, `step ${step}: leans further first`);
+    swings.forEach((swing, i) => {
+      assert.ok(Math.abs(swing) <= DANCE_COMBO_TILT_DEG + 1e-9);
+      if (i === 0) return;
+      assert.ok(swing * swings[i - 1] < 0, `step ${step}: swing ${i} is on the other side`);
+      assert.ok(Math.abs(swing) < Math.abs(swings[i - 1]), `step ${step}: swing ${i} is smaller`);
+    });
+  }
+});
+
+test('combo: settles back onto the pose, so the next snap starts from it', () => {
+  for (let step = 1; step < STEPS; step++) {
+    const start = comboAt(step, 0);
+    const held = poseModeAt(step - 1, SETTLED_MS);
+    assert.ok(Math.abs(start.rotation - held.rotation) < 1e-9);
+    const end = comboAt(step - 1, STEP_MS - 1e-6);
+    assert.ok(Math.abs(end.rotation - held.rotation) < 1e-6 && Math.abs(end.x - held.x) < 1e-6);
+  }
 });
 
 // dance: 'handheld'

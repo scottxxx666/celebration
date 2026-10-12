@@ -1,6 +1,7 @@
 import {
   DANCE_STEPS_PER_BEAT, DANCE_TILT_MIN_DEG, DANCE_TILT_MAX_DEG, DANCE_SHIFT_MIN_PX, DANCE_SHIFT_MAX_PX, DANCE_SNAP_MS,
   DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS, DANCE_SHAKE_JITTER_MS, DANCE_HEAD_SWINGS, DANCE_HEAD_SPAN, DANCE_ZOOM,
+  DANCE_COMBO_START, DANCE_COMBO_SWINGS, DANCE_COMBO_TILT_DEG, DANCE_COMBO_SHIFT_PX,
   DANCE_HAND_ZOOM_FROM, DANCE_HAND_ZOOM_TO, DANCE_HAND_TILT_DEG, DANCE_HAND_SWAY_BEATS,
   DANCE_HAND_DRIFT_X, DANCE_HAND_DRIFT_Y, DANCE_HAND_DRIFT_BEATS, DANCE_HAND_CALM,
 } from './config/gameConfig.js';
@@ -34,11 +35,18 @@ function stepPose(section, step, runSeed) {
 
 const UPRIGHT = Object.freeze({ tilt: 0, shift: 0 });
 
-// -1..1 swing of a head shake `progress` (0..1) of the way through it: DANCE_HEAD_SWINGS
-// half-waves, alternating sides, under an envelope that falls linearly to 0 at the end.
-function headSwing(progress) {
+// -1..1 swing of a head shake `progress` (0..1) of the way through it: `swings` half-waves,
+// alternating sides, under an envelope that falls linearly to 0 at the end.
+function headSwing(progress, swings = DANCE_HEAD_SWINGS) {
   if (progress >= 1) return 0;
-  return Math.sin(Math.PI * DANCE_HEAD_SWINGS * progress) * (1 - progress);
+  return Math.sin(Math.PI * swings * progress) * (1 - progress);
+}
+
+// -1..1 swing of the `dance: 'combo'` head shake `stepProgress` (0..1) of the way through a step:
+// nothing until DANCE_COMBO_START, then one shake filling the rest of the step.
+function comboSwing(stepProgress) {
+  if (stepProgress <= DANCE_COMBO_START) return 0;
+  return headSwing((stepProgress - DANCE_COMBO_START) / (1 - DANCE_COMBO_START), DANCE_COMBO_SWINGS);
 }
 
 const smoothstep = t => t * t * (3 - 2 * t);
@@ -86,6 +94,8 @@ function handheldPose(section, songMs, beatMs, runSeed) {
 // so GameScene rolls one per run. With `dance: 'headshake'` each step is instead one head shake:
 // the step's rolled tilt swings side to side around upright (headSwing) over DANCE_HEAD_SPAN of the
 // step, the slide follows the lean as if pivoting on a neck below the screen, and there is no jitter;
+// with `dance: 'combo'` the snapped pose also gets a small head shake around it late in the step
+// (comboSwing), leaning further first and settling back onto the pose before the next snap;
 // `dance: 'handheld'` is handheldPose above. Returns { rotation, x, y, zoom } (radians, scroll px, base zoom);
 // upright at zoom 1 outside the section.
 export function dancePose(section, songMs, beatMs, runSeed = 0) {
@@ -111,9 +121,11 @@ export function dancePose(section, songMs, beatMs, runSeed = 0) {
 
   const amp = DANCE_SHAKE_PX * Math.max(0, 1 - sinceMs / DANCE_SHAKE_DECAY_MS);
   const jitter = section.startMs + runSeed + Math.floor(elapsed / DANCE_SHAKE_JITTER_MS) * 2;
+  // Signed by the pose's tilt, so the shake leans further the same way first
+  const wobble = section.dance === 'combo' ? Math.sign(to.tilt) * comboSwing(sinceMs / stepMs) : 0;
   return {
-    rotation: from.tilt + (to.tilt - from.tilt) * eased,
-    x: from.shift + (to.shift - from.shift) * eased + (rand(jitter + 0.25) * 2 - 1) * amp,
+    rotation: from.tilt + (to.tilt - from.tilt) * eased + wobble * DANCE_COMBO_TILT_DEG * Math.PI / 180,
+    x: from.shift + (to.shift - from.shift) * eased - wobble * DANCE_COMBO_SHIFT_PX + (rand(jitter + 0.25) * 2 - 1) * amp,
     y: (rand(jitter + 1.25) * 2 - 1) * amp,
     zoom: DANCE_ZOOM,
   };
