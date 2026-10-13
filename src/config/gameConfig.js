@@ -130,12 +130,9 @@ export const BEAT_FLASH_OFFBEAT_RATIO = 0.5;  // non-downbeat alpha as a fractio
 export const DISCO_FLASH_OFFBEAT_RATIO = 0.6; // same, during disco
 export const BEAT_FLASH_DECAY = 0.4;          // alpha fade per second after each flash
 export const DISCO_FLASH_ALPHA = 0.14;        // beat-flash alpha during disco (downbeat; others slightly lower)
-// Camera spin (`rotate` sections): each move turns by a random angle between the bounds below, in a random direction
-export const ROTATE_BEATS_PER_MOVE = 1.5;       // beats one move takes (it spans all of them)
-export const ROTATE_MIN_DEG = 15;
-export const ROTATE_MAX_DEG = 45;
+export const ROTATE_BEATS_PER_TURN = 16;      // camera spin speed: N beats per full revolution (it reverses every half turn, so N/2 beats per swing)
 // Worst-case fit: GAME_HEIGHT / √(GAME_WIDTH² + GAME_HEIGHT²) ≈ 0.49 — the constant zoom
-// at which the whole 800×450 field stays inside the viewport at every angle
+// at which the whole 800×450 field stays inside the viewport at every angle of a full turn
 // (no per-angle breathing)
 export const ROTATE_ZOOM = 0.49;
 export const DISCO_DIM_ALPHA = 0.55;    // black overlay alpha during disco — darkens world so beams/lasers pop

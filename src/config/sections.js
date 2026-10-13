@@ -23,8 +23,6 @@
 //   pulsing from the section start — GHOST_ON_BEATS ghosted, then GHOST_OFF_BEATS clear (each pulse fades in/out over GHOST_FADE_MS). Don't combine with lightsOut (the copies show through the black).
 // trails = afterimages: player, chaser and obstacles leave short fading coloured copies of themselves
 //   (TRAIL_* in gameConfig). Independent of ghost; like it, not meant for lightsOut sections.
-// rotate = camera spin: every ROTATE_BEATS_PER_MOVE beats it starts a turn by a random angle in a random direction, finishing
-//   as the next one starts (ROTATE_* in gameConfig; spinRotation in cameraDance.js); the last move turns back to upright.
 // dance = camera "crazy dance": true = on every beat it snaps to a random left/right tilt and sideways slide, and shakes;
 //   'combo' = the `true` dance plus a small head shake around the held pose late in each beat (DANCE_COMBO_*);
 //   (DANCE_* in gameConfig). Adds to rotate; composes with zoomPunch and ghost.
@@ -89,4 +87,12 @@ export function strobeRate(section, songMs, beatMs) {
     beats -= length;
   }
   return strobe[strobe.length - 1][1];
+}
+
+// Camera turns away from upright at songMs for a `rotate` section: half a turn forward (to
+// upside-down), then the same half turn played back in reverse, repeating (a ping-pong, so the
+// spin is stateless and returns to upright every turnMs). turnMs is the time a full turn would take.
+export function rotateTurns(section, songMs, turnMs) {
+  const lap = ((songMs - section.startMs) / turnMs) % 1;
+  return lap <= 0.5 ? lap : 1 - lap;
 }

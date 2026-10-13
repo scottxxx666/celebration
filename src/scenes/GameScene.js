@@ -9,8 +9,8 @@ import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
 import { ghostFade, ghostOffset } from '../ghostWorld.js';
-import { dancePose, spinRotation } from '../cameraDance.js';
-import { sectionAt, strobeRate, strobeScale } from '../config/sections.js';
+import { dancePose } from '../cameraDance.js';
+import { rotateTurns, sectionAt, strobeRate, strobeScale } from '../config/sections.js';
 import { HUD_DEPTH } from '../config/ui.js';
 import { getStartMs, formatSongTime } from '../songTime.js';
 import { addDirectionKeys } from '../input.js';
@@ -34,6 +34,7 @@ import {
   BEAT_FLASH_OFFBEAT_RATIO,
   DISCO_FLASH_OFFBEAT_RATIO,
   BEAT_FLASH_DECAY,
+  ROTATE_BEATS_PER_TURN,
   ROTATE_ZOOM,
   DISCO_DIM_ALPHA,
   DIM_ROW_LINE_COLOR,
@@ -299,10 +300,15 @@ export class GameScene extends Phaser.Scene {
     }
     this.afterimages.update(delta, section.trails, sources, worldDx * TRAIL_DRIFT);
 
-    // Camera spin during the final highlight — a random direction and angle every ROTATE_BEATS_PER_MOVE beats,
-    // each turn spanning its whole move. Visual only, collision/rows untouched; stateless like the dance below.
+    // Continuous camera spin during the final highlight — visual only, collision/rows untouched.
+    // Negative camera.rotation makes the world spin counterclockwise on screen — the direction
+    // we want (confirmed by play-testing); after each half turn it reverses (rotateTurns).
     const cam = this.cameras.main;
-    const rotation = spinRotation(section, songMs, this.conductor.beatMs, this.danceSeed);
+    let rotation = 0;
+    if (section.rotate) {
+      const turnMs = this.conductor.beatMs * ROTATE_BEATS_PER_TURN;
+      rotation = -rotateTurns(section, songMs, turnMs) * Math.PI * 2;
+    }
 
     // Camera dance — a random left/right tilt and sideways slide snapped on each beat plus a shake, added on
     // top of the spin. Stateless within a run: the pose derives from song time and the run's seed (all 0 outside dance sections).
