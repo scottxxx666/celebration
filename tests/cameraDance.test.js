@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dancePose } from '../src/cameraDance.js';
+import { dancePose, spinRotation } from '../src/cameraDance.js';
 import {
   DANCE_STEPS_PER_BEAT, DANCE_TILT_MIN_DEG, DANCE_TILT_MAX_DEG, DANCE_SHIFT_MIN_PX, DANCE_SHIFT_MAX_PX, DANCE_SNAP_MS,
   DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS,
   DANCE_COMBO_START, DANCE_COMBO_SWINGS, DANCE_COMBO_TILT_DEG, DANCE_COMBO_SHIFT_PX,
-  DANCE_ZOOM,
+  DANCE_ZOOM, ROTATE_BEATS_PER_MOVE, ROTATE_MIN_DEG, ROTATE_MAX_DEG,
 } from '../src/config/gameConfig.js';
 
 const BEAT_MS = 400;
@@ -139,4 +139,49 @@ test('combo: settles back onto the pose, so the next snap starts from it', () =>
 test('every mode holds DANCE_ZOOM', () => {
   assert.equal(settled(3).zoom, DANCE_ZOOM);
   assert.equal(comboAt(3, 20).zoom, DANCE_ZOOM);
+});
+
+const MOVE_MS = BEAT_MS * ROTATE_BEATS_PER_MOVE;
+const SPIN_MOVES = 32;
+const spin = { rotate: true, startMs: 20000, endMs: 20000 + MOVE_MS * SPIN_MOVES };
+const spinDeg = (songMs, seed = 0) => deg(spinRotation(spin, songMs, BEAT_MS, seed));
+// Degrees turned during move `i` (the end of the move is read just short of the next one)
+const turnOf = (i, seed = 0) => spinDeg(spin.startMs + (i + 1) * MOVE_MS - 1e-6, seed) - spinDeg(spin.startMs + i * MOVE_MS, seed);
+
+test('no spin outside a rotate section', () => {
+  assert.equal(spinRotation({ ...spin, rotate: false }, spin.startMs + 100, BEAT_MS), 0);
+  assert.equal(spinRotation(spin, spin.startMs - 1, BEAT_MS), 0);
+  assert.equal(spinRotation(spin, spin.endMs, BEAT_MS), 0);
+});
+
+test('every move turns by an angle inside the bounds, in both directions', () => {
+  const turns = Array.from({ length: SPIN_MOVES - 1 }, (_, i) => turnOf(i));
+  for (const turn of turns) {
+    assert.ok(Math.abs(turn) >= ROTATE_MIN_DEG - 0.01 && Math.abs(turn) <= ROTATE_MAX_DEG + 0.01, `turn ${turn}`);
+  }
+  assert.ok(turns.some(turn => turn < 0) && turns.some(turn => turn > 0));
+});
+
+test('each move starts where the last one finished', () => {
+  for (let i = 1; i < SPIN_MOVES; i++) {
+    const at = spin.startMs + i * MOVE_MS;
+    assert.ok(Math.abs(spinDeg(at) - spinDeg(at - 1e-6)) < 0.01, `jump at move ${i}`);
+  }
+});
+
+test('the turn is halfway through at the middle of its move', () => {
+  const start = spinDeg(spin.startMs + 3 * MOVE_MS);
+  assert.ok(Math.abs(spinDeg(spin.startMs + 3.5 * MOVE_MS) - start - turnOf(3) / 2) < 0.01);
+});
+
+test('the last move turns back to upright by the short way', () => {
+  const end = spinDeg(spin.endMs - 1e-6);
+  assert.ok(Math.abs(end - Math.round(end / 360) * 360) < 0.01, `ends at ${end}`);
+  assert.ok(Math.abs(turnOf(SPIN_MOVES - 1)) <= 180.01);
+});
+
+test('the spin differs per run seed and repeats for the same seed', () => {
+  const at = spin.startMs + 5.5 * MOVE_MS;
+  assert.equal(spinDeg(at, 7), spinDeg(at, 7));
+  assert.notEqual(spinDeg(at, 7), spinDeg(at, 8));
 });

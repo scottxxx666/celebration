@@ -2,6 +2,7 @@ import {
   DANCE_STEPS_PER_BEAT, DANCE_TILT_MIN_DEG, DANCE_TILT_MAX_DEG, DANCE_SHIFT_MIN_PX, DANCE_SHIFT_MAX_PX, DANCE_SNAP_MS,
   DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS, DANCE_SHAKE_JITTER_MS, DANCE_ZOOM,
   DANCE_COMBO_START, DANCE_COMBO_SWINGS, DANCE_COMBO_TILT_DEG, DANCE_COMBO_SHIFT_PX,
+  ROTATE_BEATS_PER_MOVE, ROTATE_MIN_DEG, ROTATE_MAX_DEG,
 } from './config/gameConfig.js';
 
 const STILL = Object.freeze({ rotation: 0, x: 0, y: 0, zoom: 1 });
@@ -72,4 +73,36 @@ export function dancePose(section, songMs, beatMs, runSeed = 0) {
     y: (rand(jitter + 1.25) * 2 - 1) * amp,
     zoom: DANCE_ZOOM,
   };
+}
+
+// Degrees the camera turns during move `step` of a `rotate` section: a random direction
+// (negative = world spins counterclockwise) at a random size between the ROTATE_*_DEG bounds.
+function spinStepDeg(section, step, runSeed) {
+  return signedBetween(section.startMs + runSeed + step * 2, ROTATE_MIN_DEG, ROTATE_MAX_DEG);
+}
+
+// Camera rotation (radians) at songMs for a `rotate` section: every ROTATE_BEATS_PER_MOVE beats
+// from the section start it rolls a random direction and angle and turns by that much from
+// wherever the last move left it, easing in and out so the turn spans the whole move and
+// finishes as the next one starts. The section's last move instead turns the short way back to
+// upright, so the spin ends level. Stateless from song time and `runSeed` (the angles of the
+// earlier moves are re-summed), so GameScene's per-run seed gives every run its own spin.
+// 0 outside the section.
+export function spinRotation(section, songMs, beatMs, runSeed = 0) {
+  if (!section.rotate || songMs < section.startMs || songMs >= section.endMs) return 0;
+  const stepMs = beatMs * ROTATE_BEATS_PER_MOVE;
+  const elapsed = songMs - section.startMs;
+  const step = Math.floor(elapsed / stepMs);
+  const lastStep = Math.ceil((section.endMs - section.startMs) / stepMs - 1e-6) - 1;
+
+  let fromDeg = 0;
+  for (let i = 0; i < step; i++) fromDeg += spinStepDeg(section, i, runSeed);
+  const turnDeg = step >= lastStep
+    ? Math.round(fromDeg / 360) * 360 - fromDeg
+    : spinStepDeg(section, step, runSeed);
+
+  const stepEndMs = Math.min((step + 1) * stepMs, section.endMs - section.startMs);
+  const t = (elapsed - step * stepMs) / (stepEndMs - step * stepMs);
+  const eased = t * t * (3 - 2 * t);
+  return (fromDeg + turnDeg * eased) * Math.PI / 180;
 }
