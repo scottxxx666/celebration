@@ -45,7 +45,6 @@ export const SECTIONS = [
   { name: 'blackout', startMs: 98191, endMs: 98589, speedMult: 1.5 },
   { name: 'final_highlight', startMs: 123697, endMs: 130074, speedMult: 1.5, ...DISCO, rotate: true },
   { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: 'combo', beatFlash: true },
-  // { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: true, beatFlash: true },
 ].map(section => ({ ...NORMAL, ...section }));
 
 // SECTIONS is in time order: one forward and one backward pass give every dimmed

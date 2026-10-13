@@ -178,8 +178,8 @@ export const ZOOM_PUNCH_DECAY_MS = 350;   // linear decay time from peak back to
 // The tilt adds to the rotate spin and the zoom punch still multiplies on top. Purely
 // visual, gated on section.dance / song time; the moves differ every run (GameScene rolls a seed).
 export const DANCE_STEPS_PER_BEAT = 1;    // new pose per beat (2 = every half-beat, 0.5 = every 2 beats)
-export const DANCE_TILT_MIN_DEG = 3;      // smallest tilt of a pose, either side
-export const DANCE_TILT_MAX_DEG = 6;      // largest tilt of a pose, either side
+export const DANCE_TILT_MIN_DEG = 1;      // smallest tilt of a pose, either side
+export const DANCE_TILT_MAX_DEG = 5;      // largest tilt of a pose, either side
 export const DANCE_SHIFT_MIN_PX = 5;     // smallest sideways slide of a pose, either side (its side is rolled separately from the tilt's)
 export const DANCE_SHIFT_MAX_PX = 25;     // largest sideways slide of a pose, either side (0 for both = tilt only)
 export const DANCE_SNAP_MS = 90;          // ease-out time from the previous pose to the new one (0 = hard cut)
@@ -190,9 +190,9 @@ export const DANCE_SHAKE_JITTER_MS = 30;  // the shake offset is re-rolled this 
 // held pose in the back of each step, settling back onto the pose before the next snap.
 export const DANCE_COMBO_START = 0.55;    // fraction of the step at which the head shake begins (keep it past the snap and the jitter)
 export const DANCE_COMBO_SWINGS = 1;      // side-to-side swings of that shake, each smaller than the last
-export const DANCE_COMBO_TILT_DEG = 6;    // size of the shake's first swing, added onto the pose's tilt (it leans further first)
-export const DANCE_COMBO_SHIFT_PX = 8;    // sideways slide at that swing, following the lean
-export const DANCE_ZOOM = 0.92;           // base zoom during a dance, so the tilted corners crop less (1 = no zoom-out; ignored when rotate is on)
+export const DANCE_COMBO_TILT_DEG = 3;    // size of the shake's first swing, added onto the pose's tilt (it leans further first)
+export const DANCE_COMBO_SHIFT_PX = 12;    // sideways slide at that swing, following the lean
+export const DANCE_ZOOM = 0.98;           // base zoom during a dance, so the tilted corners crop less (1 = no zoom-out; ignored when rotate is on)
 
 // Ghost double vision — extra translucent cameras redraw the whole world (not the HUD)
 // slightly offset, each orbiting an ellipse once per GHOST_SWAY_BEATS beats. Composes
