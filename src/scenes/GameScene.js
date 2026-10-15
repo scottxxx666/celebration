@@ -10,6 +10,7 @@ import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
 import { ghostFade, ghostOffset } from '../ghostWorld.js';
 import { dancePose } from '../cameraDance.js';
+import { jitterOffset } from '../cameraJitter.js';
 import { rotateTurns, sectionAt, strobeRate, strobeScale } from '../config/sections.js';
 import { HUD_DEPTH } from '../config/ui.js';
 import { getStartMs, formatSongTime } from '../songTime.js';
@@ -140,7 +141,7 @@ export class GameScene extends Phaser.Scene {
 
     this.afterimages = new Afterimages(this);
     this.trailSources = [];
-    // Rolled once per run (so also per restart): every run gets a different camera dance
+    // Rolled once per run (so also per restart): every run gets a different camera dance and jitter
     this.danceSeed = Math.random() * 1000;
 
     // Ghost cameras last, so they draw every object above; each skips the HUD (the
@@ -310,10 +311,12 @@ export class GameScene extends Phaser.Scene {
       rotation = -rotateTurns(section, songMs, turnMs) * Math.PI * 2;
     }
 
-    // Camera dance — a random left/right tilt and sideways slide snapped on each beat plus a shake, added on
-    // top of the spin. Stateless within a run: the pose derives from song time and the run's seed (all 0 outside dance sections).
+    // Camera dance — a random left/right tilt and sideways slide snapped on each beat, added on
+    // top of the spin — and camera jitter, a decaying scroll shake kicked on each beat, added on top of the slide.
+    // Stateless within a run: both derive from song time and the run's seed (all 0 outside their sections).
     const dance = dancePose(section, songMs, this.conductor.beatMs, this.danceSeed);
-    cam.setRotation(rotation + dance.rotation).setScroll(dance.x, dance.y);
+    const jitter = jitterOffset(section, songMs, this.conductor.beatMs, this.danceSeed);
+    cam.setRotation(rotation + dance.rotation).setScroll(dance.x + jitter.x, dance.y + jitter.y);
 
     // Zoom punch — subtle pulse on the (down)beat that decays, multiplied onto the
     // base zoom (1, the dance's own zoom, or ROTATE_ZOOM) so it composes. Stateless: derived from beat phase.

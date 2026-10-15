@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { dancePose } from '../src/cameraDance.js';
 import {
   DANCE_STEPS_PER_BEAT, DANCE_TILT_MIN_DEG, DANCE_TILT_MAX_DEG, DANCE_SHIFT_MIN_PX, DANCE_SHIFT_MAX_PX, DANCE_SNAP_MS,
-  DANCE_SHAKE_PX, DANCE_SHAKE_DECAY_MS,
   DANCE_COMBO_START, DANCE_COMBO_SWINGS, DANCE_COMBO_TILT_DEG, DANCE_COMBO_SHIFT_PX,
   DANCE_ZOOM,
 } from '../src/config/gameConfig.js';
@@ -14,12 +13,12 @@ const STEPS = 64;
 const section = { dance: true, startMs: 10000, endMs: 10000 + STEP_MS * STEPS };
 const poseAt = (songMs, s = section) => dancePose(s, songMs, BEAT_MS);
 const deg = rad => rad * 180 / Math.PI;
-// Settled pose of a step: past both the snap and the shake
-const SETTLED_MS = Math.max(DANCE_SNAP_MS, DANCE_SHAKE_DECAY_MS);
+// Settled pose of a step: past the snap
+const SETTLED_MS = DANCE_SNAP_MS;
 const settled = step => poseAt(section.startMs + step * STEP_MS + SETTLED_MS);
 
 test('the settled pose fits inside a step', () => {
-  assert.ok(SETTLED_MS < STEP_MS, 'snap + shake must finish before the next step');
+  assert.ok(SETTLED_MS < STEP_MS, 'the snap must finish before the next step');
 });
 
 test('no pose outside a dance section', () => {
@@ -53,20 +52,13 @@ test('the slide goes both left and right, not always on the tilt side', () => {
 
 test('the first step snaps from upright; later steps from the previous pose', () => {
   assert.equal(poseAt(section.startMs).rotation, 0);
-  assert.ok(Math.abs(poseAt(section.startMs).x) <= DANCE_SHAKE_PX);
+  assert.ok(poseAt(section.startMs).x === 0);
   const start = section.startMs + 5 * STEP_MS;
   assert.ok(Math.abs(poseAt(start).rotation - settled(4).rotation) < 1e-9);
 });
 
-test('each snap kicks a shake that stays within DANCE_SHAKE_PX', () => {
-  let moved = false;
-  const maxX = DANCE_SHAKE_PX + DANCE_SHIFT_MAX_PX;
-  for (let ms = 0; ms < DANCE_SHAKE_DECAY_MS; ms += 7) {
-    const pose = poseAt(section.startMs + 3 * STEP_MS + ms);
-    assert.ok(Math.abs(pose.x) <= maxX && Math.abs(pose.y) <= DANCE_SHAKE_PX);
-    moved ||= pose.y !== 0;
-  }
-  assert.ok(moved);
+test('the dance itself never shakes: no vertical offset (that is the jitter flag)', () => {
+  for (let ms = 0; ms < STEP_MS; ms += 7) assert.ok(poseAt(section.startMs + 3 * STEP_MS + ms).y === 0);
 });
 
 test('the pose is a pure function of song time and the run seed', () => {
@@ -94,7 +86,7 @@ const COMBO_START_MS = STEP_MS * DANCE_COMBO_START;
 const comboAt = (step, ms) => poseAt(comboSection.startMs + step * STEP_MS + ms, comboSection);
 const poseModeAt = (step, ms) => poseAt(section.startMs + step * STEP_MS + ms);
 
-test('combo: the head shake starts after the snap and the jitter', () => {
+test('combo: the head shake starts after the snap', () => {
   assert.ok(COMBO_START_MS >= SETTLED_MS);
 });
 
@@ -113,7 +105,6 @@ test('combo: the shake swings around the held pose, further into its lean first,
       const pose = comboAt(step, COMBO_START_MS + shakeMs * (i + 0.5) / DANCE_COMBO_SWINGS);
       assert.ok((pose.x - held.x) * (pose.rotation - held.rotation) <= 0, 'slides the way it leans');
       assert.ok(Math.abs(pose.x - held.x) <= DANCE_COMBO_SHIFT_PX + 1e-9);
-      assert.ok(pose.y === 0, 'no jitter left');
       return deg(pose.rotation - held.rotation);
     });
     assert.ok(swings[0] * held.rotation > 0, `step ${step}: leans further first`);
