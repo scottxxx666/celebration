@@ -11,6 +11,12 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
+    // The loader still completes (and create() still runs) when a file fails,
+    // so surface failures loudly instead of starting a run with missing assets.
+    this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, file => {
+      window.alert(`Failed to load ${file.key} (${file.src})`);
+    });
+
     this.load.audio('music', 'assets/music.m4a');
     this.load.video('intro', 'assets/intro.mp4');
 
