@@ -196,7 +196,7 @@ export const DANCE_ZOOM = 0.98;           // base zoom during a dance, so the ti
 // JITTER_KICKS_PER_BEAT = DANCE_STEPS_PER_BEAT each dance snap lands with a shake. Purely visual,
 // gated on section.jitter / song time; the offsets differ every run (same seed as the dance).
 export const JITTER_KICKS_PER_BEAT = 1;   // kicks per beat from the section start (2 = every half-beat, 0.5 = every 2 beats)
-export const JITTER_PX = 10;              // shake offset (per axis) at the kick instant
+export const JITTER_PX = 6;              // shake offset (per axis) at the kick instant
 export const JITTER_DECAY_MS = 220;       // linear decay of the shake after each kick
 export const JITTER_REROLL_MS = 30;       // the shake offset is re-rolled this often
 
