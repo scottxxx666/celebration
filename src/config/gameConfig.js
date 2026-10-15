@@ -125,11 +125,11 @@ export const AUDIO_LATENCY_OFFSET_MS = 0;
 export const DEFAULT_VOLUME = 0.6;
 
 // Section effects (src/config/sections.js holds the section times)
-export const BEAT_FLASH_ALPHA = 0.1;          // beat-flash peak alpha outside disco (downbeat of each bar)
+export const BEAT_FLASH_ALPHA = 0.18;         // beat-flash peak alpha outside disco (downbeat of each bar; additive blend)
 export const BEAT_FLASH_OFFBEAT_RATIO = 0.5;  // non-downbeat alpha as a fraction of the peak
 export const DISCO_FLASH_OFFBEAT_RATIO = 0.6; // same, during disco
-export const BEAT_FLASH_DECAY = 0.4;          // alpha fade per second after each flash
-export const DISCO_FLASH_ALPHA = 0.14;        // beat-flash alpha during disco (downbeat; others slightly lower)
+export const BEAT_FLASH_DECAY = 1.2;          // alpha fade per second after each flash — high peak + fast fade = a sharp hit, not a wash
+export const DISCO_FLASH_ALPHA = 0.22;        // beat-flash alpha during disco (downbeat; others slightly lower)
 export const ROTATE_BEATS_PER_TURN = 16;      // camera spin speed: N beats per full revolution (it reverses every half turn, so N/2 beats per swing)
 // Worst-case fit: GAME_HEIGHT / √(GAME_WIDTH² + GAME_HEIGHT²) ≈ 0.49 — the constant zoom
 // at which the whole 800×450 field stays inside the viewport at every angle of a full turn

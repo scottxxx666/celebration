@@ -90,10 +90,12 @@ export class GameScene extends Phaser.Scene {
     this.conductor = new Conductor(this.music);
 
     // Beat flash — white overlay over the walk zone, pulsed on each beat;
-    // above the background but below shadows and game objects
+    // above the background but below shadows and game objects. Additive so it
+    // brightens mid-tone road art visibly instead of a faint normal-blend wash
     this.beatOverlay = this.add
       .rectangle(0, WALK_ZONE_TOP, GAME_WIDTH, GAME_HEIGHT - WALK_ZONE_TOP, 0xffffff)
       .setOrigin(0, 0)
+      .setBlendMode(Phaser.BlendModes.ADD)
       .setAlpha(0)
       .setDepth(-5);
 
