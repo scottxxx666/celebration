@@ -47,6 +47,7 @@ import {
   STROBE_ALPHA,
   STROBE_DECAY,
   LIGHTS_OUT_FADE_MS,
+  LIGHTS_OUT_STROBE_ALPHA,
   LIGHTS_OUT_SILHOUETTE_BG,
   ZOOM_PUNCH_AMOUNT,
   ZOOM_PUNCH_BEATS,
@@ -265,9 +266,9 @@ export class GameScene extends Phaser.Scene {
         lightsOutAlpha = lit > 0 ? Math.min(1, (sinceLitMs - litMs) / LIGHTS_OUT_FADE_MS) : 1;
         reveal = section.lightsOut.reveal ?? null;
       } else if (section.lightsOut.strobe) {
-        // The lights come on with a strobe flash: same peak and decay as the
+        // The lights come on with a strobe flash: own peak, same decay as the
         // section strobe above, derived from time since the blink began
-        const litFlash = STROBE_ALPHA - STROBE_DECAY * (sinceLitMs / 1000);
+        const litFlash = LIGHTS_OUT_STROBE_ALPHA - STROBE_DECAY * (sinceLitMs / 1000);
         this.strobeOverlay.setAlpha(Math.max(this.strobeOverlay.alpha, litFlash));
       }
     }
