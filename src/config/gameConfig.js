@@ -201,6 +201,11 @@ export const JITTER_PX = 6;              // shake offset (per axis) at the kick 
 export const JITTER_DECAY_MS = 220;       // linear decay of the shake after each kick
 export const JITTER_REROLL_MS = 30;       // the shake offset is re-rolled this often
 
+// Camera zoom pump — during zoomPush sections the zoom rises to 1 + amount in the last
+// ZOOM_PUSH_IN_FRACTION of each cycle (peaking on the beat), then eases back out (src/cameraPush.js).
+// Purely visual, gated on section.zoomPush / song time.
+export const ZOOM_PUSH_IN_FRACTION = 0.3;  // fraction of each cycle spent zooming in (ending on the beat); the rest zooms back out
+
 // Ghost double vision — extra translucent cameras redraw the whole world (not the HUD)
 // slightly offset, each orbiting an ellipse once per GHOST_SWAY_BEATS beats. Composes
 // with rotate/zoom punch (offsets are camera scroll/zoom on top of the main camera).

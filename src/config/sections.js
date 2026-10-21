@@ -28,9 +28,10 @@
 //   (DANCE_* in gameConfig). Adds to rotate; composes with zoomPunch and ghost.
 // jitter = camera shake: a kick on every beat from the section start jolts the camera scroll and decays (JITTER_* in gameConfig).
 //   Independent of dance — add it to a dance section so each snap lands with a shake.
+// zoomPush = { every, amount }: zoom pump — every `every` beats from the section start the camera zooms in to 1 + amount, peaking on the beat, then eases back out (ZOOM_PUSH_IN_FRACTION in gameConfig). Composes with dance, jitter, zoomPunch.
 // ...DISCO = preset for dim + lights + zoomPunch together.
 const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, strobeRamp: 1,
-  beatFlash: false, lightsOut: null, ghost: false, trails: false, zoomPunch: false, dance: false, jitter: false };
+  beatFlash: false, lightsOut: null, ghost: false, trails: false, zoomPunch: false, dance: false, jitter: false, zoomPush: null };
 const DISCO = { dim: true, lights: true, zoomPunch: true };
 
 export const SECTIONS = [
@@ -46,7 +47,8 @@ export const SECTIONS = [
   { name: 'dance_break3', startMs: 96995, endMs: 98191, speedMult: 1.5, lightsOut: { lit: 0.25, gap: 0.25, bursts: 1, dark: 2.75, strobe: true }, dim: true },
   { name: 'blackout', startMs: 98191, endMs: 98589, speedMult: 1.5 },
   { name: 'final_highlight', startMs: 123697, endMs: 130074, speedMult: 1.5, ...DISCO, rotate: true },
-  { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: 'combo', beatFlash: true, jitter: true },
+  { name: 'final_highlight2', startMs: 130074, endMs: 136451, speedMult: 1.5, ...DISCO, dance: 'combo', beatFlash: true,
+    jitter: true, zoomPush: { every: 1, amount: 0.25 } },
 ].map(section => ({ ...NORMAL, ...section }));
 
 // SECTIONS is in time order: one forward and one backward pass give every dimmed

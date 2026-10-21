@@ -11,6 +11,7 @@ import { Conductor } from '../Conductor.js';
 import { ghostFade, ghostOffset } from '../ghostWorld.js';
 import { dancePose } from '../cameraDance.js';
 import { jitterOffset } from '../cameraJitter.js';
+import { pushZoom } from '../cameraPush.js';
 import { rotateTurns, sectionAt, strobeRate, strobeScale } from '../config/sections.js';
 import { HUD_DEPTH } from '../config/ui.js';
 import { getStartMs, formatSongTime } from '../songTime.js';
@@ -329,7 +330,8 @@ export class GameScene extends Phaser.Scene {
       const decay = Math.max(0, 1 - this.conductor.phaseMs(ZOOM_PUNCH_BEATS) / ZOOM_PUNCH_DECAY_MS);
       zoomPunch = 1 + ZOOM_PUNCH_AMOUNT * decay;
     }
-    cam.setZoom(baseZoom * zoomPunch);
+    // The zoom pump (zoomPush sections) multiplies on too.
+    cam.setZoom(baseZoom * zoomPunch * pushZoom(section, songMs, this.conductor.beatMs));
 
     // Ghost double vision — extra translucent cameras copy the main camera, each offset
     // on an orbit. Stateless: fade and orbit phase both derive from song time.
