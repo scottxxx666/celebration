@@ -103,6 +103,13 @@ export function gripArm(shoulder, grip, side, upperLen, foreLen) {
   return { elbow, hand: d <= upperLen + foreLen ? { ...grip } : elbow };
 }
 
+// The (beatIndex, msSinceBeat) pair `lagMs` earlier than the given one, so secondary motion (hair) can
+// replay the beat-driven curves late. Before the lag has elapsed it falls back into the previous beat.
+export function laggedBeat(beatIndex, msSinceBeat, beatMs, lagMs) {
+  const t = msSinceBeat - lagMs;
+  return t >= 0 ? { beatIndex, msSinceBeat: t } : { beatIndex: beatIndex - 1, msSinceBeat: Math.min(Math.max(t + beatMs, 0), beatMs) };
+}
+
 // Darken (k < 1) or lighten an 0xRRGGBB colour by scaling each channel.
 export function shade(color, k) {
   const ch = shift => Math.min(255, Math.round(((color >> shift) & 255) * k));

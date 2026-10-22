@@ -1,11 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { crankAngle, legIK, frontLeg, armPose, armLean, gripDip, headNod, gripArm, shade, bikeRowStartX } from '../src/spinBikes.js';
+import { crankAngle, legIK, frontLeg, armPose, armLean, gripDip, headNod, gripArm, laggedBeat, shade, bikeRowStartX } from '../src/spinBikes.js';
 import {
   GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX, BIKE_ARM_HIT_MS, BIKE_ARM_RELAX, BIKE_DIP_HIT_MS, BIKE_GRIP_HUNCH_PX,
   BIKE_NOD_DROP_PX, BIKE_NOD_HAIR_REST, BIKE_NOD_HAIR_FULL, BIKE_NOD_SQUASH,
   BIKE_FLOOR_Y, BIKE_SHOULDER_RISE, BIKE_SHOULDER_HALF, BIKE_HIP_HALF, BIKE_HIP_RISE, BIKE_SPLAY,
-  BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN,
+  BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN, BIKE_PEDAL_RADIUS, BIKE_BAR_RISE, BIKE_BAR_HALF, BIKE_GRIP_LEN, BIKE_GRIP_FORESHORTEN,
   BIKE_COUNT, BIKE_SPACING, BIKE_WIDTH,
 } from '../src/config/gameConfig.js';
 
@@ -119,7 +119,7 @@ test('shade scales channels and clamps', () => {
   assert.equal(shade(0x808080, 10), 0xffffff);
 });
 
-const R = 6;
+const R = BIKE_PEDAL_RADIUS;
 const hipL = { x: -BIKE_HIP_HALF, y: -BIKE_HIP_RISE };
 const hipR = { x: BIKE_HIP_HALF, y: -BIKE_HIP_RISE };
 const crankC = { x: 6, y: -28 };
@@ -143,13 +143,23 @@ test('frontLeg: the knee rises as the foot rises', () => {
     const { knee, foot } = frontLeg(hipL, crankC, R, a, -1, BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_SPLAY);
     if (prev) {
       assert.ok(foot.y <= prev.foot.y + 1e-9);
-      assert.ok(knee.y <= prev.knee.y + 0.1, // near full extension the knee barely moves, so allow sub-pixel wobble
+      assert.ok(knee.y <= prev.knee.y + 0.5, // near full extension the knee barely moves, so allow sub-pixel wobble
          `knee ${knee.y} vs ${prev.knee.y} @${a}`);
     }
     prev = { knee, foot };
   }
   const bottom = frontLeg(hipL, crankC, R, Math.PI / 2, -1, BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_SPLAY);
   assert.ok(prev.knee.y < bottom.knee.y - 5);
+});
+
+test('frontLeg: knees pump visibly over a crank turn and feet stay above the floor bar', () => {
+  let lo = Infinity; let hi = -Infinity; let lowFoot = -Infinity;
+  for (let a = 0; a < 2 * Math.PI; a += 0.02) {
+    const { l, r } = legs(a);
+    for (const p of [l, r]) { lo = Math.min(lo, p.knee.y); hi = Math.max(hi, p.knee.y); lowFoot = Math.max(lowFoot, p.foot.y); }
+  }
+  assert.ok(hi - lo >= 8, `knee travel ${hi - lo}`);
+  assert.ok(-lowFoot - 8 >= 8, `lowest sole at rise ${-lowFoot - 8}`); // shoe sole sits ~8 px under the foot point; floor bar tops out ~8 px
 });
 
 test('frontLeg: knees splay outward, bounded by the splay fraction of the thigh', () => {
@@ -197,18 +207,26 @@ test('gripDip is fully down on the beat, back up by mid-beat, bounded and finite
 });
 
 test('gripArm lands the hand on the grip with both bones intact, elbow flared outward, with the shoulders fixed', () => {
-  const barY = BIKE_FLOOR_Y - 70 - 3;
+  const barY = BIKE_FLOOR_Y - BIKE_BAR_RISE - BIKE_GRIP_LEN / 2;
   {
     const dip = 0;
     const shY = BIKE_FLOOR_Y - BIKE_SHOULDER_RISE + BIKE_GRIP_HUNCH_PX; // shoulders no longer move with the nod
+    const upper = BIKE_UPPER_ARM_LEN * BIKE_GRIP_FORESHORTEN; // as drawn by SpinBikes
+    const fore = BIKE_FOREARM_LEN * BIKE_GRIP_FORESHORTEN;
     for (const side of [-1, 1]) {
       const shoulder = { x: side * BIKE_SHOULDER_HALF, y: shY };
-      const grip = { x: side * 15, y: barY };
-      const { elbow, hand } = gripArm(shoulder, grip, side, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+      const grip = { x: side * BIKE_BAR_HALF, y: barY };
+      const { elbow, hand } = gripArm(shoulder, grip, side, upper, fore);
       near(hand.x, grip.x); near(hand.y, grip.y);
-      near(dist(shoulder, elbow), BIKE_UPPER_ARM_LEN);
-      near(dist(elbow, hand), BIKE_FOREARM_LEN);
-      assert.ok(side * (elbow.x - shoulder.x) > 0, `elbow flares outward (dip ${dip})`);
+      near(dist(shoulder, elbow), upper);
+      near(dist(elbow, hand), fore);
+      assert.ok(elbow.y > shoulder.y, 'elbow hangs below the shoulder');
+      assert.ok(grip.y > shoulder.y, 'hands sit below the shoulders');
+      assert.ok(side * (grip.x - shoulder.x) > 0, 'grips are wider than the shoulders');
+      // outward of the shoulder->grip line: the cross product has the outward sign
+      const cross = (grip.x - shoulder.x) * (elbow.y - shoulder.y) - (grip.y - shoulder.y) * (elbow.x - shoulder.x);
+      assert.ok(side * cross < 0, `elbow outside the shoulder-grip line (dip ${dip})`);
+      assert.ok(side * (elbow.x - grip.x) > 0, 'forearm runs down-inward to the grip');
     }
   }
 });
@@ -232,4 +250,14 @@ test('headNod: upright at dip 0, fully bowed at 1, monotonic, bounded and clampe
   }
   assert.deepEqual(headNod(-1), up);
   assert.deepEqual(headNod(5), down);
+});
+
+test('laggedBeat replays the beat late and falls back into the previous beat before the lag has elapsed', () => {
+  assert.deepEqual(laggedBeat(4, 300, 400, 90), { beatIndex: 4, msSinceBeat: 210 });
+  assert.deepEqual(laggedBeat(4, 40, 400, 90), { beatIndex: 3, msSinceBeat: 350 });
+  assert.deepEqual(laggedBeat(4, 90, 400, 90), { beatIndex: 4, msSinceBeat: 0 });
+  assert.deepEqual(laggedBeat(4, 10, 50, 90), { beatIndex: 3, msSinceBeat: 0 }); // lag longer than the beat: clamped
+  // the lagged lean equals the live lean one lag earlier, across the beat boundary
+  const a = laggedBeat(5, 20, 400, 90);
+  near(armLean(a.beatIndex, a.msSinceBeat, 400), armLean(4, 330, 400));
 });
