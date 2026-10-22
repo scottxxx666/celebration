@@ -29,14 +29,15 @@
 // jitter = camera shake: a kick on every beat from the section start jolts the camera scroll and decays (JITTER_* in gameConfig).
 //   Independent of dance — add it to a dance section so each snap lands with a shake.
 // zoomPush = { every, amount }: zoom pump — every `every` beats from the section start the camera zooms in to 1 + amount, peaking on the beat, then eases back out (ZOOM_PUSH_IN_FRACTION in gameConfig). Composes with dance, jitter, zoomPunch.
-// bikes = a row of neon spin-bike riders in the scenery strip, drifting left with the backdrop and finishing its pass after the section ends (BIKE_* in gameConfig). Independent of the others.
+// bikes = (true = overhead arm wave, 'grip' = hands on the bars, head nodding on the beat) a row of neon spin-bike riders in the scenery strip, drifting left with the backdrop and finishing its pass after the section ends (BIKE_* in gameConfig). Independent of the others.
 // ...DISCO = preset for dim + lights + zoomPunch together.
 const NORMAL = { speedMult: 1, dim: false, lights: false, rotate: false, strobe: 0, strobeRamp: 1,
   beatFlash: false, lightsOut: null, ghost: false, trails: false, zoomPunch: false, dance: false, jitter: false, zoomPush: null, bikes: false };
 const DISCO = { dim: true, lights: true, zoomPunch: true };
 
 export const SECTIONS = [
-  { name: 'highlight1', startMs: 14498, endMs: 26055, speedMult: 1, beatFlash: true, zoomPunch: true, bikes: true },
+  { name: 'highlight1', startMs: 14498, endMs: 21273, speedMult: 1, beatFlash: true, zoomPunch: true, bikes: 'grip' },
+  { name: 'highlight1b', startMs: 21273, endMs: 26055, speedMult: 1, beatFlash: true, zoomPunch: true, bikes: true },
   { name: 'trail1', startMs: 37214, endMs: 37613, speedMult: 1, trails: true },
   { name: 'trail2', startMs: 41598, endMs: 42794, speedMult: 1, trails: true },
   { name: 'highlight2', startMs: 65909, endMs: 78663, speedMult: 1, ...DISCO },

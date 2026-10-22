@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { crankAngle, legIK, frontLeg, armPose, armLean, shade, bikeRowStartX } from '../src/spinBikes.js';
+import { crankAngle, legIK, frontLeg, armPose, armLean, gripDip, headNod, gripArm, shade, bikeRowStartX } from '../src/spinBikes.js';
 import {
-  GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX, BIKE_ARM_HIT_MS, BIKE_ARM_RELAX,
+  GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX, BIKE_ARM_HIT_MS, BIKE_ARM_RELAX, BIKE_DIP_HIT_MS, BIKE_GRIP_HUNCH_PX,
+  BIKE_NOD_DROP_PX, BIKE_NOD_HAIR_REST, BIKE_NOD_HAIR_FULL, BIKE_NOD_SQUASH,
   BIKE_FLOOR_Y, BIKE_SHOULDER_RISE, BIKE_SHOULDER_HALF, BIKE_HIP_HALF, BIKE_HIP_RISE, BIKE_SPLAY,
   BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN,
   BIKE_COUNT, BIKE_SPACING, BIKE_WIDTH,
@@ -178,4 +179,57 @@ test('raised hands stay clear of the HUD strip (y >= 50) at every point of the b
 test('the rider row spans roughly 600-700 px', () => {
   const span = (BIKE_COUNT - 1) * BIKE_SPACING + BIKE_WIDTH;
   assert.ok(span >= 600 && span <= 700, `${span}`);
+});
+
+test('gripDip is fully down on the beat, back up by mid-beat, bounded and finite', () => {
+  near(gripDip(0, BEAT), 1);
+  near(gripDip(BIKE_DIP_HIT_MS, BEAT), 1);
+  for (let t = Math.ceil(BEAT / 2); t <= BEAT; t++) near(gripDip(t, BEAT), 0);
+  let prev = 1;
+  for (let t = 0; t <= BEAT; t++) {
+    const d = gripDip(t, BEAT);
+    assert.ok(Number.isFinite(d) && d >= 0 && d <= 1);
+    assert.ok(d <= prev + 1e-9); // never re-descends within a beat
+    prev = d;
+  }
+  assert.ok(Number.isFinite(gripDip(-5, BEAT)) && Number.isFinite(gripDip(BEAT + 50, BEAT)));
+  assert.ok(Number.isFinite(gripDip(10, 100))); // beat shorter than the hit window
+});
+
+test('gripArm lands the hand on the grip with both bones intact, elbow flared outward, with the shoulders fixed', () => {
+  const barY = BIKE_FLOOR_Y - 70 - 3;
+  {
+    const dip = 0;
+    const shY = BIKE_FLOOR_Y - BIKE_SHOULDER_RISE + BIKE_GRIP_HUNCH_PX; // shoulders no longer move with the nod
+    for (const side of [-1, 1]) {
+      const shoulder = { x: side * BIKE_SHOULDER_HALF, y: shY };
+      const grip = { x: side * 15, y: barY };
+      const { elbow, hand } = gripArm(shoulder, grip, side, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+      near(hand.x, grip.x); near(hand.y, grip.y);
+      near(dist(shoulder, elbow), BIKE_UPPER_ARM_LEN);
+      near(dist(elbow, hand), BIKE_FOREARM_LEN);
+      assert.ok(side * (elbow.x - shoulder.x) > 0, `elbow flares outward (dip ${dip})`);
+    }
+  }
+});
+
+test('headNod: upright at dip 0, fully bowed at 1, monotonic, bounded and clamped', () => {
+  const up = headNod(0);
+  assert.deepEqual(up, { dropPx: 0, hairEdge: BIKE_NOD_HAIR_REST, eyesVisible: true, squash: 1 });
+  const down = headNod(1);
+  near(down.dropPx, BIKE_NOD_DROP_PX);
+  near(down.hairEdge, BIKE_NOD_HAIR_FULL);
+  assert.ok(down.hairEdge > 0.85 && down.hairEdge < 1);
+  assert.equal(down.eyesVisible, false);
+  near(down.squash, BIKE_NOD_SQUASH);
+  let prev = up;
+  for (let d = 0; d <= 1.0001; d += 0.01) {
+    const n = headNod(d);
+    assert.ok(n.dropPx >= prev.dropPx && n.hairEdge >= prev.hairEdge && n.squash <= prev.squash);
+    assert.ok(!n.eyesVisible || prev.eyesVisible); // once hidden, stays hidden
+    assert.ok(n.squash > 0 && n.hairEdge <= 1);
+    prev = n;
+  }
+  assert.deepEqual(headNod(-1), up);
+  assert.deepEqual(headNod(5), down);
 });

@@ -1,8 +1,9 @@
-import { crankAngle, frontLeg, armPose, bikeRowStartX, BIKE_ROW_WIDTH } from '../spinBikes.js';
+import { crankAngle, frontLeg, armPose, gripArm, gripDip, headNod, bikeRowStartX, BIKE_ROW_WIDTH } from '../spinBikes.js';
 import {
   GAME_WIDTH, SCENERY_PARALLAX, BIKE_COUNT, BIKE_SPACING, BIKE_WIDTH, BIKE_FLOOR_Y, BIKE_DEPTH, BIKE_PEDAL_BEATS,
   BIKE_HIP_HALF, BIKE_SHOULDER_HALF, BIKE_HIP_RISE, BIKE_SHOULDER_RISE, BIKE_SPLAY,
   BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN,
+  BIKE_GRIP_HUNCH_PX, BIKE_NOD_HAIR_REST, BIKE_NOD_HAIR_FULL,
   BIKE_FRAME_WIDTH, BIKE_RIM_ALPHA, BIKE_FRAME_COLOR, BIKE_SHOE_COLOR,
   BIKE_COLORS, BIKE_SKINS, BIKE_TOPS, BIKE_SHORTS, BIKE_HAIR,
 } from '../config/gameConfig.js';
@@ -63,6 +64,8 @@ export class SpinBikes {
     const crank = crankAngle(conductor.phaseMs(BIKE_PEDAL_BEATS), beatMs * BIKE_PEDAL_BEATS);
     const beatIndex = conductor.gridIndex(1);
     const sinceBeat = conductor.phaseMs(1);
+    this.grip = section.bikes === 'grip';
+    this.dip = this.grip ? gripDip(sinceBeat, beatMs) : 0;
 
     const g = this.gfx.clear().setVisible(true);
     for (let i = 0; i < BIKE_COUNT; i++) {
@@ -123,12 +126,14 @@ export class SpinBikes {
 
   drawRider(g, r, cx, crankBase, beatIndex, sinceBeat, beatMs) {
     const hipY = BIKE_FLOOR_Y - BIKE_HIP_RISE;
-    const shoulderY = BIKE_FLOOR_Y - BIKE_SHOULDER_RISE;
+    const grip = this.grip;
+    const shoulderY = BIKE_FLOOR_Y - BIKE_SHOULDER_RISE + (grip ? BIKE_GRIP_HUNCH_PX : 0);
     const hipL = { x: cx - BIKE_HIP_HALF, y: hipY };
     const hipR = { x: cx + BIKE_HIP_HALF, y: hipY };
     const shL = { x: cx - BIKE_SHOULDER_HALF, y: shoulderY };
     const shR = { x: cx + BIKE_SHOULDER_HALF, y: shoulderY };
-    const head = { x: cx, y: BIKE_FLOOR_Y - HEAD_RISE };
+    const nod = headNod(this.dip); // dip is 0 in wave mode, so the head is upright
+    const head = { x: cx, y: BIKE_FLOOR_Y - HEAD_RISE + (grip ? BIKE_GRIP_HUNCH_PX : 0) + nod.dropPx };
 
     this.leg(g, hipL, crankBase, -1, r);
     this.leg(g, hipR, crankBase + Math.PI, 1, r);
@@ -141,12 +146,15 @@ export class SpinBikes {
       .fillTriangle(shL.x, shL.y, cx + tw, hipY, cx - tw, hipY)
       .fillCircle(shL.x, shL.y + 2, 3).fillCircle(shR.x, shR.y + 2, 3);
     g.fillStyle(r.shorts, 1).fillRoundedRect(cx - BIKE_HIP_HALF - 5, hipY - 3, BIKE_HIP_HALF * 2 + 10, 12, 4);
-    g.fillStyle(r.skin, 1).fillRect(cx - 2.5, head.y + 6, 5, shoulderY - head.y - 4);
+    g.fillStyle(r.skin, 1).fillRect(cx - 2.5, head.y + 6, 5, Math.max(shoulderY - head.y - 4, 0));
     this.drawHandlebar(g, r, cx);
-    this.drawHead(g, r, head);
+    this.drawHead(g, r, head, nod);
 
-    const armL = armPose(shL, beatIndex, sinceBeat, beatMs, -1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
-    const armR = armPose(shR, beatIndex, sinceBeat, beatMs, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+    const barY = BIKE_FLOOR_Y - BAR_RISE - 3; // grip: middle of the upturned bar end
+    const armL = grip ? gripArm(shL, { x: cx - BAR_HALF, y: barY }, -1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN)
+      : armPose(shL, beatIndex, sinceBeat, beatMs, -1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+    const armR = grip ? gripArm(shR, { x: cx + BAR_HALF, y: barY }, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN)
+      : armPose(shR, beatIndex, sinceBeat, beatMs, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
     this.arm(g, shL, armL, r.skin);
     this.arm(g, shR, armR, r.skin);
     if (r.band) {
@@ -155,25 +163,47 @@ export class SpinBikes {
     }
   }
 
-  drawHead(g, r, head) {
+  // Front-on head that tips forward as nod.hairEdge grows: the skin circle squashes, the hair covers it from
+  // the top down to hairEdge (the crown), and the eyes and hair details follow the edge.
+  drawHead(g, r, head, nod) {
     const R = HEAD_RADIUS;
-    g.fillStyle(r.skin, 1).fillCircle(head.x, head.y, R);
-    g.fillStyle(0x222222, 1).fillCircle(head.x - 3, head.y + 1, 1).fillCircle(head.x + 3, head.y + 1, 1);
+    const ry = R * nod.squash;
+    const top = head.y - ry;
+    const edgeY = top + 2 * ry * nod.hairEdge;
+    const pitch = (nod.hairEdge - BIKE_NOD_HAIR_REST) / (BIKE_NOD_HAIR_FULL - BIKE_NOD_HAIR_REST);
+    const chord = y => Math.sqrt(Math.max(1 - ((y - head.y) / ry) ** 2, 0)) * R; // half width of the head at y
+    g.fillStyle(r.skin, 1).fillEllipse(head.x, head.y, R * 2, ry * 2);
+    if (nod.eyesVisible) {
+      const eyeY = head.y + 1 + 3 * pitch;
+      g.fillStyle(0x222222, 1).fillCircle(head.x - 3, eyeY, 1).fillCircle(head.x + 3, eyeY, 1);
+    }
     g.fillStyle(r.hair, 1);
-    if (r.hairStyle === 1) { // cap: dome plus a brim band across the forehead
-      g.beginPath().arc(head.x, head.y, R + 0.5, Math.PI, Math.PI * 2).closePath().fillPath();
-      g.fillRoundedRect(head.x - R - 2, head.y - 4, R * 2 + 4, 3.5, 1.5);
+    // hair: the part of the (slightly enlarged) head ellipse above edgeY
+    const a = Math.asin(Math.min(Math.max((edgeY - head.y) / (ry + 0.5), -1), 1));
+    const pts = [];
+    for (let k = 0; k <= 16; k++) {
+      const t = Math.PI - a + (Math.PI + 2 * a) * (k / 16);
+      pts.push({ x: head.x + Math.cos(t) * (R + 0.5), y: head.y + Math.sin(t) * (ry + 0.5) });
+    }
+    g.fillPoints(pts, true);
+    if (r.hairStyle === 1) { // cap: brim band at the hair edge, foreshortened as we look down on it
+      const h = 3.5 * (1 - 0.6 * pitch);
+      const half = chord(edgeY - h) + 2;
+      g.fillRoundedRect(head.x - half, edgeY - h - 0.5, half * 2, h, 1.5);
       return;
     }
-    // hair dome over the top plus a strip down each side of the face
-    g.beginPath().arc(head.x, head.y, R + 0.5, Math.PI, Math.PI * 2).closePath().fillPath();
-    g.fillRect(head.x - R - 0.5, head.y - 2, 3, 8).fillRect(head.x + R - 2.5, head.y - 2, 3, 8);
+    // a strip of hair down each side of the face
+    const stripH = edgeY - (head.y - 2) + 6 * (1 - pitch);
+    g.fillRect(head.x - R - 0.5, head.y - 2, 3, stripH).fillRect(head.x + R - 2.5, head.y - 2, 3, stripH);
     if (r.hairStyle === 0) { // ponytail peeking out at one side
       g.fillCircle(head.x + R + 3, head.y + 2, 3.5).fillCircle(head.x + R + 4, head.y + 7, 3);
-    } else if (r.hairStyle === 2) { // headband across the forehead
-      g.lineStyle(3, r.accent, 1).beginPath().moveTo(head.x - R, head.y - 3).lineTo(head.x + R, head.y - 3).strokePath();
-    } else if (r.hairStyle === 4) { // bun on top
-      g.fillCircle(head.x, head.y - R - 3, 4.5);
+    } else if (r.hairStyle === 2) { // headband across the forehead, riding the hair edge
+      const y = edgeY - 3;
+      const half = chord(y);
+      g.lineStyle(3, r.accent, 1).beginPath().moveTo(head.x - half, y).lineTo(head.x + half, y).strokePath();
+    } else if (r.hairStyle === 4) { // bun on the crown; seen from above it moves toward the head's centre
+      const restY = head.y - R - 3;
+      g.fillCircle(head.x, restY + (head.y - 2 - restY) * pitch, 4.5);
     }
   }
 }

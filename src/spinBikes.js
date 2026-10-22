@@ -2,7 +2,8 @@ import {
   GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX,
   BIKE_COUNT, BIKE_SPACING, BIKE_WIDTH,
   BIKE_ARM_SPREAD_DEG, BIKE_ARM_HIT_UPPER_DEG, BIKE_ARM_HIT_FORE_DEG,
-  BIKE_ARM_HIT_MS, BIKE_ARM_HOLD_MS, BIKE_ARM_RELAX,
+  BIKE_ARM_HIT_MS, BIKE_ARM_HOLD_MS, BIKE_ARM_RELAX, BIKE_DIP_HIT_MS,
+  BIKE_NOD_DROP_PX, BIKE_NOD_HAIR_REST, BIKE_NOD_HAIR_FULL, BIKE_NOD_EYES_HIDE, BIKE_NOD_SQUASH,
 } from './config/gameConfig.js';
 
 const TAU = Math.PI * 2;
@@ -69,6 +70,37 @@ export function armPose(shoulder, beatIndex, msSinceBeat, beatMs, side, upperLen
   const fore = upper + lean * rad(BIKE_ARM_HIT_FORE_DEG);
   const elbow = { x: shoulder.x + Math.sin(upper) * upperLen, y: shoulder.y - Math.cos(upper) * upperLen };
   return { elbow, hand: { x: elbow.x + Math.sin(fore) * foreLen, y: elbow.y - Math.cos(fore) * foreLen } };
+}
+
+// Head-bang dip in 0..1 (1 = fully down) at msSinceBeat into a beat: fully down on the beat and for
+// BIKE_DIP_HIT_MS, then a smoothstep back up that finishes at mid-beat and stays up until the next beat.
+export function gripDip(msSinceBeat, beatMs) {
+  const t = Math.min(Math.max(msSinceBeat, 0), beatMs);
+  const upMs = Math.max(beatMs / 2 - BIKE_DIP_HIT_MS, 1);
+  const u = Math.min(Math.max((t - BIKE_DIP_HIT_MS) / upMs, 0), 1);
+  return 1 - u * u * (3 - 2 * u);
+}
+
+// Head pose for a nod amount `dip` in 0..1 (0 = upright, 1 = fully bowed): dropPx is how far the head
+// sinks, hairEdge the fraction of the head's height covered by hair from the top (the crown showing as the
+// face tips away), eyesVisible whether the eyes are still uncovered, squash the head's height multiplier.
+export function headNod(dip) {
+  const d = Math.min(Math.max(dip, 0), 1);
+  return {
+    dropPx: BIKE_NOD_DROP_PX * d,
+    hairEdge: BIKE_NOD_HAIR_REST + (BIKE_NOD_HAIR_FULL - BIKE_NOD_HAIR_REST) * d,
+    eyesVisible: d <= BIKE_NOD_EYES_HIDE,
+    squash: 1 - (1 - BIKE_NOD_SQUASH) * d,
+  };
+}
+
+// Arm gripping the handlebar: shoulder to `grip` with the elbow solved by legIK and flaring outward
+// (`side` -1 = screen-left arm, 1 = right). An unreachable grip is clamped like legIK, so the hand
+// then stops short of it.
+export function gripArm(shoulder, grip, side, upperLen, foreLen) {
+  const elbow = legIK(shoulder, grip, upperLen, foreLen, side);
+  const d = Math.hypot(grip.x - shoulder.x, grip.y - shoulder.y);
+  return { elbow, hand: d <= upperLen + foreLen ? { ...grip } : elbow };
 }
 
 // Darken (k < 1) or lighten an 0xRRGGBB colour by scaling each channel.
