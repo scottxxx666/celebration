@@ -68,9 +68,11 @@ any upper-body pose (grip is easiest).
 Pure functions to add to `src/spinBikes.js` (unit-tested like the rest):
 
 - **Pedal:** frame `floor(crankAngle / (2π) × 4) % 4` — one revolution per
-  `BIKE_PEDAL_BEATS` as today. Frame order (front view): 0 = right knee up,
-  1 = knees level (right going down), 2 = left knee up, 3 = knees level (left
-  going down).
+  `BIKE_PEDAL_BEATS` as today. With the game's crank math the frames are
+  (rider's own left/right, the rider faces the camera): 0 = knees level
+  (right knee coming down, left coming up), 1 = LEFT knee up, 2 = knees level
+  (left coming down, right coming up), 3 = RIGHT knee up. The pose guides
+  below are rendered from the same math.
 - **Grip — 2 frames for now:** `grip-nod` while `gripDip ≥ 0.5`, else
   `grip-up`. That makes the head snap down on the beat and pop back up about
   mid-beat (~0.2 s at this tempo), which suits a head-bang. **After checking
@@ -113,6 +115,22 @@ used elsewhere in the song.
 - Origin `(0.5, 1)` at the floor-bar bottom centre, placed on
   `BIKE_FLOOR_Y` at each rider's centre x.
 - Transparent PNG, no ground or shadow (the backdrop is the scenery strip).
+
+## Pose guides
+
+`docs/spin-bike-pose-guide/` holds one 1536 × 1024 guide per frame
+(`pedal-0.png` … `wave-right.png`). Each guide shows the row of 5 mannequins
+in exactly the pose the game shows for that frame, at the target layout:
+even spacing with side margins, floor bars on one line near the bottom edge.
+They were rendered from the game's own pose functions in `src/spinBikes.js`
+(`frontLeg`, `gripArm`, `armPose`, `headNod`) and the `BIKE_*` config, so
+they match option A's choreography. Attach the matching guide to each
+generation prompt. `overview.png` is a labelled contact sheet of all 9, for
+people only; don't attach it to a prompt.
+
+Torso colours in the guides only mark rider order (matching the outfit list
+in the prompt doc); the mannequin look is not the target style. If `BIKE_*`
+poses are retuned, re-render the guides before generating.
 
 ## File layout
 
@@ -164,3 +182,5 @@ public/assets/sprites/spinbike/r<i>/          # prepped output, i = rider 0..4 (
 - **2 nod frames** (`grip-up`, `grip-nod`) for now; add `grip-half` only if the
   in-game check shows a jumpy return.
 - **Style** follows the stage reference, not the zombie sprites.
+- **Pose guides** (`docs/spin-bike-pose-guide/`) are attached to every
+  generation prompt.

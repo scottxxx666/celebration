@@ -12,6 +12,11 @@ the shorts' waistband. Pedal images become the lower layer and pose images
 the upper layer. So the framing and the riders' positions must not move
 between images.
 
+**Attach the matching pose guide** from `docs/spin-bike-pose-guide/` to every
+prompt (`pedal-0.png` with image 1, and so on). The guides fix the layout,
+each rider's size and position, and the exact pose. The prompts below tell
+the generator to copy the guide's pose and layout but not its look.
+
 ## Prompt (image 1, `pedal-0`)
 
 ```
@@ -20,6 +25,11 @@ I need game sprite frames: a row of 5 original, generic adult spin-class riders
 side.
 
 Rules for every image in this conversation:
+- Each prompt comes with a pose guide image: a row of 5 simple mannequins on
+  bikes. Copy the guide EXACTLY for layout, each rider's size and position,
+  the floor line, and every rider's pose (arms, legs, head). Do NOT copy its
+  look: the mannequins, flat colours and white background are only a guide.
+  The torso colours in the guide mark which rider is which (see the list below).
 - Style: a photo-real still from a live K-pop TV stage performance, where a row
   of spin-class backup dancers rides on stage. Not cartoon.
 - The same 5 people, same outfits, same bikes, in the same left-to-right order
@@ -31,8 +41,8 @@ Rules for every image in this conversation:
   neighbours. No overlapping bikes or limbs.
 - Every rider fully visible, nothing cropped: from the top of the head (and
   raised hands, if any) down to the bike's floor bar. All floor bars sit on
-  one line touching the bottom edge. Leave empty space above the heads for
-  raised arms.
+  one line near the bottom edge, as in the guide; the riders fill about the
+  lower half of the image, with empty space above.
 - All 5 riders do exactly the same pose at the same moment, in unison.
 - Only these 5 riders. No other people, no text, no floor, no shadow, no stage
   set or background.
@@ -62,28 +72,33 @@ Riders, left to right:
    crop top, yellow bike shorts, white socks, white sneakers, black wristbands.
    Bike glow: lime.
 
-Image 1: all riders seated, both hands gripping the handlebar ends, slightly
-hunched, looking at the camera. Pedalling: each rider's RIGHT knee raised high
-(right pedal at the top), left leg extended down (left pedal at the bottom).
+Image 1 (pedal-0, guide attached): all riders seated, both hands gripping the
+handlebar ends, slightly hunched, looking at the camera. Pedalling, mid-stroke:
+both knees at about the same height, each rider's right leg moving down and
+left leg moving up.
 ```
 
 ## Follow-up prompts (same conversation, one per image)
 
+Each follow-up is sent with its own guide attached (the file named in
+parentheses).
+
 ```
 Same 5 riders, outfits, bikes, order, lighting and EXACT same framing and
-positions. Image 2 (pedal-1): same upper bodies. Both knees at the same
-height, right leg moving down, left leg moving up (pedals level, right pedal
-forward).
+positions; follow the attached guide. Image 2 (pedal-1): same upper bodies.
+Each rider's LEFT knee raised high (left pedal at the top), right leg extended
+down.
 ```
 
 ```
-Image 3 (pedal-2): mirror of image 1's legs. Each rider's LEFT knee raised
-high, right leg extended down. Same upper bodies.
+Image 3 (pedal-2): same upper bodies; follow the attached guide. Both knees at
+about the same height, each rider's left leg moving down and right leg moving
+up.
 ```
 
 ```
-Image 4 (pedal-3): both knees at the same height, left leg moving down, right
-leg moving up. Same upper bodies.
+Image 4 (pedal-3): same upper bodies; follow the attached guide. Each rider's
+RIGHT knee raised high (right pedal at the top), left leg extended down.
 ```
 
 ```
@@ -123,7 +138,8 @@ dropped, face still partly visible, looking down at the handlebars.
 
 ## Workflow
 
-1. One ChatGPT conversation; generate images 1–9 in order. Reject and
+1. One ChatGPT conversation; generate images 1–9 in order, attaching the
+   matching guide from `docs/spin-bike-pose-guide/` each time. Reject and
    regenerate any image where the framing, a rider's position, outfit, hair or
    order drifted. The layers only line up if all of that is identical.
 2. Save to `original_images/spinbike/` using the names in parentheses:
