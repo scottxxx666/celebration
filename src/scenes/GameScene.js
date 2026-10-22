@@ -5,6 +5,7 @@ import { Enemy } from '../objects/Enemy.js';
 import { DiscoLights } from '../objects/DiscoLights.js';
 import { Afterimages } from '../objects/Afterimages.js';
 import { Scenery } from '../objects/Scenery.js';
+import { SpinBikes } from '../objects/SpinBikes.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
@@ -90,6 +91,7 @@ export class GameScene extends Phaser.Scene {
       this.sound.remove(this.music);
     });
     this.conductor = new Conductor(this.music);
+    this.spinBikes = new SpinBikes(this, this.conductor);
 
     // Beat flash — white overlay over the walk zone, pulsed on each beat;
     // above the background but below shadows and game objects. Additive so it
@@ -285,6 +287,7 @@ export class GameScene extends Phaser.Scene {
     // Scroll background — global world multiplier from the current section
     const worldDx = this.player.speed * section.speedMult * (delta / 1000);
     this.scenery.scroll(worldDx);
+    this.spinBikes.update(section, songMs, worldDx);
 
     this.enemy.trackRow(this.player.row, this.conductor.beatCrossed, beatSyncOn);
     this.enemy.update(delta / 1000, this.player.speed, songMs, section.speedMult);

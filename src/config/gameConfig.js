@@ -250,3 +250,32 @@ export const CONFETTI_FLUTTER_AMP = 40;        // px horizontal sway amplitude
 export const CONFETTI_FLUTTER_FREQ = 8;        // sway/tumble oscillation speed (rad/s)
 export const CONFETTI_SIZE_MIN = 6;            // min strip width (px)
 export const CONFETTI_SIZE_MAX = 12;           // max strip width (px)
+
+// Spin-bike riders — during bikes sections a row of neon riders on stationary bikes drifts across
+// the scenery strip with the backdrop (src/objects/SpinBikes.js, src/spinBikes.js). Purely visual,
+// drawn in code, gated on section.bikes / song time.
+export const BIKE_COUNT = 5;                 // riders in the row
+export const BIKE_SPACING = 144;             // px between rider centres (5 riders span ~670 px)
+export const BIKE_WIDTH = 96;                // px, one bike's width (pads the row's ends)
+export const BIKE_FLOOR_Y = WALK_ZONE_TOP - 8; // y of the bikes' floor line (just above the road)
+export const BIKE_DEPTH = -9.5;              // between the scenery strip (-10) and the disco dim (-6)
+export const BIKE_PEDAL_BEATS = 2;           // beats per crank revolution (all riders in unison)
+export const BIKE_THIGH_LEN = 31;            // px
+export const BIKE_SHIN_LEN = 33;             // px
+export const BIKE_UPPER_ARM_LEN = 19;        // px
+export const BIKE_FOREARM_LEN = 18;          // px
+export const BIKE_ARM_SPREAD_DEG = 22;       // relaxed pose: arms raised in a V, each this far outward from vertical
+export const BIKE_ARM_HIT_UPPER_DEG = 40;    // on each beat both upper arms snap this far toward the beat's side (even beats +x, odd -x)
+export const BIKE_ARM_HIT_FORE_DEG = 25;     // forearms whip this much further than the upper arm
+export const BIKE_ARM_HIT_MS = 100;          // ms after the beat to reach the hit pose (ease-out)
+export const BIKE_ARM_HOLD_MS = 120;         // ms the hit pose is held before relaxing
+export const BIKE_ARM_RELAX = 0.3;           // fraction of the hit lean still left at the end of the beat (the next hit starts from the opposite of it)
+export const BIKE_FRAME_WIDTH = 5;           // px, bike frame stroke
+export const BIKE_RIM_ALPHA = 0.5;           // alpha of the rider-coloured rim light around the dark bike
+export const BIKE_FRAME_COLOR = 0x14141c;    // near-black bike
+export const BIKE_SHOE_COLOR = 0xf4f4f4;
+export const BIKE_COLORS = [0x2ef2ff, 0xff3df2, 0xa66bff, 0xff6fa8, 0xa6ff4d]; // neon rim-light accent per rider, i % length
+export const BIKE_SKINS = [0xf1c27d, 0x8d5524, 0xe0ac69, 0xc68642, 0xffdbac];
+export const BIKE_TOPS = [0x39ff14, 0xff8c1a, 0xff4fb0, 0xffffff, 0xb266ff]; // tee / tank colours
+export const BIKE_SHORTS = [0x15151f, 0x1f2a6b, 0x15151f, 0x00b3a4, 0xffe14d];
+export const BIKE_HAIR = [0x2b1b12, 0x120c08, 0xc9822b, 0x4a2a14, 0x1a1a1a];
