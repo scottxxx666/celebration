@@ -1,8 +1,8 @@
 import {
   GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX,
   BIKE_COUNT, BIKE_SPACING, BIKE_WIDTH,
-  BIKE_ARM_SPREAD_DEG, BIKE_ARM_HIT_UPPER_DEG, BIKE_ARM_HIT_FORE_DEG,
-  BIKE_ARM_HIT_MS, BIKE_ARM_HOLD_MS, BIKE_ARM_RELAX, BIKE_DIP_HIT_MS,
+  BIKE_ARM_HIT_UPPER_DEG,
+  BIKE_ARM_HIT_FRAC, BIKE_ARM_HOLD_FRAC, BIKE_ARM_RELAX, BIKE_DIP_HIT_MS,
   BIKE_NOD_DROP_PX, BIKE_NOD_HAIR_REST, BIKE_NOD_HAIR_FULL, BIKE_NOD_EYES_HIDE, BIKE_NOD_SQUASH,
 } from './config/gameConfig.js';
 
@@ -46,30 +46,32 @@ export function frontLeg(hip, crank, radius, angle, side, thigh, shin, splay) {
   };
 }
 
-// Lean of the arm "hit" at msSinceBeat into beat `beatIndex`, in -1..1 (+1 = fully toward screen-right).
-// Even beats hit toward screen-right, odd toward screen-left. The lean snaps from where the previous beat ended
-// (-BIKE_ARM_RELAX of this side) to the full hit within BIKE_ARM_HIT_MS (ease-out), holds for
-// BIKE_ARM_HOLD_MS, then relaxes to BIKE_ARM_RELAX of the hit by the next beat, so it is continuous
-// across beats except for the intended snap.
-export function armLean(beatIndex, msSinceBeat, beatMs) {
-  const dir = Math.abs(beatIndex % 2) === 0 ? 1 : -1;
-  const t = Math.min(Math.max(msSinceBeat, 0), beatMs);
-  const hit = 1 - Math.pow(1 - Math.min(t / BIKE_ARM_HIT_MS, 1), 3);
-  if (t < BIKE_ARM_HIT_MS) return dir * (-BIKE_ARM_RELAX + (1 + BIKE_ARM_RELAX) * hit);
-  const relaxMs = Math.max(beatMs - BIKE_ARM_HIT_MS - BIKE_ARM_HOLD_MS, 1);
-  const u = Math.min(Math.max((t - BIKE_ARM_HIT_MS - BIKE_ARM_HOLD_MS) / relaxMs, 0), 1);
+// Lean of the arm "hit" at msSinceHit into hit `hitIndex` (a hit lasts periodMs: a beat or a fraction of one,
+// see BIKE_WAVE_HITS_PER_BEAT), in -1..1 (+1 = fully toward screen-right). Even hits go toward screen-right,
+// odd toward screen-left. The lean snaps from where the previous hit ended (-BIKE_ARM_RELAX of this side) to
+// the full hit within BIKE_ARM_HIT_FRAC of the period (ease-out), holds for BIKE_ARM_HOLD_FRAC, then relaxes
+// to BIKE_ARM_RELAX of the hit by the next hit, so it is continuous across hits except for the intended snap.
+export function armLean(hitIndex, msSinceHit, periodMs) {
+  const dir = Math.abs(hitIndex % 2) === 0 ? 1 : -1;
+  const t = Math.min(Math.max(msSinceHit, 0), periodMs);
+  const hitMs = BIKE_ARM_HIT_FRAC * periodMs;
+  const holdMs = BIKE_ARM_HOLD_FRAC * periodMs;
+  const hit = 1 - Math.pow(1 - Math.min(t / hitMs, 1), 3);
+  if (t < hitMs) return dir * (-BIKE_ARM_RELAX + (1 + BIKE_ARM_RELAX) * hit);
+  const relaxMs = Math.max(periodMs - hitMs - holdMs, 1);
+  const u = Math.min(Math.max((t - hitMs - holdMs) / relaxMs, 0), 1);
   return dir * (1 - (1 - BIKE_ARM_RELAX) * u * u * (3 - 2 * u));
 }
 
-// One raised arm from the shoulder at the beat-hit pose. `side` is -1 (screen-left arm) or 1 (screen-right arm);
-// every rider uses the same beat so the row hits in unison. Angles are from straight up, positive
-// toward +x; the forearm whips further than the upper arm along the lean.
-export function armPose(shoulder, beatIndex, msSinceBeat, beatMs, side, upperLen, foreLen) {
-  const lean = armLean(beatIndex, msSinceBeat, beatMs);
-  const upper = side * rad(BIKE_ARM_SPREAD_DEG) * (1 - Math.abs(lean)) * 0.5 + lean * rad(BIKE_ARM_HIT_UPPER_DEG);
-  const fore = upper + lean * rad(BIKE_ARM_HIT_FORE_DEG);
+// One raised arm from the shoulder at the hit pose. `side` is -1 (screen-left arm) or 1 (screen-right arm);
+// every rider uses the same hit so the row waves in unison. Angles are from straight up, positive
+// toward +x. The arm is always straight (forearm = upper arm angle) and both arms share one angle (the lean),
+// so they stay parallel: straight up between hits, swinging together toward the hit's side.
+export function armPose(shoulder, hitIndex, msSinceHit, periodMs, side, upperLen, foreLen) {
+  const lean = armLean(hitIndex, msSinceHit, periodMs);
+  const upper = lean * rad(BIKE_ARM_HIT_UPPER_DEG);
   const elbow = { x: shoulder.x + Math.sin(upper) * upperLen, y: shoulder.y - Math.cos(upper) * upperLen };
-  return { elbow, hand: { x: elbow.x + Math.sin(fore) * foreLen, y: elbow.y - Math.cos(fore) * foreLen } };
+  return { elbow, hand: { x: elbow.x + Math.sin(upper) * foreLen, y: elbow.y - Math.cos(upper) * foreLen } };
 }
 
 // Head-bang dip in 0..1 (1 = fully down) at msSinceBeat into a beat: fully down on the beat and for

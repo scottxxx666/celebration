@@ -113,20 +113,23 @@ mostly hidden. Hands stay on the handlebars, shoulders stay where they are.
 ```
 
 ```
-Image 7 (wave-centre): all riders seated, both arms raised straight up overhead
-in a wide V, hands open, heads up, smiling. Hands must stay inside the image
-and must not touch a neighbour's hands.
+Image 7 (wave-centre): all riders seated, both arms raised straight up overhead,
+parallel to each other (shoulder width apart), arms fully STRAIGHT (elbows
+locked, no bend), hands open, heads up, smiling. Hands must stay inside the
+image and must not touch a neighbour's hands.
 ```
 
 ```
-Image 8 (wave-left): same as image 7, but every rider's raised arms lean
-together toward the LEFT side of the image, like a big unison side-to-side wave.
+Image 8 (wave-left): same as image 7, arms still fully straight and still
+parallel to each other, but both arms of every rider swing together toward
+the LEFT side of the image, like a unison side-to-side wave. The arm on the
+right side of the image passes just above the head, never across the face.
 Torsos stay upright. Hands must not touch a neighbour's.
 ```
 
 ```
-Image 9 (wave-right): mirror of image 8: all raised arms lean together toward
-the RIGHT side of the image.
+Image 9 (wave-right): mirror of image 8: both parallel straight arms swing
+toward the RIGHT side of the image.
 ```
 
 Only if the in-game check calls for it (see the plan doc), add one more:

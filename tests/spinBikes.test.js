@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { crankAngle, legIK, frontLeg, armPose, armLean, gripDip, headNod, gripArm, laggedBeat, shade, bikeRowStartX } from '../src/spinBikes.js';
 import {
-  GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX, BIKE_ARM_HIT_MS, BIKE_ARM_RELAX, BIKE_DIP_HIT_MS, BIKE_GRIP_HUNCH_PX,
+  GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX, BIKE_ARM_HIT_FRAC, BIKE_ARM_HOLD_FRAC, BIKE_WAVE_HITS_PER_BEAT, BIKE_HAIR_LAG_MS, BIKE_ARM_RELAX, BIKE_DIP_HIT_MS, BIKE_GRIP_HUNCH_PX,
   BIKE_NOD_DROP_PX, BIKE_NOD_HAIR_REST, BIKE_NOD_HAIR_FULL, BIKE_NOD_SQUASH,
   BIKE_FLOOR_Y, BIKE_SHOULDER_RISE, BIKE_SHOULDER_HALF, BIKE_HIP_HALF, BIKE_HIP_RISE, BIKE_SPLAY,
   BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN, BIKE_PEDAL_RADIUS, BIKE_BAR_RISE, BIKE_BAR_HALF, BIKE_GRIP_LEN, BIKE_GRIP_FORESHORTEN,
@@ -59,6 +59,7 @@ test('bikeRowStartX is GAME_WIDTH at the section start and decreases with time',
 });
 
 const BEAT = 398;
+const BIKE_ARM_HIT_MS = BIKE_ARM_HIT_FRAC * BEAT; // hit timing at one hit per beat
 const sh = { x: 100, y: 100 };
 
 test('arms reach the hit pose by BIKE_ARM_HIT_MS and hold it', () => {
@@ -71,7 +72,37 @@ test('arms reach the hit pose by BIKE_ARM_HIT_MS and hold it', () => {
   const a = armPose(sh, 0, BIKE_ARM_HIT_MS, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
   const b = armPose(sh, 0, BIKE_ARM_HIT_MS + 80, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
   near(a.hand.x, b.hand.x);
-  assert.ok(a.hand.x > sh.x + 15);
+  assert.ok(a.hand.x > sh.x + 5);
+});
+
+test('arm timings scale with the wave period and match the old 100/120 ms at one hit per beat', () => {
+  const TRACK_BEAT_MS = 60000 / 150.55;
+  assert.ok(Math.abs(BIKE_ARM_HIT_FRAC * TRACK_BEAT_MS - 100) < 1);
+  assert.ok(Math.abs(BIKE_ARM_HOLD_FRAC * TRACK_BEAT_MS - 120) < 1);
+  for (const P of [TRACK_BEAT_MS, TRACK_BEAT_MS / BIKE_WAVE_HITS_PER_BEAT]) {
+    near(armLean(0, BIKE_ARM_HIT_FRAC * P, P), 1);
+    assert.ok(armLean(0, BIKE_ARM_HIT_FRAC * P * 0.9, P) < 1);
+    near(armLean(0, (BIKE_ARM_HIT_FRAC + BIKE_ARM_HOLD_FRAC) * P - 1, P), 1); // still held
+    assert.ok(armLean(0, (BIKE_ARM_HIT_FRAC + BIKE_ARM_HOLD_FRAC) * P + 0.1 * P, P) < 1); // relaxing
+  }
+});
+
+test('half-beat wave period: relax phase exists and the lean is continuous across hits, alternating sides', () => {
+  const P = 60000 / 150.55 / 2;
+  assert.ok(BIKE_ARM_HIT_FRAC + BIKE_ARM_HOLD_FRAC < 1);
+  assert.ok(BIKE_HAIR_LAG_MS < P);
+  for (let i = -2; i < 4; i++) {
+    near(armLean(i, P, P), BIKE_ARM_RELAX * Math.sign(armLean(i, P / 2, P)));
+    near(armLean(i, P - 1e-6, P), armLean(i + 1, 0, P), 1e-6); // end of this hit == start of next (which then snaps the other way)
+    assert.equal(Math.sign(armLean(i, P / 2, P)), -Math.sign(armLean(i + 1, P / 2, P)));
+    let prev = armLean(i, 0, P);
+    for (let t = 1; t <= P; t++) {
+      const lean = armLean(i, t, P);
+      assert.ok(Math.abs(lean) <= 1 + 1e-9);
+      if (t > BIKE_ARM_HIT_FRAC * P) assert.ok(Math.abs(lean - prev) < 0.15, `${i}@${t}`);
+      prev = lean;
+    }
+  }
 });
 
 test('odd beats mirror even beats', () => {
@@ -184,6 +215,43 @@ test('raised hands stay clear of the HUD strip (y >= 50) at every point of the b
     }
   }
   assert.ok(top >= 50, `highest hand at y=${top}`);
+});
+
+test('both arms always have the same angle (parallel)', () => {
+  const angle = (p) => Math.atan2(p.hand.x - sh.x, sh.y - p.hand.y);
+  for (const beat of [0, 1]) {
+    for (let t = 0; t <= 2 * BEAT; t += 7) {
+      const l = armPose(sh, beat, t, BEAT, -1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+      const r = armPose(sh, beat, t, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+      near(angle(l), angle(r), 1e-9);
+    }
+  }
+});
+
+test('wave-mode arms are straight and the far arm clears the head at full lean', () => {
+  const shY = BIKE_FLOOR_Y - BIKE_SHOULDER_RISE;
+  for (const beat of [0, 1]) {
+    for (const t of [0, 30, BIKE_ARM_HIT_MS, 200, 300, BEAT]) {
+      for (const side of [-1, 1]) {
+        const x = side * BIKE_SHOULDER_HALF;
+        const p = armPose({ x, y: shY }, beat, t, BEAT, side, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+        // elbow on the shoulder -> hand line: cross product ~ 0
+        const cross = (p.elbow.x - x) * (p.hand.y - shY) - (p.elbow.y - shY) * (p.hand.x - x);
+        near(cross, 0, 1e-6);
+      }
+    }
+  }
+  // head ellipse as drawn in SpinBikes.js (HEAD_RX/RY/RISE duplicated here), grown by a 2 px margin for the arm's thickness
+  const rx = 7.2 + 2, ry = 8 + 2, cy = BIKE_FLOOR_Y - 103;
+  for (const beat of [0, 1]) {
+    const far = beat % 2 === 0 ? -1 : 1; // leaning toward screen-right: the left arm is the far one
+    const x0 = far * BIKE_SHOULDER_HALF;
+    const p = armPose({ x: x0, y: shY }, beat, BIKE_ARM_HIT_MS, BEAT, far, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+    for (let s = 0; s <= 1; s += 0.01) {
+      const x = x0 + (p.hand.x - x0) * s, y = shY + (p.hand.y - shY) * s;
+      assert.ok((x / rx) ** 2 + ((y - cy) / ry) ** 2 > 1, `beat ${beat} s=${s}`);
+    }
+  }
 });
 
 test('the rider row spans roughly 600-700 px', () => {

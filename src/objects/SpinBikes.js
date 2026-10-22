@@ -5,7 +5,7 @@ import {
   GAME_WIDTH, SCENERY_PARALLAX, BIKE_COUNT, BIKE_SPACING, BIKE_WIDTH, BIKE_FLOOR_Y, BIKE_DEPTH, BIKE_PEDAL_BEATS,
   BIKE_HIP_HALF, BIKE_SHOULDER_HALF, BIKE_PEDAL_RADIUS, BIKE_BAR_RISE, BIKE_BAR_HALF, BIKE_GRIP_LEN, BIKE_GRIP_FORESHORTEN, BIKE_HIP_RISE, BIKE_SHOULDER_RISE, BIKE_SPLAY,
   BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN,
-  BIKE_GRIP_HUNCH_PX, BIKE_NOD_HAIR_REST, BIKE_NOD_HAIR_FULL, BIKE_SHOULDER_BOB_PX, BIKE_HAIR_LAG_MS, BIKE_HAIR_SWING_PX,
+  BIKE_GRIP_HUNCH_PX, BIKE_NOD_HAIR_REST, BIKE_NOD_HAIR_FULL, BIKE_SHOULDER_BOB_PX, BIKE_HAIR_LAG_MS, BIKE_HAIR_SWING_PX, BIKE_WAVE_HITS_PER_BEAT,
   BIKE_FRAME_WIDTH, BIKE_RIM_ALPHA, BIKE_FRAME_COLOR, BIKE_SHOE_COLOR, BIKE_OUTLINE_COLOR, BIKE_RENDER_SCALE,
   BIKE_COLORS, BIKE_SKINS, BIKE_TOPS, BIKE_SHORTS, BIKE_HAIR,
 } from '../config/gameConfig.js';
@@ -156,18 +156,25 @@ export class SpinBikes {
     const beatIndex = conductor.gridIndex(1);
     const sinceBeat = conductor.phaseMs(1);
     this.grip = section.bikes === 'grip';
+    // wave mode hits BIKE_WAVE_HITS_PER_BEAT times a beat; grip mode (nod) stays per beat
+    const waveIndex = conductor.gridIndex(BIKE_WAVE_HITS_PER_BEAT);
+    const sinceHit = conductor.phaseMs(1 / BIKE_WAVE_HITS_PER_BEAT);
+    const waveMs = beatMs / BIKE_WAVE_HITS_PER_BEAT;
     this.dip = this.grip ? gripDip(sinceBeat, beatMs) : 0;
     // hair replays the head / arm motion late: relative to the head it trails the nod, and swings with the lagged lean
-    const lag = laggedBeat(beatIndex, sinceBeat, beatMs, BIKE_HAIR_LAG_MS);
-    this.hair = this.grip
-      ? pt(0, (gripDip(lag.msSinceBeat, beatMs) - this.dip) * BIKE_HAIR_SWING_PX)
-      : pt(armLean(lag.beatIndex, lag.msSinceBeat, beatMs) * BIKE_HAIR_SWING_PX, 0);
+    if (this.grip) {
+      const lag = laggedBeat(beatIndex, sinceBeat, beatMs, BIKE_HAIR_LAG_MS);
+      this.hair = pt(0, (gripDip(lag.msSinceBeat, beatMs) - this.dip) * BIKE_HAIR_SWING_PX);
+    } else {
+      const lag = laggedBeat(waveIndex, sinceHit, waveMs, BIKE_HAIR_LAG_MS); // clamps if the lag exceeds the period
+      this.hair = pt(armLean(lag.beatIndex, lag.msSinceBeat, waveMs) * BIKE_HAIR_SWING_PX, 0);
+    }
 
     const g = this.gfx.clear();
     for (let i = 0; i < BIKE_COUNT; i++) {
       const cx = this.left + BIKE_WIDTH / 2 + i * BIKE_SPACING;
       if (cx + BIKE_WIDTH < 0 || cx - BIKE_WIDTH > GAME_WIDTH) continue;
-      this.drawRider(g, this.riders[i], cx, crank, beatIndex, sinceBeat, beatMs);
+      this.drawRider(g, this.riders[i], cx, crank, beatIndex, sinceBeat, beatMs, waveIndex, sinceHit, waveMs);
     }
     this.rt.clear().draw(g).setVisible(true);
   }
@@ -279,7 +286,7 @@ export class SpinBikes {
     g.lineStyle(1, BIKE_OUTLINE_COLOR, 0.8).beginPath().moveTo(cx, hipY + 3).lineTo(cx, hipY + 9).strokePath();
   }
 
-  drawRider(g, r, cx, crankBase, beatIndex, sinceBeat, beatMs) {
+  drawRider(g, r, cx, crankBase, beatIndex, sinceBeat, beatMs, waveIndex, sinceHit, waveMs) {
     const hipY = BIKE_FLOOR_Y - BIKE_HIP_RISE;
     const grip = this.grip;
     const shoulderY = BIKE_FLOOR_Y - BIKE_SHOULDER_RISE + (grip ? BIKE_GRIP_HUNCH_PX - BIKE_SHOULDER_BOB_PX * this.dip : 0);
@@ -303,9 +310,9 @@ export class SpinBikes {
 
     const barY = BIKE_FLOOR_Y - BIKE_BAR_RISE - BIKE_GRIP_LEN / 2; // grip: middle of the upturned bar end
     const armL = grip ? gripArm(shL, { x: cx - BIKE_BAR_HALF, y: barY }, -1, BIKE_UPPER_ARM_LEN * BIKE_GRIP_FORESHORTEN, BIKE_FOREARM_LEN * BIKE_GRIP_FORESHORTEN)
-      : armPose(shL, beatIndex, sinceBeat, beatMs, -1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+      : armPose(shL, waveIndex, sinceHit, waveMs, -1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
     const armR = grip ? gripArm(shR, { x: cx + BIKE_BAR_HALF, y: barY }, 1, BIKE_UPPER_ARM_LEN * BIKE_GRIP_FORESHORTEN, BIKE_FOREARM_LEN * BIKE_GRIP_FORESHORTEN)
-      : armPose(shR, beatIndex, sinceBeat, beatMs, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+      : armPose(shR, waveIndex, sinceHit, waveMs, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
     this.arm(g, shL, armL, { ...r, band: false }, grip);
     this.arm(g, shR, armR, r, grip);
   }

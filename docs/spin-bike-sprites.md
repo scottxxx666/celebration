@@ -40,8 +40,10 @@ Instead each rider is **two stacked images** sharing one registration:
 | **lower** | shorts below the waistband, legs, sneakers, flywheel, post, floor bar | 4 pedal phases |
 | **upper** | torso, head, arms, hands, handlebar + console | 5 poses |
 
-Upper poses: `grip-up`, `grip-nod`, `wave-centre` (arms up in a V),
-`wave-left`, `wave-right` (both arms leaning to screen-left / screen-right).
+Upper poses: `grip-up`, `grip-nod`, `wave-centre` (both straight arms pointing
+straight up, parallel), `wave-left`, `wave-right` (both arms still parallel,
+swinging together toward screen-left / screen-right; the far arm passes just
+above the head). Arms are always straight in the wave, as in the reference.
 Total **9 images**.
 
 Split line: the shorts' waistband, just *below* the handlebar — so the bar,
@@ -80,8 +82,9 @@ Pure functions to add to `src/spinBikes.js` (unit-tested like the rest):
   return looks too jumpy — it would show while `gripDip` is between two
   thresholds, costing one more image.
 - **Wave:** `armLean > +0.5` → `wave-right`, `< −0.5` → `wave-left`, else
-  `wave-centre`. `armLean` already snaps on the beat and relaxes, so the
-  centre frame shows between hits.
+  `wave-centre`. `armLean` already snaps on each hit (every
+  1/`BIKE_WAVE_HITS_PER_BEAT` beat, currently every beat) and relaxes,
+  so the centre frame shows between hits.
 
 ## Style
 
