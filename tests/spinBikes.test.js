@@ -1,8 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { crankAngle, legIK, armPose, armLean, shade, bikeRowStartX } from '../src/spinBikes.js';
+import { crankAngle, legIK, frontLeg, armPose, armLean, shade, bikeRowStartX } from '../src/spinBikes.js';
 import {
   GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX, BIKE_ARM_HIT_MS, BIKE_ARM_RELAX,
+  BIKE_FLOOR_Y, BIKE_SHOULDER_RISE, BIKE_SHOULDER_HALF, BIKE_HIP_HALF, BIKE_HIP_RISE, BIKE_SPLAY,
+  BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN,
+  BIKE_COUNT, BIKE_SPACING, BIKE_WIDTH,
 } from '../src/config/gameConfig.js';
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -64,17 +67,17 @@ test('arms reach the hit pose by BIKE_ARM_HIT_MS and hold it', () => {
   // it snaps: most of the way there within the first third of the hit window
   assert.ok(armLean(0, BIKE_ARM_HIT_MS / 3, BEAT) > 0.5);
   // pose at the hit is the same pose a little later in the hold
-  const a = armPose(sh, 0, BIKE_ARM_HIT_MS, BEAT, 1, 19, 18);
-  const b = armPose(sh, 0, BIKE_ARM_HIT_MS + 80, BEAT, 1, 19, 18);
+  const a = armPose(sh, 0, BIKE_ARM_HIT_MS, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+  const b = armPose(sh, 0, BIKE_ARM_HIT_MS + 80, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
   near(a.hand.x, b.hand.x);
-  assert.ok(a.hand.x > sh.x + 20);
+  assert.ok(a.hand.x > sh.x + 15);
 });
 
 test('odd beats mirror even beats', () => {
   for (const t of [0, 30, 100, 200, 300, BEAT]) {
     for (const side of [-1, 1]) {
-      const e = armPose(sh, 4, t, BEAT, side, 19, 18);
-      const o = armPose(sh, 5, t, BEAT, -side, 19, 18);
+      const e = armPose(sh, 4, t, BEAT, side, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+      const o = armPose(sh, 5, t, BEAT, -side, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
       near(e.hand.x - sh.x, -(o.hand.x - sh.x), 1e-9);
       near(e.hand.y, o.hand.y, 1e-9);
       near(e.elbow.x - sh.x, -(o.elbow.x - sh.x), 1e-9);
@@ -94,9 +97,9 @@ test('arms stay raised, lengths hold, and the lean is bounded and continuous', (
       if (prev !== null && t > BIKE_ARM_HIT_MS) assert.ok(Math.abs(lean - prev) < 0.05, `${beat}@${t}`);
       prev = lean;
       for (const side of [-1, 1]) {
-        const p = armPose(sh, beat, t, BEAT, side, 19, 18);
+        const p = armPose(sh, beat, t, BEAT, side, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
         assert.ok(Number.isFinite(p.hand.x) && Number.isFinite(p.hand.y));
-        near(Math.hypot(p.elbow.x - sh.x, p.elbow.y - sh.y), 19);
+        near(Math.hypot(p.elbow.x - sh.x, p.elbow.y - sh.y), BIKE_UPPER_ARM_LEN);
         assert.ok(p.elbow.y < sh.y && p.hand.y < sh.y);
       }
     }
@@ -113,4 +116,66 @@ test('lean relaxes to BIKE_ARM_RELAX by the end of the beat and the next beat st
 test('shade scales channels and clamps', () => {
   assert.equal(shade(0xff8040, 0.5), 0x804020);
   assert.equal(shade(0x808080, 10), 0xffffff);
+});
+
+const R = 6;
+const hipL = { x: -BIKE_HIP_HALF, y: -BIKE_HIP_RISE };
+const hipR = { x: BIKE_HIP_HALF, y: -BIKE_HIP_RISE };
+const crankC = { x: 6, y: -28 };
+const legs = a => ({
+  l: frontLeg(hipL, crankC, R, a, -1, BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_SPLAY),
+  r: frontLeg(hipR, crankC, R, a + Math.PI, 1, BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_SPLAY),
+});
+
+test('frontLeg: feet differ by the crank diameter at the stroke ends and match at the midpoints', () => {
+  near(Math.abs(legs(Math.PI / 2).l.foot.y - legs(Math.PI / 2).r.foot.y), 2 * R);
+  near(Math.abs(legs(-Math.PI / 2).l.foot.y - legs(-Math.PI / 2).r.foot.y), 2 * R);
+  near(legs(0).l.foot.y, legs(0).r.foot.y);
+  near(legs(Math.PI).l.foot.y, legs(Math.PI).r.foot.y);
+  assert.equal(legs(0.7).l.foot.x, hipL.x);
+  assert.equal(legs(0.7).r.foot.x, hipR.x);
+});
+
+test('frontLeg: the knee rises as the foot rises', () => {
+  let prev = null;
+  for (let a = Math.PI / 2; a <= 1.5 * Math.PI + 1e-9; a += 0.1) { // bottom of the stroke to the top
+    const { knee, foot } = frontLeg(hipL, crankC, R, a, -1, BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_SPLAY);
+    if (prev) {
+      assert.ok(foot.y <= prev.foot.y + 1e-9);
+      assert.ok(knee.y <= prev.knee.y + 0.1, // near full extension the knee barely moves, so allow sub-pixel wobble
+         `knee ${knee.y} vs ${prev.knee.y} @${a}`);
+    }
+    prev = { knee, foot };
+  }
+  const bottom = frontLeg(hipL, crankC, R, Math.PI / 2, -1, BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_SPLAY);
+  assert.ok(prev.knee.y < bottom.knee.y - 5);
+});
+
+test('frontLeg: knees splay outward, bounded by the splay fraction of the thigh', () => {
+  for (let a = 0; a < 2 * Math.PI; a += 0.1) {
+    const { l, r } = legs(a);
+    for (const [k, hip, side] of [[l.knee, hipL, -1], [r.knee, hipR, 1]]) {
+      assert.ok(Number.isFinite(k.x) && Number.isFinite(k.y));
+      assert.ok(side * (k.x - hip.x) >= 0);
+      assert.ok(Math.abs(k.x - hip.x) <= BIKE_SPLAY * BIKE_THIGH_LEN + 1e-9);
+    }
+  }
+});
+
+test('raised hands stay clear of the HUD strip (y >= 50) at every point of the beat', () => {
+  const shY = BIKE_FLOOR_Y - BIKE_SHOULDER_RISE;
+  let top = Infinity;
+  for (let beat = 0; beat < 2; beat++) {
+    for (let t = 0; t <= BEAT; t++) {
+      for (const [side, x] of [[-1, -BIKE_SHOULDER_HALF], [1, BIKE_SHOULDER_HALF]]) {
+        top = Math.min(top, armPose({ x, y: shY }, beat, t, BEAT, side, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN).hand.y);
+      }
+    }
+  }
+  assert.ok(top >= 50, `highest hand at y=${top}`);
+});
+
+test('the rider row spans roughly 600-700 px', () => {
+  const span = (BIKE_COUNT - 1) * BIKE_SPACING + BIKE_WIDTH;
+  assert.ok(span >= 600 && span <= 700, `${span}`);
 });

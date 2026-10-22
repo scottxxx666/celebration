@@ -255,17 +255,22 @@ export const CONFETTI_SIZE_MAX = 12;           // max strip width (px)
 // the scenery strip with the backdrop (src/objects/SpinBikes.js, src/spinBikes.js). Purely visual,
 // drawn in code, gated on section.bikes / song time.
 export const BIKE_COUNT = 5;                 // riders in the row
-export const BIKE_SPACING = 144;             // px between rider centres (5 riders span ~670 px)
-export const BIKE_WIDTH = 96;                // px, one bike's width (pads the row's ends)
+export const BIKE_SPACING = 150;             // px between rider centres (5 riders span ~660 px)
+export const BIKE_WIDTH = 60;                // px, one front-on rider's width (pads the row's ends)
 export const BIKE_FLOOR_Y = WALK_ZONE_TOP - 8; // y of the bikes' floor line (just above the road)
 export const BIKE_DEPTH = -9.5;              // between the scenery strip (-10) and the disco dim (-6)
 export const BIKE_PEDAL_BEATS = 2;           // beats per crank revolution (all riders in unison)
-export const BIKE_THIGH_LEN = 31;            // px
-export const BIKE_SHIN_LEN = 33;             // px
-export const BIKE_UPPER_ARM_LEN = 19;        // px
-export const BIKE_FOREARM_LEN = 18;          // px
-export const BIKE_ARM_SPREAD_DEG = 22;       // relaxed pose: arms raised in a V, each this far outward from vertical
-export const BIKE_ARM_HIT_UPPER_DEG = 40;    // on each beat both upper arms snap this far toward the beat's side (even beats +x, odd -x)
+export const BIKE_HIP_HALF = 8;              // px, each hip's x offset from the rider's centre (legs sit side by side)
+export const BIKE_SHOULDER_HALF = 13;        // px, each shoulder's x offset (shoulders wider than hips)
+export const BIKE_HIP_RISE = 62;             // px, hip height above the floor line
+export const BIKE_SHOULDER_RISE = 92;        // px, shoulder height above the floor line
+export const BIKE_SPLAY = 0.35;              // knees flare outward by this fraction of how far forward (toward the camera) they are
+export const BIKE_THIGH_LEN = 20;            // px
+export const BIKE_SHIN_LEN = 22;             // px
+export const BIKE_UPPER_ARM_LEN = 15;        // px
+export const BIKE_FOREARM_LEN = 14;          // px (raised hands stay >= 50 px from the top: tests/spinBikes.test.js)
+export const BIKE_ARM_SPREAD_DEG = 30;       // relaxed pose: arms raised in a V, each this far outward from vertical
+export const BIKE_ARM_HIT_UPPER_DEG = 40;    // on each beat both upper arms snap this far toward the beat's side (even beats screen-right, odd screen-left)
 export const BIKE_ARM_HIT_FORE_DEG = 25;     // forearms whip this much further than the upper arm
 export const BIKE_ARM_HIT_MS = 100;          // ms after the beat to reach the hit pose (ease-out)
 export const BIKE_ARM_HOLD_MS = 120;         // ms the hit pose is held before relaxing

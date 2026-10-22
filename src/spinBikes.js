@@ -31,8 +31,22 @@ export function legIK(hip, foot, thigh, shin, bend = 1) {
   return { x: hip.x + ux * along + uy * h * bend, y: hip.y + uy * along - ux * h * bend };
 }
 
-// Lean of the arm "hit" at msSinceBeat into beat `beatIndex`, in -1..1 (+1 = fully toward +x).
-// Even beats hit toward +x, odd toward -x. The lean snaps from where the previous beat ended
+// Front-on leg of a rider facing the camera. The leg is solved in the sagittal plane (legIK: x =
+// forward, toward the camera; y = up/down) from the hip to the pedal on the crank circle, then
+// projected to the screen: y is kept, x is the hip's x plus a small outward splay (`side` -1 = screen-left
+// leg, +1 = right) proportional to how far forward the knee is. `crank` is {x: forward offset from the
+// hip, y} of the crank centre; the two legs run half a turn apart (pass `angle` and `angle + Math.PI`).
+export function frontLeg(hip, crank, radius, angle, side, thigh, shin, splay) {
+  const pedal = { x: crank.x + Math.cos(angle) * radius, y: crank.y + Math.sin(angle) * radius };
+  const k = legIK({ x: 0, y: hip.y }, pedal, thigh, shin);
+  return {
+    knee: { x: hip.x + side * splay * Math.max(k.x, 0), y: k.y },
+    foot: { x: hip.x, y: pedal.y },
+  };
+}
+
+// Lean of the arm "hit" at msSinceBeat into beat `beatIndex`, in -1..1 (+1 = fully toward screen-right).
+// Even beats hit toward screen-right, odd toward screen-left. The lean snaps from where the previous beat ended
 // (-BIKE_ARM_RELAX of this side) to the full hit within BIKE_ARM_HIT_MS (ease-out), holds for
 // BIKE_ARM_HOLD_MS, then relaxes to BIKE_ARM_RELAX of the hit by the next beat, so it is continuous
 // across beats except for the intended snap.
@@ -46,7 +60,7 @@ export function armLean(beatIndex, msSinceBeat, beatMs) {
   return dir * (1 - (1 - BIKE_ARM_RELAX) * u * u * (3 - 2 * u));
 }
 
-// One raised arm from the shoulder at the beat-hit pose. `side` is -1 (back arm) or 1 (front arm);
+// One raised arm from the shoulder at the beat-hit pose. `side` is -1 (screen-left arm) or 1 (screen-right arm);
 // every rider uses the same beat so the row hits in unison. Angles are from straight up, positive
 // toward +x; the forearm whips further than the upper arm along the lean.
 export function armPose(shoulder, beatIndex, msSinceBeat, beatMs, side, upperLen, foreLen) {
