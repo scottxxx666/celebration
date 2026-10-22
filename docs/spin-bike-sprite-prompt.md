@@ -122,9 +122,8 @@ image and must not touch a neighbour's hands.
 ```
 Image 8 (wave-left): same as image 7, arms still fully straight and still
 parallel to each other, but both arms of every rider swing together toward
-the LEFT side of the image, like a unison side-to-side wave. The arm on the
-right side of the image passes just above the head, never across the face.
-Torsos stay upright. Hands must not touch a neighbour's.
+the LEFT side of the image, like a unison side-to-side wave. Torsos stay
+upright. Hands must not touch a neighbour's.
 ```
 
 ```

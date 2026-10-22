@@ -274,11 +274,13 @@ export const BIKE_GRIP_FORESHORTEN = 0.68;   // 'grip' mode: arms reach toward t
 export const BIKE_GRIP_LEN = 11;             // px, how far each grip end stands up from the bar (the fist wraps its middle)
 export const BIKE_UPPER_ARM_LEN = 15;        // px
 export const BIKE_FOREARM_LEN = 14;          // px (raised hands stay >= 50 px from the top: tests/spinBikes.test.js)
-export const BIKE_ARM_HIT_UPPER_DEG = 30;    // on each beat both parallel arms swing this many deg toward the beat's side (even beats screen-right, odd screen-left), straight up at rest; the far arm clears the head up to 16 deg (tests/spinBikes.test.js), 15 leaves margin
+export const BIKE_ARM_HIT_UPPER_DEG = 20;    // on each hit both parallel arms swing this many deg toward the hit's side (even hits screen-right, odd screen-left), straight up at rest
 export const BIKE_WAVE_HITS_PER_BEAT = 1;    // arm-wave hits per beat in the non-grip 'bikes' mode (1 = on every beat); the lean alternates side on every hit
-export const BIKE_ARM_HIT_FRAC = 0.25;       // fraction of the wave period (1 / BIKE_WAVE_HITS_PER_BEAT beat) after a hit to reach the hit pose (ease-out); 100 ms at 1 hit per beat, 150.55 BPM
-export const BIKE_ARM_HOLD_FRAC = 0.3;       // fraction of the wave period the hit pose is held before relaxing (~120 ms at 1 hit per beat)
-export const BIKE_ARM_RELAX = 0.3;           // fraction of the hit lean still left at the end of the wave period (the next hit starts from the opposite of it)
+export const BIKE_ARM_HIT_FRAC = 0.12;       // fraction of the wave period (1 / BIKE_WAVE_HITS_PER_BEAT beat) after a hit to reach the hit pose (ease-out); ~48 ms at 1 hit per beat, 150.55 BPM (a fast snap gives the wave its hard stop)
+export const BIKE_ARM_HOLD_FRAC = 0.45;      // fraction of the wave period the hit pose is held before relaxing (~180 ms at 1 hit per beat)
+export const BIKE_ARM_RELAX = 0.5;           // fraction of the hit lean still left at the end of the wave period (the next hit starts from the opposite of it)
+export const BIKE_ARM_OVERSHOOT = 0.25;    // fraction of the hit lean the arms swing PAST the hit pose at the end of the snap before springing back (0 = no overshoot)
+export const BIKE_ARM_SETTLE_FRAC = 0.12;    // fraction of the wave period the overshoot takes to settle back onto the hit pose (~48 ms at 1 hit per beat); must be <= BIKE_ARM_HOLD_FRAC
 export const BIKE_DIP_HIT_MS = 70;           // ms the nod stays fully down after the beat, then it eases back up by mid-beat
 export const BIKE_NOD_DROP_PX = 7;           // 'grip' mode: head sinks this far at a full nod (about its radius)
 export const BIKE_NOD_HAIR_REST = 0.5;       // fraction of the head's height covered by hair/cap from the top when upright

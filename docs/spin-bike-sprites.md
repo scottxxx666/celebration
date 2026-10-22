@@ -42,8 +42,7 @@ Instead each rider is **two stacked images** sharing one registration:
 
 Upper poses: `grip-up`, `grip-nod`, `wave-centre` (both straight arms pointing
 straight up, parallel), `wave-left`, `wave-right` (both arms still parallel,
-swinging together toward screen-left / screen-right; the far arm passes just
-above the head). Arms are always straight in the wave, as in the reference.
+swinging together toward screen-left / screen-right). Arms are always straight in the wave, as in the reference.
 Total **9 images**.
 
 Split line: the shorts' waistband, just *below* the handlebar — so the bar,

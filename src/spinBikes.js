@@ -2,7 +2,7 @@ import {
   GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX,
   BIKE_COUNT, BIKE_SPACING, BIKE_WIDTH,
   BIKE_ARM_HIT_UPPER_DEG,
-  BIKE_ARM_HIT_FRAC, BIKE_ARM_HOLD_FRAC, BIKE_ARM_RELAX, BIKE_DIP_HIT_MS,
+  BIKE_ARM_HIT_FRAC, BIKE_ARM_HOLD_FRAC, BIKE_ARM_RELAX, BIKE_ARM_OVERSHOOT, BIKE_ARM_SETTLE_FRAC, BIKE_DIP_HIT_MS,
   BIKE_NOD_DROP_PX, BIKE_NOD_HAIR_REST, BIKE_NOD_HAIR_FULL, BIKE_NOD_EYES_HIDE, BIKE_NOD_SQUASH,
 } from './config/gameConfig.js';
 
@@ -47,9 +47,10 @@ export function frontLeg(hip, crank, radius, angle, side, thigh, shin, splay) {
 }
 
 // Lean of the arm "hit" at msSinceHit into hit `hitIndex` (a hit lasts periodMs: a beat or a fraction of one,
-// see BIKE_WAVE_HITS_PER_BEAT), in -1..1 (+1 = fully toward screen-right). Even hits go toward screen-right,
+// see BIKE_WAVE_HITS_PER_BEAT), in -(1 + BIKE_ARM_OVERSHOOT)..(1 + BIKE_ARM_OVERSHOOT) (+1 = the hit pose toward screen-right). Even hits go toward screen-right,
 // odd toward screen-left. The lean snaps from where the previous hit ended (-BIKE_ARM_RELAX of this side) to
-// the full hit within BIKE_ARM_HIT_FRAC of the period (ease-out), holds for BIKE_ARM_HOLD_FRAC, then relaxes
+// past the full hit (by BIKE_ARM_OVERSHOOT) within BIKE_ARM_HIT_FRAC of the period (ease-out), springs back to the
+// hit pose over the first BIKE_ARM_SETTLE_FRAC of the hold, holds for BIKE_ARM_HOLD_FRAC in all, then relaxes
 // to BIKE_ARM_RELAX of the hit by the next hit, so it is continuous across hits except for the intended snap.
 export function armLean(hitIndex, msSinceHit, periodMs) {
   const dir = Math.abs(hitIndex % 2) === 0 ? 1 : -1;
@@ -57,7 +58,11 @@ export function armLean(hitIndex, msSinceHit, periodMs) {
   const hitMs = BIKE_ARM_HIT_FRAC * periodMs;
   const holdMs = BIKE_ARM_HOLD_FRAC * periodMs;
   const hit = 1 - Math.pow(1 - Math.min(t / hitMs, 1), 3);
-  if (t < hitMs) return dir * (-BIKE_ARM_RELAX + (1 + BIKE_ARM_RELAX) * hit);
+  const peak = 1 + BIKE_ARM_OVERSHOOT;
+  if (t < hitMs) return dir * (-BIKE_ARM_RELAX + (peak + BIKE_ARM_RELAX) * hit);
+  const settleMs = Math.max(BIKE_ARM_SETTLE_FRAC * periodMs, 1e-9);
+  const s = Math.min((t - hitMs) / settleMs, 1);
+  if (s < 1) return dir * (peak - BIKE_ARM_OVERSHOOT * s * s * (3 - 2 * s));
   const relaxMs = Math.max(periodMs - hitMs - holdMs, 1);
   const u = Math.min(Math.max((t - hitMs - holdMs) / relaxMs, 0), 1);
   return dir * (1 - (1 - BIKE_ARM_RELAX) * u * u * (3 - 2 * u));
