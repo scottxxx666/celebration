@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { crankAngle, legIK, frontLeg, armPose, armLean, gripDip, headNod, gripArm, laggedBeat, shade, bikeRowStartX } from '../src/spinBikes.js';
 import {
-  GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX, BIKE_ARM_HIT_FRAC, BIKE_ARM_HOLD_FRAC, BIKE_WAVE_HITS_PER_BEAT, BIKE_HAIR_LAG_MS, BIKE_ARM_RELAX, BIKE_ARM_OVERSHOOT, BIKE_ARM_SETTLE_FRAC, BIKE_DIP_HIT_MS, BIKE_GRIP_HUNCH_PX,
+  GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX, BIKE_ARM_HIT_FRAC, BIKE_ARM_HOLD_FRAC, BIKE_ARM_REST_FRAC, BIKE_WAVE_HITS_PER_BEAT, BIKE_HAIR_LAG_MS, BIKE_ARM_RELAX, BIKE_ARM_FORWARD_DEG, BIKE_ARM_OVERSHOOT, BIKE_ARM_SETTLE_FRAC, BIKE_DIP_HIT_MS, BIKE_GRIP_HUNCH_PX,
   BIKE_NOD_DROP_PX, BIKE_NOD_HAIR_REST, BIKE_NOD_HAIR_FULL, BIKE_NOD_SQUASH,
   BIKE_FLOOR_Y, BIKE_SHOULDER_RISE, BIKE_SHOULDER_HALF, BIKE_HIP_HALF, BIKE_HIP_RISE, BIKE_SPLAY,
   BIKE_THIGH_LEN, BIKE_SHIN_LEN, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN, BIKE_PEDAL_RADIUS, BIKE_BAR_RISE, BIKE_BAR_HALF, BIKE_GRIP_LEN, BIKE_GRIP_FORESHORTEN,
@@ -64,15 +64,16 @@ const sh = { x: 100, y: 100 };
 
 test('arms reach the hit pose by BIKE_ARM_HIT_MS and hold it', () => {
   const settleMs = BIKE_ARM_SETTLE_FRAC * BEAT;
+  const holdEnd = BIKE_ARM_HIT_MS + BIKE_ARM_HOLD_FRAC * BEAT - 1; // last ms of the hold
   near(armLean(0, BIKE_ARM_HIT_MS, BEAT), 1 + BIKE_ARM_OVERSHOOT); // snap peaks past the hit pose
   near(armLean(1, BIKE_ARM_HIT_MS, BEAT), -(1 + BIKE_ARM_OVERSHOOT));
   near(armLean(0, BIKE_ARM_HIT_MS + settleMs, BEAT), 1); // sprung back
-  near(armLean(0, BIKE_ARM_HIT_MS + settleMs + 100, BEAT), 1); // still held
+  near(armLean(0, holdEnd, BEAT), 1); // still held
   // it snaps: most of the way there within the first third of the hit window
   assert.ok(armLean(0, BIKE_ARM_HIT_MS / 3, BEAT) > 0.5);
   // pose at the hit is the same pose a little later in the hold
   const a = armPose(sh, 0, BIKE_ARM_HIT_MS + settleMs, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
-  const b = armPose(sh, 0, BIKE_ARM_HIT_MS + settleMs + 80, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+  const b = armPose(sh, 0, holdEnd, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
   near(a.hand.x, b.hand.x);
   assert.ok(a.hand.x > sh.x + 5);
 });
@@ -108,7 +109,7 @@ test('overshoot: the peak exceeds the hit pose and settles to exactly 1 before t
 
 test('half-beat wave period: relax phase exists and the lean is continuous across hits, alternating sides', () => {
   const P = 60000 / 150.55 / 2;
-  assert.ok(BIKE_ARM_HIT_FRAC + BIKE_ARM_HOLD_FRAC < 1);
+  assert.ok(BIKE_ARM_HIT_FRAC + BIKE_ARM_HOLD_FRAC + BIKE_ARM_REST_FRAC < 1);
   assert.ok(BIKE_HAIR_LAG_MS < P);
   for (let i = -2; i < 4; i++) {
     near(armLean(i, P, P), BIKE_ARM_RELAX * Math.sign(armLean(i, P / 2, P)));
@@ -150,7 +151,8 @@ test('arms stay raised, lengths hold, and the lean is bounded and continuous', (
       for (const side of [-1, 1]) {
         const p = armPose(sh, beat, t, BEAT, side, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
         assert.ok(Number.isFinite(p.hand.x) && Number.isFinite(p.hand.y));
-        near(Math.hypot(p.elbow.x - sh.x, p.elbow.y - sh.y), BIKE_UPPER_ARM_LEN);
+        assert.ok(Math.hypot(p.elbow.x - sh.x, p.elbow.y - sh.y) <= BIKE_UPPER_ARM_LEN + 1e-9); // foreshortened, never longer
+        assert.ok(p.handScale >= 1);
         assert.ok(p.elbow.y < sh.y && p.hand.y < sh.y);
       }
     }
@@ -336,4 +338,47 @@ test('laggedBeat replays the beat late and falls back into the previous beat bef
   // the lagged lean equals the live lean one lag earlier, across the beat boundary
   const a = laggedBeat(5, 20, 400, 90);
   near(armLean(a.beatIndex, a.msSinceBeat, 400), armLean(4, 330, 400));
+});
+
+test('wave arms swing toward the camera: shorter, lower, bigger fist at full lean', () => {
+  const full = armPose(sh, 0, BIKE_ARM_HIT_MS + BIKE_ARM_SETTLE_FRAC * BEAT, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+  const rest = armPose(sh, 0, BEAT, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+  assert.ok(BIKE_ARM_FORWARD_DEG > 0);
+  assert.ok(Math.hypot(full.hand.x - sh.x, full.hand.y - sh.y) < BIKE_UPPER_ARM_LEN + BIKE_FOREARM_LEN);
+  assert.ok(full.hand.y > rest.hand.y);
+  assert.ok(full.handScale > 1);
+  assert.ok(full.hand.x > sh.x); // even hit swings toward screen-right
+  const odd = armPose(sh, 1, BIKE_ARM_HIT_MS + BIKE_ARM_SETTLE_FRAC * BEAT, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+  assert.ok(odd.hand.x < sh.x); // odd hit toward screen-left
+  near(odd.handScale, full.handScale, 1e-9); // fist size is symmetric
+});
+
+test('at rest the arm is straight up, full length, fist unscaled', () => {
+  const rest = armPose(sh, 0, BEAT, BEAT, 1, BIKE_UPPER_ARM_LEN, BIKE_FOREARM_LEN);
+  near(rest.hand.x, sh.x, 1e-9);
+  near(sh.y - rest.hand.y, BIKE_UPPER_ARM_LEN + BIKE_FOREARM_LEN, 1e-9);
+  near(rest.handScale, 1, 1e-9);
+});
+
+test('arms rest at the relaxed pose for the last BIKE_ARM_REST_FRAC of each period, relax is monotonic before it', () => {
+  assert.ok(BIKE_ARM_REST_FRAC > 0);
+  assert.ok(BIKE_ARM_HIT_FRAC + BIKE_ARM_HOLD_FRAC + BIKE_ARM_REST_FRAC < 1);
+  assert.ok(BIKE_ARM_SETTLE_FRAC <= BIKE_ARM_HOLD_FRAC);
+  for (const P of [BEAT, BEAT / 2]) {
+    for (const i of [0, 1, 2, -1]) {
+      const dir = Math.abs(i % 2) === 0 ? 1 : -1;
+      const restStart = (1 - BIKE_ARM_REST_FRAC) * P;
+      for (const f of [0, 0.01, 0.3, 0.5, 0.99, 1]) {
+        near(armLean(i, restStart + f * BIKE_ARM_REST_FRAC * P, P), dir * BIKE_ARM_RELAX);
+      }
+      near(armLean(i, restStart - 1e-6, P), dir * BIKE_ARM_RELAX, 1e-4); // relax lands on the rest pose, no jump
+      let prev = armLean(i, (BIKE_ARM_HIT_FRAC + BIKE_ARM_HOLD_FRAC) * P, P);
+      for (let t = (BIKE_ARM_HIT_FRAC + BIKE_ARM_HOLD_FRAC) * P; t <= restStart; t += P / 200) {
+        const lean = armLean(i, t, P);
+        assert.ok(dir * (prev - lean) >= -1e-9, `${i}@${t}`);
+        prev = lean;
+      }
+      near(armLean(i, P, P), armLean(i + 1, 0, P)); // rest value == next hit's start
+    }
+  }
 });

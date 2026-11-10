@@ -121,14 +121,16 @@ image and must not touch a neighbour's hands.
 
 ```
 Image 8 (wave-left): same as image 7, arms still fully straight and still
-parallel to each other, but both arms of every rider swing together toward
-the LEFT side of the image, like a unison side-to-side wave. Torsos stay
+parallel to each other, but both arms of every rider swing together to the
+FRONT-UPPER-LEFT: diagonally toward the camera and toward the LEFT side of the
+image, like a unison wave reaching out over the audience. Seen from the front
+the arms look shorter (foreshortened) and the fists a little bigger. Torsos stay
 upright. Hands must not touch a neighbour's.
 ```
 
 ```
 Image 9 (wave-right): mirror of image 8: both parallel straight arms swing
-toward the RIGHT side of the image.
+to the FRONT-UPPER-RIGHT (toward the camera and the RIGHT side of the image).
 ```
 
 Only if the in-game check calls for it (see the plan doc), add one more:

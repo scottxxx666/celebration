@@ -1,8 +1,8 @@
 import {
   GAME_WIDTH, ENEMY_CRUISE_SPEED, SCENERY_PARALLAX,
   BIKE_COUNT, BIKE_SPACING, BIKE_WIDTH,
-  BIKE_ARM_HIT_UPPER_DEG,
-  BIKE_ARM_HIT_FRAC, BIKE_ARM_HOLD_FRAC, BIKE_ARM_RELAX, BIKE_ARM_OVERSHOOT, BIKE_ARM_SETTLE_FRAC, BIKE_DIP_HIT_MS,
+  BIKE_ARM_HIT_UPPER_DEG, BIKE_ARM_FORWARD_DEG, BIKE_ARM_HAND_DEPTH_SCALE,
+  BIKE_ARM_HIT_FRAC, BIKE_ARM_HOLD_FRAC, BIKE_ARM_REST_FRAC, BIKE_ARM_RELAX, BIKE_ARM_OVERSHOOT, BIKE_ARM_SETTLE_FRAC, BIKE_DIP_HIT_MS,
   BIKE_NOD_DROP_PX, BIKE_NOD_HAIR_REST, BIKE_NOD_HAIR_FULL, BIKE_NOD_EYES_HIDE, BIKE_NOD_SQUASH,
 } from './config/gameConfig.js';
 
@@ -63,20 +63,27 @@ export function armLean(hitIndex, msSinceHit, periodMs) {
   const settleMs = Math.max(BIKE_ARM_SETTLE_FRAC * periodMs, 1e-9);
   const s = Math.min((t - hitMs) / settleMs, 1);
   if (s < 1) return dir * (peak - BIKE_ARM_OVERSHOOT * s * s * (3 - 2 * s));
-  const relaxMs = Math.max(periodMs - hitMs - holdMs, 1);
+  const restMs = BIKE_ARM_REST_FRAC * periodMs;
+  if (t >= periodMs - restMs) return dir * BIKE_ARM_RELAX;
+  const relaxMs = Math.max(periodMs - restMs - hitMs - holdMs, 1);
   const u = Math.min(Math.max((t - hitMs - holdMs) / relaxMs, 0), 1);
   return dir * (1 - (1 - BIKE_ARM_RELAX) * u * u * (3 - 2 * u));
 }
 
 // One raised arm from the shoulder at the hit pose. `side` is -1 (screen-left arm) or 1 (screen-right arm);
-// every rider uses the same hit so the row waves in unison. Angles are from straight up, positive
-// toward +x. The arm is always straight (forearm = upper arm angle) and both arms share one angle (the lean),
-// so they stay parallel: straight up between hits, swinging together toward the hit's side.
+// every rider uses the same hit so the row waves in unison. The arm is a straight 3D bone tilted by the lean
+// from straight up, toward the hit's side and toward the camera (azimuth BIKE_ARM_FORWARD_DEG), then
+// projected orthographically like frontLeg: the on-screen arm shortens and the hand drops as it swings
+// forward. Both arms share one direction (parallel). `handScale` (>= 1) grows the fist with its depth.
 export function armPose(shoulder, hitIndex, msSinceHit, periodMs, side, upperLen, foreLen) {
   const lean = armLean(hitIndex, msSinceHit, periodMs);
-  const upper = lean * rad(BIKE_ARM_HIT_UPPER_DEG);
-  const elbow = { x: shoulder.x + Math.sin(upper) * upperLen, y: shoulder.y - Math.cos(upper) * upperLen };
-  return { elbow, hand: { x: elbow.x + Math.sin(upper) * foreLen, y: elbow.y - Math.cos(upper) * foreLen } };
+  const tilt = Math.abs(lean) * rad(BIKE_ARM_HIT_UPPER_DEG);
+  const az = rad(BIKE_ARM_FORWARD_DEG);
+  const dx = Math.sign(lean) * Math.sin(tilt) * Math.cos(az);
+  const dy = -Math.cos(tilt); // screen y: up is negative
+  const dz = Math.sin(tilt) * Math.sin(az); // toward the camera
+  const at = len => ({ x: shoulder.x + dx * len, y: shoulder.y + dy * len });
+  return { elbow: at(upperLen), hand: at(upperLen + foreLen), handScale: Math.max(1, 1 + BIKE_ARM_HAND_DEPTH_SCALE * dz) };
 }
 
 // Head-bang dip in 0..1 (1 = fully down) at msSinceBeat into a beat: fully down on the beat and for

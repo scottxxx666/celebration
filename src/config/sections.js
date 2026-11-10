@@ -37,7 +37,7 @@ const DISCO = { dim: true, lights: true, zoomPunch: true };
 
 export const SECTIONS = [
   { name: 'highlight1', startMs: 14498, endMs: 21273, speedMult: 1, beatFlash: true, zoomPunch: true, bikes: 'grip' },
-  { name: 'highlight1b', startMs: 21273, endMs: 26055, speedMult: 1, beatFlash: true, zoomPunch: true, bikes: true },
+  { name: 'highlight1b', startMs: 21273, endMs: 26055, speedMult: 1, beatFlash: true, bikes: true },
   { name: 'trail1', startMs: 37214, endMs: 37613, speedMult: 1, trails: true },
   { name: 'trail2', startMs: 41598, endMs: 42794, speedMult: 1, trails: true },
   { name: 'highlight2', startMs: 65909, endMs: 78663, speedMult: 1, ...DISCO },

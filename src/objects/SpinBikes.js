@@ -202,8 +202,9 @@ export class SpinBikes {
 
   arm(g, shoulder, pose, r, fist) {
     const skinShade = shade(r.skin, SHADE_K);
+    const hs = pose.handScale ?? 1; // wave mode: the fist grows as the arm swings toward the camera
     for (const ol of [OUTLINE, 0]) {
-      chain(g, r.skin, [shoulder, pose.elbow, pose.hand], [3.8, 3.1, 2.8], ol, skinShade, true);
+      chain(g, r.skin, [shoulder, pose.elbow, pose.hand], [3.8, 3.1, 2.8 * hs], ol, skinShade, true);
       if (fist) { // fist wrapped over the grip: wider than the grip, with the grip end showing above and below
         const { x, y } = pose.hand;
         g.fillStyle(paint(r.skin, ol), 1).fillRoundedRect(x - 4 - ol, y - 3.2 - ol, 8 + ol * 2, 6.4 + ol * 2, 2.6);
@@ -217,7 +218,7 @@ export class SpinBikes {
     if (r.band) { // white sweatband just above the wrist
       const a = lerp(pose.hand, pose.elbow, 0.2);
       const b = lerp(pose.hand, pose.elbow, 0.42);
-      for (const ol of [OUTLINE, 0]) chain(g, 0xffffff, [a, b], [3.1, 3.2], ol, shade(0xffffff, 0.8));
+      for (const ol of [OUTLINE, 0]) chain(g, 0xffffff, [a, b], [3.1 * hs, 3.2 * hs], ol, shade(0xffffff, 0.8));
     }
   }
 
