@@ -31,4 +31,10 @@ export const OBSTACLE_SPRITES = [
     hh: 70,
     hw: 39,
   },
+  {
+    key: 'obs-sakura-pikmin',
+    file: 'assets/sprites/obstacles/sakura-pikmin.png',
+    hh: 60, // crouching, so shorter than the standing obstacles
+    hw: 30,
+  },
 ];
