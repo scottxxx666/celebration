@@ -9,6 +9,7 @@ yarn dev       # start dev server (http://localhost:5173)
 yarn build     # production build to dist/
 yarn preview   # preview production build locally
 yarn test      # unit tests (Node's built-in runner, no deps): tests/**/*.test.js
+yarn test:tools  # Python unittest for the tools/ prep scripts (tests/tools/, via uv + Pillow)
 yarn check:beats  # verify section + wave times sit on real track beats (--fix snaps off-grid section + wave times in place; runs before build)
 ```
 

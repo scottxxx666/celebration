@@ -4,6 +4,7 @@ generate placeholder frames so the pipeline works before real art exists.
 
     python3 tools/prep-run-frames.py original_images/player/run-1.png \
         original_images/player/run-2.png
+    python3 tools/prep-run-frames.py --sheet 3 original_images/player/sheet.png
     python3 tools/prep-run-frames.py --dummy 2
     python3 tools/prep-run-frames.py --dummy 2 --target enemy
 
@@ -18,9 +19,19 @@ docs/image-assets.md).
 (`PLAYER_FRAME_COUNT` / `ENEMY_FRAME_COUNT`) and the dummy-mode colours
 (green for player, red for enemy); `--out-dir` overrides the directory.
 
-Source mode (images in argument order):
-  1. open all as RGBA; they must share one canvas size (cells of one sheet,
-     character placed consistently)
+`--sheet N` takes exactly ONE image holding N frames side by side (left to
+right = frame order) and splits it into N frames first (`split_sheet`):
+content segments are runs of columns with any alpha > 8 (segments narrower
+than 2% of the width are specks and ignored; the count must equal N), cells
+are cut at the midpoint of each gap between segments, and every cell is
+padded to the widest cell width with its own centre kept at the centre of the
+padded canvas, at the full sheet height. The frames then go through the
+source pipeline below. Not combinable with `--dummy`.
+
+Source mode (images in argument order, or the split sheet):
+  1. open all as RGBA; each must have transparent corners (real alpha, not
+     an opaque backdrop or drawn checkerboard); they must share one canvas
+     size (cells of one sheet, character placed consistently)
   2. take each image's alpha bounding box (`Image.getbbox()`) and crop every
      frame to the UNION of them — no padding — so the character keeps the
      same scale and position across frames
@@ -45,6 +56,8 @@ import math
 import os
 
 from PIL import Image, ImageDraw
+
+from prep_common import require_transparency
 
 DEFAULT_HEIGHT = 280
 
@@ -78,9 +91,68 @@ def print_reminder(n, frame_count_const):
     print(f'set {frame_count_const} = {n} in src/config/gameConfig.js')
 
 
+EMPTY_ALPHA_MAX = 8
+SPECK_FRACTION = 0.02
+
+
+def content_segments(img):
+    """(start, end) x-ranges (end exclusive) of runs of non-empty columns,
+    ignoring runs narrower than SPECK_FRACTION of the width."""
+    alpha = img.getchannel('A').point(lambda a: 255 if a > EMPTY_ALPHA_MAX else 0)
+    occupied = [alpha.crop((x, 0, x + 1, img.height)).getbbox() is not None
+                for x in range(img.width)]
+    segments, start = [], None
+    for x, occ in enumerate(occupied + [False]):
+        if occ and start is None:
+            start = x
+        elif not occ and start is not None:
+            segments.append((start, x))
+            start = None
+    min_w = SPECK_FRACTION * img.width
+    return [s for s in segments if s[1] - s[0] >= min_w]
+
+
+def split_sheet(img, n):
+    """Split an RGBA sheet of n frames side by side into n equal-size RGBA
+    images (see module docstring)."""
+    segments = content_segments(img)
+    if len(segments) != n:
+        found = ', '.join(f'{a}-{b}' for a, b in segments) or 'none'
+        raise SystemExit(f'expected {n} frames in the sheet but found '
+                         f'{len(segments)} content segments (x ranges: {found})')
+    bounds = [0]
+    for (_, end), (start, _) in zip(segments, segments[1:]):
+        bounds.append((end + start) // 2)
+    bounds.append(img.width)
+    cells = [img.crop((bounds[i], 0, bounds[i + 1], img.height))
+             for i in range(n)]
+    width = max(c.width for c in cells)
+    out = []
+    for c in cells:
+        canvas = Image.new('RGBA', (width, img.height), (0, 0, 0, 0))
+        canvas.paste(c, ((width - c.width) // 2, 0))
+        out.append(canvas)
+    return out
+
+
 def prep_sources(images, out_dir, height, frame_count_const):
     clear_stale_frames(out_dir)
     srcs = [Image.open(image).convert('RGBA') for image in images]
+    prep_frames(images, srcs, out_dir, height, frame_count_const)
+
+
+def prep_sheet(image, n, out_dir, height, frame_count_const):
+    clear_stale_frames(out_dir)
+    src = Image.open(image).convert('RGBA')
+    require_transparency(src, image)
+    frames = split_sheet(src, n)
+    labels = [f'{image}[{i + 1}/{n}]' for i in range(n)]
+    prep_frames(labels, frames, out_dir, height, frame_count_const,
+                check_alpha=False)
+
+
+def prep_frames(images, srcs, out_dir, height, frame_count_const,
+                check_alpha=True):
     if len({src.size for src in srcs}) > 1:
         sizes = '\n'.join(f'  {image}: {src.width}x{src.height}'
                           for image, src in zip(images, srcs))
@@ -88,6 +160,8 @@ def prep_sources(images, out_dir, height, frame_count_const):
 
     boxes = []
     for image, src in zip(images, srcs):
+        if check_alpha:
+            require_transparency(src, image)
         bbox = src.getbbox()
         if bbox is None:
             raise SystemExit(f'{image} is fully transparent, nothing to crop')
@@ -203,6 +277,9 @@ def main():
                                                'background), in frame order')
     ap.add_argument('--dummy', type=int, metavar='N',
                     help='generate N placeholder frames instead of using source images')
+    ap.add_argument('--sheet', type=int, metavar='N',
+                    help='one source image holding N frames side by side '
+                         '(left to right = frame order)')
     ap.add_argument('--target', choices=sorted(TARGETS), default='player',
                     help='which character to prep frames for (default player)')
     ap.add_argument('--out-dir', default=None,
@@ -210,6 +287,18 @@ def main():
     ap.add_argument('--height', type=int, default=DEFAULT_HEIGHT,
                     help=f'output height in px (default {DEFAULT_HEIGHT})')
     args = ap.parse_args()
+
+    if args.sheet is not None:
+        if args.dummy:
+            raise SystemExit('--sheet cannot be combined with --dummy')
+        if len(args.images) != 1:
+            raise SystemExit('--sheet takes exactly one source image')
+        if args.sheet < 1:
+            raise SystemExit('--sheet N must be at least 1')
+        target = TARGETS[args.target]
+        prep_sheet(args.images[0], args.sheet, args.out_dir or target['out_dir'],
+                   args.height, target['frame_count_const'])
+        return
 
     if bool(args.images) == bool(args.dummy):
         raise SystemExit('pass either source images or --dummy N, not both')

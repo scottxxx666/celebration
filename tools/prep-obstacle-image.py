@@ -11,7 +11,8 @@ they just need a tight alpha crop and a uniform height so every obstacle
 sprite scales consistently in `ObstacleSpawner.js` (see `OBSTACLE_SPRITES` in
 `src/config/obstacleSprites.js` and docs/image-assets.md).
 
-  1. open as RGBA
+  1. open as RGBA; refuse it unless all four corners are transparent (an
+     opaque backdrop or drawn checkerboard would defeat the crop)
   2. crop to the alpha bounding box (`Image.getbbox()`) — no padding, feet
      (bottom of the art) end up on the bottom edge of the crop
   3. resize with LANCZOS so the output height == --height, keeping aspect
@@ -25,6 +26,8 @@ import argparse
 import os
 
 from PIL import Image
+
+from prep_common import require_transparency
 
 DEFAULT_HEIGHT = 280
 
@@ -47,6 +50,7 @@ def main():
     src = Image.open(args.image).convert('RGBA')
     print(f'{args.image}: {src.width}x{src.height}')
 
+    require_transparency(src, args.image)
     bbox = src.getbbox()
     if bbox is None:
         raise SystemExit('image is fully transparent, nothing to crop')

@@ -81,7 +81,8 @@ left leg moving up.
 ## Follow-up prompts (same conversation, one per image)
 
 Each follow-up is sent with its own guide attached (the file named in
-parentheses).
+parentheses). Each should say "change only the pose; do not redesign the
+riders, bikes or lighting".
 
 ```
 Same 5 riders, outfits, bikes, order, lighting and EXACT same framing and
@@ -133,11 +134,24 @@ Image 9 (wave-right): mirror of image 8: both parallel straight arms swing
 to the FRONT-UPPER-RIGHT (toward the camera and the RIGHT side of the image).
 ```
 
-Only if the in-game check calls for it (see the plan doc), add one more:
+Only if the in-game check calls for them (see the plan doc), add these, each
+with its own guide (`grip-half.png`, `wave-half-left.png`,
+`wave-half-right.png`):
 
 ```
 Image 10 (grip-half): same as image 6 but the heads only halfway bowed: chin
 dropped, face still partly visible, looking down at the handlebars.
+```
+
+```
+Image 11 (wave-half-left): same as image 8 but the arms only halfway between
+straight up (image 7) and the full front-upper-left swing (image 8). Still
+fully straight and parallel.
+```
+
+```
+Image 12 (wave-half-right): mirror of image 11, halfway toward the
+front-upper-right swing (image 9).
 ```
 
 ## Workflow

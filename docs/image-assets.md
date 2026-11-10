@@ -53,6 +53,12 @@ The prep scripts handle crop and resize; the source art only needs:
 - **Transparent background** — the scripts crop to the alpha bounding box, so
   a leftover backdrop defeats the crop. Empty margins would otherwise shrink
   the visible art and desync it from the collision box and shadow width.
+  Generators sometimes return an opaque backdrop or a drawn checkerboard
+  instead of real alpha, so `prep-obstacle-image.py` and `prep-run-frames.py`
+  (source mode) refuse any image whose four corner pixels have alpha above 8
+  (`require_transparency` in `tools/prep_common.py`). Regenerate with a
+  transparent background, or remove it first (e.g. `uvx rembg i in.png
+  out.png`). The scenery script is exempt (opaque by design).
 - **Feet/base as the lowest opaque pixels**, so after the crop they sit on
   the bottom edge of the image. Sprites are base-anchored to the row's feet
   line and tall art grows upward; the engine-drawn shadow ellipse marks
@@ -82,6 +88,10 @@ It crops to the alpha bounding box (`Image.getbbox()`, no padding) and
 resizes so the output height matches `--height` (default 280 = 2x the
 tallest logical obstacle height, 140) — width follows the source aspect, so
 sprites of different builds don't get distorted to a common box.
+
+Tip: once a character looks right, save it in ChatGPT as a reference image and
+call it back by name for the next obstacle; fix-ups should say "change only
+<X>; do not redesign the character" and repeat the defining details.
 
 Each prepped PNG is registered in `src/config/obstacleSprites.js`
 (`OBSTACLE_SPRITES`, `{ key, file, hh, hw }`), loaded by `BootScene`, and
@@ -124,6 +134,22 @@ python3 tools/prep-run-frames.py original_images/player/run-1.png \
 python3 tools/prep-run-frames.py original_images/enemy/run-1.png \
     original_images/enemy/run-2.png --target enemy
 ```
+
+Better: draw all frames of a character in ONE image side by side and let the
+script split it (see `docs/run-sprite-prompt.md`):
+
+```
+python3 tools/prep-run-frames.py --sheet 3 original_images/player/sheet.png
+python3 tools/prep-run-frames.py --sheet 2 original_images/enemy/sheet.png --target enemy
+```
+
+`--sheet N` takes exactly one image (not combinable with `--dummy`), finds N
+content segments (runs of columns with alpha above 8; segments narrower than
+2% of the width are ignored), cuts at the midpoint of each gap, and pads every
+cell to the widest one around its own centre at full sheet height, so each
+character keeps its offset within its cell and feet height is preserved. It
+exits listing the segment x-ranges if the count is not N. The result then goes
+through the same union-bbox/shared-scale pipeline below.
 
 `--target` (default `player`) picks the output directory
 (`public/assets/sprites/<target>`), the config-constant reminder it prints,
@@ -255,7 +281,7 @@ Requirements:
 - No characters, no vehicles, no props, no obstacles, no text, no
   watermark, no vignette, no border, no lighting hotspot.
 - Fill the entire canvas, edge to edge. No margins, no frame.
-- Output: 1600 x 540 pixels, PNG.
+- Output: 1536 x 512 pixels, PNG.
 ```
 
 ### Prompt template — background
@@ -280,7 +306,9 @@ Requirements:
 - No characters in focus, no foreground props, no text, no watermark, no
   vignette, no border.
 - Fill the entire canvas, edge to edge. No margins, no frame.
-- Output: 1600 x 360 pixels, PNG.
+- Keep all scenery in the lower part of the image, with plain sky above, so
+  the crop to the final wide strip has room.
+- Output: 1536 x 512 pixels, PNG.
 ```
 
 ### The four `[SCENE]` blocks
@@ -291,6 +319,11 @@ Requirements:
 | **Day city** | Sunlit grey asphalt street, warm mid-grey, faded white lane markings, light cracks and tar seams, occasional drain grate | Daytime city skyline: pale buildings and rooftops in soft haze, a few trees and street lamps, bright blue sky with flat cartoon clouds |
 | **Gym** | Indoor gym floor: pale honey-coloured wooden boards running left to right, faint painted court lines in red and blue, subtle polished sheen | Gym interior wall: racks of dumbbells and weight plates, a wall mirror, hanging championship banners and a scoreboard, all flat and muted |
 | **Disco / party** | Glossy black-and-white checkered dance floor with a wet mirror-like sheen, faint coloured light pools smeared across it | Nightclub interior: dark wall with stacked speakers, a DJ booth, a mirror ball, strings of party lights and confetti, silhouetted dancing crowd along the bottom |
+
+The model's widest allowed aspect is 3:1, hence `1536 x 512` in both
+prompts; the prep script crops the widest 1600:360 band from the background
+(position via `--offset`) and resizes to the final 1600×540 / 1600×360.
+Seamless tiling is not guaranteed by the model, so `--blend` remains needed.
 
 ### After generation
 

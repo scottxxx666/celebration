@@ -83,8 +83,14 @@ Pure functions to add to `src/spinBikes.js` (unit-tested like the rest):
   thresholds, costing one more image.
 - **Wave:** `armLean > +0.5` → `wave-right`, `< −0.5` → `wave-left`, else
   `wave-centre`. `armLean` already snaps on each hit (every
-  1/`BIKE_WAVE_HITS_PER_BEAT` beat, currently every beat) and relaxes,
-  so the centre frame shows between hits.
+  1/`BIKE_WAVE_HITS_PER_BEAT` beat, currently every beat), eases back to
+  straight up and rests there (`BIKE_ARM_REST_FRAC`) before the next hit,
+  so the centre frame shows between hits. The ease back takes over half a
+  beat (~285 ms at the current config), so with only these 3 frames the
+  arms would jump from the side straight to the centre partway through it.
+  **After checking it in-game**, add `wave-half-left` / `wave-half-right`
+  (arms halfway back to straight up) only if that jump looks wrong — shown
+  while `|armLean|` is between two thresholds, costing two more images.
 
 ## Style
 
@@ -128,8 +134,11 @@ even spacing with side margins, floor bars on one line near the bottom edge.
 They were rendered from the game's own pose functions in `src/spinBikes.js`
 (`frontLeg`, `gripArm`, `armPose`, `headNod`) and the `BIKE_*` config, so
 they match option A's choreography. Attach the matching guide to each
-generation prompt. `overview.png` is a labelled contact sheet of all 9, for
-people only; don't attach it to a prompt.
+generation prompt. The optional frames have guides too (`grip-half.png`,
+`wave-half-left.png`, `wave-half-right.png`; halfway = the moment in the
+ease back where the lean is 0.5), so they're ready if the in-game check calls
+for them. `overview.png` is a labelled contact sheet of all 12, for people
+only; don't attach it to a prompt.
 
 Torso colours in the guides only mark rider order (matching the outfit list
 in the prompt doc); the mannequin look is not the target style. If `BIKE_*`
@@ -184,6 +193,9 @@ public/assets/sprites/spinbike/r<i>/          # prepped output, i = rider 0..4 (
 - **One image per frame holds all 5 riders** — 9 images total, not 9 per rider.
 - **2 nod frames** (`grip-up`, `grip-nod`) for now; add `grip-half` only if the
   in-game check shows a jumpy return.
+- **3 wave frames** (`wave-centre`, `wave-left`, `wave-right`) for now; add
+  `wave-half-left` / `wave-half-right` only if the in-game check shows a
+  jumpy return to straight up.
 - **Style** follows the stage reference, not the zombie sprites.
 - **Pose guides** (`docs/spin-bike-pose-guide/`) are attached to every
   generation prompt.
