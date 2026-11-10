@@ -5,6 +5,7 @@ generate placeholder frames so the pipeline works before real art exists.
     python3 tools/prep-run-frames.py original_images/player/run-1.png \
         original_images/player/run-2.png
     python3 tools/prep-run-frames.py --sheet 3 original_images/player/sheet.png
+    python3 tools/prep-run-frames.py --sheet 3x2 original_images/player/sheet.png
     python3 tools/prep-run-frames.py --dummy 2
     python3 tools/prep-run-frames.py --dummy 2 --target enemy
 
@@ -21,18 +22,28 @@ docs/image-assets.md).
 
 `--sheet N` takes exactly ONE image holding N frames side by side (left to
 right = frame order) and splits it into N frames first (`split_sheet`):
-content segments are runs of columns with any alpha > 8 (segments narrower
+content segments are runs of columns with any alpha above the noise threshold (segments narrower
 than 2% of the width are specks and ignored; the count must equal N), cells
 are cut at the midpoint of each gap between segments, and every cell is
 padded to the widest cell width with its own centre kept at the centre of the
 padded canvas, at the full sheet height. The frames then go through the
 source pipeline below. Not combinable with `--dummy`.
 
+`--sheet COLSxROWS` (e.g. `3x2`; `X` also accepted; plain `N` means `Nx1`)
+takes a grid, frames in row-major order (top row left to right, then the next
+row). Rows are found like columns (runs of non-empty rows, specks narrower
+than 2% of the height ignored; the count must equal ROWS) and cut at the
+midpoints of the gaps between them (first strip from y=0, last to the sheet
+height). Each row strip is split into COLS cells with `split_sheet`, then
+every cell of every row is padded to the max width and max height with its
+centre kept at the canvas centre (`split_grid`).
+
 Source mode (images in argument order, or the split sheet):
   1. open all as RGBA; each must have transparent corners (real alpha, not
      an opaque backdrop or drawn checkerboard); they must share one canvas
      size (cells of one sheet, character placed consistently)
-  2. take each image's alpha bounding box (`Image.getbbox()`) and crop every
+  2. zero faint alpha noise (alpha <= `ALPHA_NOISE_MAX`, `clean_alpha`), take
+     each image's alpha bounding box (`Image.getbbox()`) and crop every
      frame to the UNION of them — no padding — so the character keeps the
      same scale and position across frames
   3. resize all with ONE shared LANCZOS scale so the output height ==
@@ -57,7 +68,7 @@ import os
 
 from PIL import Image, ImageDraw
 
-from prep_common import require_transparency
+from prep_common import ALPHA_NOISE_MAX, clean_alpha, require_transparency
 
 DEFAULT_HEIGHT = 280
 
@@ -91,48 +102,95 @@ def print_reminder(n, frame_count_const):
     print(f'set {frame_count_const} = {n} in src/config/gameConfig.js')
 
 
-EMPTY_ALPHA_MAX = 8
 SPECK_FRACTION = 0.02
 
 
-def content_segments(img):
-    """(start, end) x-ranges (end exclusive) of runs of non-empty columns,
-    ignoring runs narrower than SPECK_FRACTION of the width."""
-    alpha = img.getchannel('A').point(lambda a: 255 if a > EMPTY_ALPHA_MAX else 0)
-    occupied = [alpha.crop((x, 0, x + 1, img.height)).getbbox() is not None
-                for x in range(img.width)]
+def content_segments(img, axis='x'):
+    """(start, end) ranges (end exclusive) of runs of non-empty columns
+    (axis 'x') or rows (axis 'y'), ignoring runs narrower than SPECK_FRACTION
+    of that dimension."""
+    alpha = img.getchannel('A').point(lambda a: 255 if a > ALPHA_NOISE_MAX else 0)
+    if axis == 'y':
+        length = img.height
+        occupied = [alpha.crop((0, y, img.width, y + 1)).getbbox() is not None
+                    for y in range(length)]
+    else:
+        length = img.width
+        occupied = [alpha.crop((x, 0, x + 1, img.height)).getbbox() is not None
+                    for x in range(length)]
     segments, start = [], None
-    for x, occ in enumerate(occupied + [False]):
+    for i, occ in enumerate(occupied + [False]):
         if occ and start is None:
-            start = x
+            start = i
         elif not occ and start is not None:
-            segments.append((start, x))
+            segments.append((start, i))
             start = None
-    min_w = SPECK_FRACTION * img.width
-    return [s for s in segments if s[1] - s[0] >= min_w]
+    min_len = SPECK_FRACTION * length
+    return [s for s in segments if s[1] - s[0] >= min_len]
 
 
-def split_sheet(img, n):
-    """Split an RGBA sheet of n frames side by side into n equal-size RGBA
-    images (see module docstring)."""
-    segments = content_segments(img)
-    if len(segments) != n:
-        found = ', '.join(f'{a}-{b}' for a, b in segments) or 'none'
-        raise SystemExit(f'expected {n} frames in the sheet but found '
-                         f'{len(segments)} content segments (x ranges: {found})')
+def cut_bounds(segments, length):
+    """Cut positions: 0, the midpoint of each gap between segments, length."""
     bounds = [0]
     for (_, end), (start, _) in zip(segments, segments[1:]):
         bounds.append((end + start) // 2)
-    bounds.append(img.width)
+    bounds.append(length)
+    return bounds
+
+
+def parse_sheet(value):
+    """'N' -> (N, 1); 'CxR' / 'CXR' -> (C, R). Exits on anything else."""
+    parts = str(value).lower().split('x')
+    if len(parts) not in (1, 2) or not all(p.isdigit() for p in parts):
+        raise SystemExit(f'--sheet expects N or COLSxROWS (e.g. 3x2), got {value!r}')
+    cols, rows = int(parts[0]), int(parts[1]) if len(parts) == 2 else 1
+    if cols < 1 or rows < 1:
+        raise SystemExit(f'--sheet columns and rows must be at least 1, got {value!r}')
+    return cols, rows
+
+
+def split_sheet(img, n, where=''):
+    """Split an RGBA sheet of n frames side by side into n equal-size RGBA
+    images (see module docstring). `where` names the row in error messages."""
+    segments = content_segments(img)
+    if len(segments) != n:
+        found = ', '.join(f'{a}-{b}' for a, b in segments) or 'none'
+        raise SystemExit(f'expected {n} frames{where} in the sheet but found '
+                         f'{len(segments)} content segments (x ranges: {found})')
+    bounds = cut_bounds(segments, img.width)
     cells = [img.crop((bounds[i], 0, bounds[i + 1], img.height))
              for i in range(n)]
+    return pad_to_common(cells)
+
+
+def pad_to_common(cells):
+    """Pad every cell to the max width and height, each cell's centre kept at
+    the centre of the padded canvas."""
     width = max(c.width for c in cells)
+    height = max(c.height for c in cells)
     out = []
     for c in cells:
-        canvas = Image.new('RGBA', (width, img.height), (0, 0, 0, 0))
-        canvas.paste(c, ((width - c.width) // 2, 0))
+        canvas = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+        canvas.paste(c, ((width - c.width) // 2, (height - c.height) // 2))
         out.append(canvas)
     return out
+
+
+def split_grid(img, cols, rows):
+    """Split a cols x rows RGBA sheet into cols*rows equal-size frames in
+    row-major order (see module docstring)."""
+    segments = content_segments(img, 'y')
+    if len(segments) != rows:
+        found = ', '.join(f'{a}-{b}' for a, b in segments) or 'none'
+        raise SystemExit(f'expected {rows} rows in the sheet but found '
+                         f'{len(segments)} content segments (y ranges: {found})')
+    bounds = cut_bounds(segments, img.height)
+    cells = []
+    for r in range(rows):
+        strip = img.crop((0, bounds[r], img.width, bounds[r + 1]))
+        where = f' in row {r + 1}' if rows > 1 else ''
+        cells.extend(split_sheet(strip, cols, where))
+    return pad_to_common(cells)
 
 
 def prep_sources(images, out_dir, height, frame_count_const):
@@ -141,11 +199,12 @@ def prep_sources(images, out_dir, height, frame_count_const):
     prep_frames(images, srcs, out_dir, height, frame_count_const)
 
 
-def prep_sheet(image, n, out_dir, height, frame_count_const):
+def prep_sheet(image, cols, rows, out_dir, height, frame_count_const):
     clear_stale_frames(out_dir)
     src = Image.open(image).convert('RGBA')
     require_transparency(src, image)
-    frames = split_sheet(src, n)
+    frames = split_grid(src, cols, rows)
+    n = len(frames)
     labels = [f'{image}[{i + 1}/{n}]' for i in range(n)]
     prep_frames(labels, frames, out_dir, height, frame_count_const,
                 check_alpha=False)
@@ -159,10 +218,12 @@ def prep_frames(images, srcs, out_dir, height, frame_count_const,
         raise SystemExit('source frames must share one canvas size:\n' + sizes)
 
     boxes = []
-    for image, src in zip(images, srcs):
+    srcs = list(srcs)
+    for i, image in enumerate(images):
         if check_alpha:
-            require_transparency(src, image)
-        bbox = src.getbbox()
+            require_transparency(srcs[i], image)
+        srcs[i] = clean_alpha(srcs[i])
+        bbox = srcs[i].getbbox()
         if bbox is None:
             raise SystemExit(f'{image} is fully transparent, nothing to crop')
         boxes.append(bbox)
@@ -277,9 +338,10 @@ def main():
                                                'background), in frame order')
     ap.add_argument('--dummy', type=int, metavar='N',
                     help='generate N placeholder frames instead of using source images')
-    ap.add_argument('--sheet', type=int, metavar='N',
-                    help='one source image holding N frames side by side '
-                         '(left to right = frame order)')
+    ap.add_argument('--sheet', metavar='N|COLSxROWS',
+                    help='one source image holding the frames: N = N frames '
+                         'side by side, COLSxROWS (e.g. 3x2) = a grid; frame '
+                         'order is row-major (left to right, top row first)')
     ap.add_argument('--target', choices=sorted(TARGETS), default='player',
                     help='which character to prep frames for (default player)')
     ap.add_argument('--out-dir', default=None,
@@ -293,10 +355,9 @@ def main():
             raise SystemExit('--sheet cannot be combined with --dummy')
         if len(args.images) != 1:
             raise SystemExit('--sheet takes exactly one source image')
-        if args.sheet < 1:
-            raise SystemExit('--sheet N must be at least 1')
+        cols, rows = parse_sheet(args.sheet)
         target = TARGETS[args.target]
-        prep_sheet(args.images[0], args.sheet, args.out_dir or target['out_dir'],
+        prep_sheet(args.images[0], cols, rows, args.out_dir or target['out_dir'],
                    args.height, target['frame_count_const'])
         return
 

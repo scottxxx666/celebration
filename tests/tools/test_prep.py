@@ -11,7 +11,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 TOOLS = os.path.join(ROOT, 'tools')
 sys.path.insert(0, TOOLS)
 
-from prep_common import require_transparency  # noqa: E402
+from prep_common import ALPHA_NOISE_MAX, clean_alpha, require_transparency  # noqa: E402
 
 
 def load(name, filename):
@@ -23,6 +23,7 @@ def load(name, filename):
 
 runs = load('prep_run_frames', 'prep-run-frames.py')
 RUN_SCRIPT = os.path.join(TOOLS, 'prep-run-frames.py')
+OBSTACLE_SCRIPT = os.path.join(TOOLS, 'prep-obstacle-image.py')
 
 H = 100
 BLOB = (200, 50, 50, 255)
@@ -107,6 +108,92 @@ class SplitSheetTest(unittest.TestCase):
         self.assertEqual(cells[1].getchannel('A').getbbox(), (60, 0, 100, 100))
 
 
+def grid(width, height, rects, colours=None):
+    """Transparent canvas with opaque rects (x0, x1, y0, y1)."""
+    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    for i, (x0, x1, y0, y1) in enumerate(rects):
+        img.paste(colours[i] if colours else BLOB, (x0, y0, x1, y1))
+    return img
+
+
+class ParseSheetTest(unittest.TestCase):
+    def test_valid(self):
+        self.assertEqual(runs.parse_sheet('6'), (6, 1))
+        self.assertEqual(runs.parse_sheet('3x2'), (3, 2))
+        self.assertEqual(runs.parse_sheet('3X2'), (3, 2))
+
+    def test_invalid(self):
+        for bad in ('0', '-2', 'abc', '3x', 'x2', '3x0', '0x2', '3x2x1', '', '2.5', '3x-1'):
+            with self.subTest(bad=bad), self.assertRaises(SystemExit):
+                runs.parse_sheet(bad)
+
+
+class SplitGridTest(unittest.TestCase):
+    def six(self):
+        # 3 cols x 2 rows on 300x200; blob height = 20 + 10 * index so each
+        # frame is identifiable
+        rects, colours = [], []
+        for r in range(2):
+            for c in range(3):
+                i = r * 3 + c
+                x0 = 30 + c * 100
+                y0 = 10 + r * 100
+                rects.append((x0, x0 + 40, y0, y0 + 20 + 10 * i))
+                colours.append((10 + i, 0, 0, 255))
+        return grid(300, 200, rects, colours)
+
+    def test_row_major_equal_size(self):
+        frames = runs.split_grid(self.six(), 3, 2)
+        self.assertEqual(len(frames), 6)
+        self.assertEqual(len({f.size for f in frames}), 1)
+        for i, f in enumerate(frames):
+            box = f.getchannel('A').getbbox()
+            self.assertEqual(f.getpixel(((box[0] + box[2]) // 2,
+                                         (box[1] + box[3]) // 2))[0], 10 + i)
+            self.assertEqual(box[3] - box[1], 20 + 10 * i)
+
+    def test_n_by_one_matches_split_sheet(self):
+        img = sheet(300, [(10, 50, 0, 50), (60, 100, 0, 50), (200, 240, 0, 50)])
+        a = runs.split_grid(img, 3, 1)
+        b = runs.split_sheet(img, 3)
+        self.assertEqual([x.tobytes() for x in a], [x.tobytes() for x in b])
+        self.assertEqual({x.size for x in a}, {(150, H)})
+
+    def test_wrong_row_count(self):
+        with self.assertRaises(SystemExit) as cm:
+            runs.split_grid(self.six(), 3, 3)
+        msg = str(cm.exception)
+        self.assertIn('found 2', msg)
+        self.assertIn('10-', msg)
+
+    def test_wrong_column_count_in_one_row(self):
+        img = self.six()
+        img.paste((0, 0, 0, 0), (0, 100, 300, 200))
+        img.paste(BLOB, (30, 110, 70, 150))
+        img.paste(BLOB, (130, 110, 170, 150))
+        with self.assertRaises(SystemExit) as cm:
+            runs.split_grid(img, 3, 2)
+        self.assertIn('row 2', str(cm.exception))
+
+    def test_uneven_row_gaps_use_midpoints(self):
+        # rows at y 10-40 and 100-190 -> boundary (40+100)//2 = 70
+        img = grid(200, 200, [(20, 60, 10, 40), (120, 160, 10, 40),
+                              (20, 60, 100, 190), (120, 160, 100, 190)])
+        frames = runs.split_grid(img, 2, 2)
+        # strips: 0-70 (h70) and 70-200 (h130) -> padded to 130
+        self.assertEqual({f.size for f in frames}, {(110, 130)})
+        top = frames[0].getchannel('A').getbbox()
+        # 30-high blob at y 10 in a 70-high strip, padded by (130-70)//2 = 30
+        self.assertEqual(top[1], 30 + 10)
+        bottom = frames[2].getchannel('A').getbbox()
+        self.assertEqual(bottom[1], 30)
+
+    def test_row_specks_ignored(self):
+        img = self.six()
+        img.paste(BLOB, (30, 99, 40, 100))  # 1px tall speck between rows
+        self.assertEqual(len(runs.split_grid(img, 3, 2)), 6)
+
+
 class SheetCliTest(unittest.TestCase):
     def run_cli(self, *args):
         return subprocess.run([sys.executable, RUN_SCRIPT, *args],
@@ -129,6 +216,30 @@ class SheetCliTest(unittest.TestCase):
             self.assertEqual(len(sizes), 1)
             self.assertEqual(sizes.pop()[1], 64)
 
+    def test_end_to_end_grid(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, 'sheet.png')
+            rects = [(30 + c * 100, 70 + c * 100, 10 + r * 100, 90 + r * 100)
+                     for r in range(2) for c in range(3)]
+            grid(300, 200, rects).save(src)
+            out = os.path.join(d, 'out')
+            r = self.run_cli('--sheet', '3x2', src, '--out-dir', out, '--height', '64')
+            self.assertEqual(r.returncode, 0, r.stderr)
+            files = sorted(f for f in os.listdir(out) if f.startswith('run-'))
+            self.assertEqual(files, [f'run-{i}.png' for i in range(6)])
+            sizes = set()
+            for f in files:
+                with Image.open(os.path.join(out, f)) as im:
+                    sizes.add(im.size)
+            self.assertEqual(len(sizes), 1)
+            self.assertEqual(sizes.pop()[1], 64)
+
+    def test_bad_sheet_arg(self):
+        r = self.run_cli('--sheet', '0x2', 'a.png')
+        self.assertNotEqual(r.returncode, 0)
+        r = self.run_cli('--sheet', 'foo', 'a.png')
+        self.assertNotEqual(r.returncode, 0)
+
     def test_rejects_dummy_and_multiple_images(self):
         r = self.run_cli('--sheet', '2', '--dummy', '2', 'a.png')
         self.assertNotEqual(r.returncode, 0)
@@ -144,6 +255,98 @@ class SheetCliTest(unittest.TestCase):
             r = self.run_cli('--sheet', '2', src, '--out-dir', os.path.join(d, 'o'))
             self.assertNotEqual(r.returncode, 0)
             self.assertIn('transparent', r.stderr)
+
+
+def add_noise(img, alpha=5, step=7):
+    """Scatter faint low-alpha specks over the whole canvas (corners stay
+    clear so require_transparency still passes)."""
+    for y in range(2, img.height - 2, step):
+        for x in range(2, img.width - 2, step):
+            if img.getpixel((x, y))[3] == 0:
+                img.putpixel((x, y), (255, 255, 255, alpha))
+    return img
+
+
+def faint_alphas(img):
+    return [a for a in img.getchannel('A').getdata() if 0 < a <= ALPHA_NOISE_MAX]
+
+
+class CleanAlphaTest(unittest.TestCase):
+    def test_threshold(self):
+        img = Image.new('RGBA', (3, 1))
+        img.putpixel((0, 0), (9, 9, 9, ALPHA_NOISE_MAX))
+        img.putpixel((1, 0), (9, 9, 9, ALPHA_NOISE_MAX + 1))
+        img.putpixel((2, 0), (9, 9, 9, 255))
+        out = clean_alpha(img)
+        self.assertEqual(out.getpixel((0, 0)), (0, 0, 0, 0))
+        self.assertEqual(out.getpixel((1, 0)), (9, 9, 9, ALPHA_NOISE_MAX + 1))
+        self.assertEqual(out.getpixel((2, 0)), (9, 9, 9, 255))
+        self.assertEqual(img.getpixel((0, 0))[3], ALPHA_NOISE_MAX)
+
+
+class NoisyCliTest(unittest.TestCase):
+    def run_script(self, script, *args):
+        return subprocess.run([sys.executable, script, *args],
+                              capture_output=True, text=True)
+
+    def test_obstacle_ignores_noise(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, 'o.png')
+            add_noise(sheet(200, [(80, 120, 20, 80)], height=150)).save(src)
+            out = os.path.join(d, 'out.png')
+            r = self.run_script(OBSTACLE_SCRIPT, src, '--out', out, '--height', '60')
+            self.assertEqual(r.returncode, 0, r.stderr)
+            with Image.open(out) as im:
+                self.assertEqual(im.height, 60)
+                self.assertEqual(im.width, 40)  # blob 40x60, scale 1
+                self.assertEqual(faint_alphas(im), [])
+                bottom = [im.getpixel((x, im.height - 1))[3] for x in range(im.width)]
+                self.assertTrue(any(a == 255 for a in bottom))
+
+    def test_obstacle_only_noise_exits(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, 'o.png')
+            add_noise(sheet(100, [], height=100)).save(src)
+            r = self.run_script(OBSTACLE_SCRIPT, src, '--out', os.path.join(d, 'x.png'))
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('fully transparent', r.stderr)
+
+    def test_run_sheet_ignores_noise(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, 's.png')
+            add_noise(sheet(300, [(30, 70, 10, 90), (130, 170, 10, 90),
+                                  (230, 270, 10, 90)])).save(src)
+            out = os.path.join(d, 'out')
+            r = self.run_script(RUN_SCRIPT, '--sheet', '3', src,
+                                '--out-dir', out, '--height', '80')
+            self.assertEqual(r.returncode, 0, r.stderr)
+            for i in range(3):
+                with Image.open(os.path.join(out, f'run-{i}.png')) as im:
+                    self.assertEqual(im.size, (40, 80))
+                    self.assertEqual(faint_alphas(im), [])
+                    self.assertEqual(im.getchannel('A').getbbox(), (0, 0, 40, 80))
+
+    def test_run_sources_ignore_noise(self):
+        with tempfile.TemporaryDirectory() as d:
+            paths = []
+            for i, blob in enumerate([(20, 60, 10, 90), (30, 70, 10, 90)]):
+                p = os.path.join(d, f'f{i}.png')
+                add_noise(sheet(100, [blob])).save(p)
+                paths.append(p)
+            out = os.path.join(d, 'out')
+            r = self.run_script(RUN_SCRIPT, *paths, '--out-dir', out, '--height', '80')
+            self.assertEqual(r.returncode, 0, r.stderr)
+            with Image.open(os.path.join(out, 'run-0.png')) as im:
+                self.assertEqual(im.size, (50, 80))  # union x 20..70
+                self.assertEqual(faint_alphas(im), [])
+
+    def test_run_only_noise_exits(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, 'f.png')
+            add_noise(sheet(100, [])).save(p)
+            r = self.run_script(RUN_SCRIPT, p, '--out-dir', os.path.join(d, 'o'))
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('fully transparent', r.stderr)
 
 
 if __name__ == '__main__':

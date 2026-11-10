@@ -149,7 +149,10 @@ content segments (runs of columns with alpha above 8; segments narrower than
 cell to the widest one around its own centre at full sheet height, so each
 character keeps its offset within its cell and feet height is preserved. It
 exits listing the segment x-ranges if the count is not N. The result then goes
-through the same union-bbox/shared-scale pipeline below.
+through the same union-bbox/shared-scale pipeline below. `--sheet COLSxROWS`
+(e.g. `3x2`) takes a grid instead, frames in row-major order (top row left to
+right, then the next); rows are found and cut the same way as columns and the
+row count must match, and all cells are padded to one common size.
 
 `--target` (default `player`) picks the output directory
 (`public/assets/sprites/<target>`), the config-constant reminder it prints,
@@ -181,8 +184,8 @@ Registration is a pair of config values per character in
   (`(spriteHh * 2 / textureHeight) * rowScale`) — the collision AABB stays
   `PLAYER_HW`/`PLAYER_HH` or `ENEMY_HW`/`ENEMY_HH`.
 - `PLAYER_RUN_STEPS_PER_BEAT` / `ENEMY_RUN_STEPS_PER_BEAT` — frame steps per
-  game beat. The player's 3-frame cycle at 6 steps lands a foot contact
-  (frame 0) every half game beat; the enemy's 2-frame cycle steps on
+  game beat. The player's 6-frame (two-step) cycle at 6 steps lands a foot contact
+  (frames 0 and 3) every half game beat; the enemy's 2-frame cycle steps on
   8th notes (2).
 
 `src/config/runFrames.js` builds `PLAYER_FRAMES` and `ENEMY_FRAMES`

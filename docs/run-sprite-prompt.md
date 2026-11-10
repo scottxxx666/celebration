@@ -5,41 +5,96 @@ reference image — both the player and the enemy are zombies, drawn as
 different characters. Ask for **all frames in ONE image**, side by side:
 frames drawn together are more consistent (character, outfit, lighting, size)
 than frames from separate prompts. The prep script splits the sheet with
-`--sheet N`.
+`--sheet N` (one row) or `--sheet COLSxROWS` (a grid).
 
 ## Player
 
-3 frames (`PLAYER_FRAME_COUNT`).
+6 frames (`PLAYER_FRAME_COUNT`), laid out 3 columns × 2 rows, read left to
+right, top row first. The cycle is **two steps**: contact → mid-stance →
+push-off on the near leg (frames 1–3), then the same three on the far leg
+(frames 4–6), looping back to frame 1. At `PLAYER_RUN_STEPS_PER_BEAT = 6`
+the foot contacts (frames 1 and 4) still land every half beat, so the timing
+constant doesn't change. The shipped frames come from
+`original_images/Zombie Running Cycle.png` (`--sheet 3x2`).
+
+### Reference images
+
+The shipped player (`public/assets/sprites/player/run-*.png`) was cut from a
+ChatGPT sheet; no original photo is kept. Attach two images, each doing one job:
+
+1. **Character (identity + style):**
+   `original_images/zombie6_2/ChatGPT Image Oct 3, 2026, 09_26_35 PM.png`
+   — the same character in a single pose outside the run cycle (knee raised),
+   large (1254×1254) and really transparent. Because the pose isn't one of the
+   cycle frames, it doesn't pull any frame toward a pose. Save it in ChatGPT as
+   a reference (e.g. "player zombie") and call it back by name in later chats.
+2. **Poses + layout:** `docs/run-pose-guide/player.png` — 6 stick figures in
+   a 3×2 grid on 1536×1024, no labels, no ground line, hips centred in each
+   512×512 cell, feet on each row's shared line. Drawn by
+   `tools/gen-run-pose-guide.py` (`--gif out.gif` writes a looping preview to
+   check the motion; tune the pose tables there and rerun). Red = the leg/arm
+   nearer the camera, blue = the far one.
+
+Do **not** attach:
+
+- `original_images/zombie6_2/run-*.png` — they are cycle poses, so the model
+  copies their exact poses onto the wrong frames instead of following the
+  pose guide.
+- `original_images/zombie6_2.png` — its checkerboard is painted in, so the
+  model may copy a fake backdrop (the prep scripts reject this image).
+- `original_images/zombie6.png` — the right character in the same 3×2
+  layout, but its poses are the old ones and would compete with the guide.
+- `original_images/zombie6_2/pose-guide/` — the older stick-figure guide,
+  with "frame N" labels (conflicts with the no-text rule) and poses that
+  don't read as running.
 
 ### Prompt
 
-Attach the reference photo, then:
+Attach the character reference (or call back the saved one) and
+`docs/run-pose-guide/player.png`, then:
 
 ```
-Reference: the attached photo of a zombie in a torn grey-brown suit, grey-white skin,
-dark wet hair, one milky eye, mouth open. Do not redesign the character. I need this
-character as a 3-frame run cycle sprite sheet.
+Two images are attached. Image 1 is the exact character to keep: a zombie man with short
+messy dark hair, pale grey-white skin with red scratches and blood smears, mouth
+open, head tilted up, clawed hands; a torn olive-brown suit jacket with ragged
+hems over an open dark grey vest and bare chest, olive-brown trousers with frayed
+hems, dark brown lace-up boots. Do not redesign the character. I need this
+character as a 6-frame run cycle sprite sheet.
 
-One landscape image, 1536x1024, with 3 frames side by side, left to right, evenly
-spaced, all the same size, feet on one shared baseline. Leave a clear transparent gap
-between frames; frames must not overlap or touch. No text, no numbers, no borders, no
+Image 2 is a pose guide: 6 stick figures in 3 columns and 2 rows. Copy it EXACTLY
+for layout, each frame's size and position, each row's feet line, and every pose
+(legs, arms, torso lean, head). Do NOT copy its look: the stick figures, flat
+colours and white background are only a guide. Red limbs are the leg/arm nearer
+the camera, blue the far one.
+
+One landscape image, 1536x1024: 3 columns x 2 rows of frames, read left to right,
+top row first. Every frame the same size, evenly spaced, the character centred in
+its cell. Leave a clear transparent gap between frames, both across and between
+the rows; frames must not overlap or touch. No text, no numbers, no borders, no
 gutters, no panel labels.
 
 Rules for every frame:
-- Same character, same outfit and face as the reference. Photo-realistic, not cartoon.
+- Same character, same outfit and face as the reference.
+- Same art style as the reference: semi-realistic comic illustration with dark ink
+  outlines and painted shading. Not a photo, not a flat or chibi cartoon.
 - Full body, head to feet, feet fully visible. Nothing cropped.
-- Side view, running to the RIGHT of the frame.
+- Side view, running to the RIGHT of the frame, torso leaning slightly forward.
 - One character per frame, no other people, no props, no ground, no shadow.
 - Fully transparent background (real PNG alpha). A drawn checkerboard is not
   transparency; no white or grey backdrop.
 - Even, daylight lighting, no dramatic shadows on the body.
 
-Frames:
-1. Mid-stride. Right leg forward and extended, left leg trailing behind.
-   Arms bent zombie-style at chest height, hunched shoulders, head slightly forward.
-2. Legs crossing at the midpoint of the stride, both feet near the ground, body
-   slightly lower than frame 1.
-3. Mirror of frame 1. Left leg forward and extended, right leg trailing.
+Frames (two running steps, looping back to frame 1):
+1. Contact, near leg. Near leg reaching forward, heel touching down; far leg
+   kicked up behind, knee bent. Near arm swung back, far arm forward.
+2. Mid-stance, near leg. Near foot planted under the hips, knee bent, body at
+   its lowest; far knee swinging through, heel tucked up behind. Arms close to
+   the body, elbows bent.
+3. Push-off, near leg. Near leg extended behind, pushing off the toe; far knee
+   driven up in front, shin hanging. Near arm forward, far arm back.
+4. Contact, far leg: frame 1 with the legs and arms swapped.
+5. Mid-stance, far leg: frame 2 with the legs and arms swapped.
+6. Push-off, far leg: frame 3 with the legs and arms swapped.
 ```
 
 ## Enemy
@@ -93,25 +148,25 @@ matches the wider silhouette.
    character" and repeats the defining details (outfit, skin, hair, eye).
 2. Save the sheet as `original_images/player/sheet.png` (or
    `original_images/enemy/sheet.png`).
-3. Split, crop and resize into `public/assets/sprites/<target>/` (N = number
-   of frames in the sheet):
+3. Split, crop and resize into `public/assets/sprites/<target>/` (`3x2` =
+   3 columns × 2 rows; a plain N = N frames in one row):
    ```
-   python3 tools/prep-run-frames.py --sheet 3 original_images/player/sheet.png
+   python3 tools/prep-run-frames.py --sheet 3x2 original_images/player/sheet.png
    python3 tools/prep-run-frames.py --sheet 2 original_images/enemy/sheet.png --target enemy
    ```
-   The script cuts the sheet at the middle of each transparent gap, pads every
-   cell to the same width (keeping each character's offset within its cell)
-   and then crops/scales all frames together. It exits with the segment
-   x-ranges it found if the count is not N (frames touching, or stray specks
-   bigger than 2% of the width), and refuses images whose corners are not
-   transparent.
+   The script cuts the sheet at the middle of each transparent gap (rows,
+   then columns), pads every cell to the same size (keeping each character's
+   offset within its cell) and then crops/scales all frames together. It exits
+   with the ranges it found if a count doesn't match (frames touching, or stray
+   specks bigger than 2% of the sheet), and refuses images whose corners are
+   not transparent.
 4. Set `PLAYER_FRAME_COUNT` / `ENEMY_FRAME_COUNT` in `src/config/gameConfig.js`
    to the number of frames produced (the script prints a reminder for
    whichever `--target` you ran).
-5. 2 frames is enough for a serviceable run cycle; 4 is smooth. The current
-   build ships 3 player frames and 2 enemy frames; if the player's count
-   changes, revisit `PLAYER_RUN_STEPS_PER_BEAT`, which is tuned so a 3-frame
-   cycle lands a foot contact every half beat.
+5. 2 frames is enough for a serviceable run cycle; 6 is smooth. The current
+   build ships 6 player frames and 2 enemy frames. `PLAYER_RUN_STEPS_PER_BEAT`
+   (6) lands a foot contact every half beat for both the 3-frame (one step)
+   and 6-frame (two steps) player cycles; revisit it for any other count.
 
 Fallback: separate per-frame images (one per prompt, same conversation) still
 work with the multi-file command — save as `run-1.png`, `run-2.png`, … on

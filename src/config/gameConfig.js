@@ -28,7 +28,7 @@ export const PLAYER_HH = 45;
 // the sprite's logical half-height at front-row scale (like obstacle `hh` in
 // obstacleSprites.js) — drives display scale only, the collision AABB stays
 // PLAYER_HW/PLAYER_HH.
-export const PLAYER_FRAME_COUNT = 3;
+export const PLAYER_FRAME_COUNT = 6;
 export const PLAYER_SPRITE_HH = 70;
 
 // Player rows
@@ -94,8 +94,8 @@ export const BPM = TRACK_BPM;   // true-tempo game beat (~398 ms) — one game b
 // export const BPM = TRACK_BPM / 2;    // half-time game beat (~797 ms) — swap in to compare (sections.js strobe/lightsOut values are authored for true tempo)
 export const BEAT_MS = 60000 / BPM;
 // Run-cycle frame steps per game beat, per character (GameScene multiplies by
-// the section's speedMult). The player's 3-frame cycle at 6 steps puts a foot
-// contact (frame 0) on every half game beat (every real track beat at half-time BPM); the
+// the section's speedMult). The player's 6-frame (two-step) cycle at 6 steps
+// puts a foot contact (frames 0 and 3) on every half game beat (every real track beat at half-time BPM); the
 // enemy's 2-frame cycle steps on 8th notes. Also sets each character's
 // free-running pre-beat frame period (BEAT_MS / steps) in RunCycle, so a
 // character runs from the very first frame, before the beat clock starts.
