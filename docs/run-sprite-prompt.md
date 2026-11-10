@@ -14,44 +14,36 @@ right, top row first. The cycle is **two steps**: contact → mid-stance →
 push-off on the near leg (frames 1–3), then the same three on the far leg
 (frames 4–6), looping back to frame 1. At `PLAYER_RUN_STEPS_PER_BEAT = 6`
 the foot contacts (frames 1 and 4) still land every half beat, so the timing
-constant doesn't change. The shipped frames come from
-`original_images/Zombie Running Cycle.png` (`--sheet 3x2`).
+constant doesn't change. Everything for the player lives in
+`original_images/zombie/`; the shipped frames come from its
+`run-sheet.png` (`--sheet 3x2`).
 
 ### Reference images
 
-The shipped player (`public/assets/sprites/player/run-*.png`) was cut from a
-ChatGPT sheet; no original photo is kept. Attach two images, each doing one job:
+No original photo is kept; the character only exists as ChatGPT output.
+Attach two images from `original_images/zombie/`, each doing one job:
 
 1. **Character (identity + style):**
-   `original_images/zombie6_2/ChatGPT Image Oct 3, 2026, 09_26_35 PM.png`
-   — the same character in a single pose outside the run cycle (knee raised),
-   large (1254×1254) and really transparent. Because the pose isn't one of the
-   cycle frames, it doesn't pull any frame toward a pose. Save it in ChatGPT as
-   a reference (e.g. "player zombie") and call it back by name in later chats.
-2. **Poses + layout:** `docs/run-pose-guide/player.png` — 6 stick figures in
-   a 3×2 grid on 1536×1024, no labels, no ground line, hips centred in each
+   `character-reference.png` — the same character in a
+   single pose outside the run cycle (knee raised), large (1254×1254) and
+   really transparent. Because the pose isn't one of the cycle frames, it
+   doesn't pull any frame toward a pose. Save it in ChatGPT as a reference
+   (e.g. "player zombie") and call it back by name in later chats.
+2. **Poses + layout:** `pose-guide.png` — the pose guide: 6 stick figures in a
+   3×2 grid on 1536×1024, no labels, no ground line, hips centred in each
    512×512 cell, feet on each row's shared line. Drawn by
    `tools/gen-run-pose-guide.py` (`--gif out.gif` writes a looping preview to
    check the motion; tune the pose tables there and rerun). Red = the leg/arm
    nearer the camera, blue = the far one.
 
-Do **not** attach:
-
-- `original_images/zombie6_2/run-*.png` — they are cycle poses, so the model
-  copies their exact poses onto the wrong frames instead of following the
-  pose guide.
-- `original_images/zombie6_2.png` — its checkerboard is painted in, so the
-  model may copy a fake backdrop (the prep scripts reject this image).
-- `original_images/zombie6.png` — the right character in the same 3×2
-  layout, but its poses are the old ones and would compete with the guide.
-- `original_images/zombie6_2/pose-guide/` — the older stick-figure guide,
-  with "frame N" labels (conflicts with the no-text rule) and poses that
-  don't read as running.
+Do **not** attach `run-sheet.png` or the shipped
+`public/assets/sprites/player/run-*.png`: they are cycle poses, so the model
+copies them instead of following the pose guide.
 
 ### Prompt
 
-Attach the character reference (or call back the saved one) and
-`docs/run-pose-guide/player.png`, then:
+Attach the character reference (or call back the saved one) and the pose
+guide `original_images/zombie/pose-guide.png`, then:
 
 ```
 Two images are attached. Image 1 is the exact character to keep: a zombie man with short
@@ -146,12 +138,14 @@ matches the wider silhouette.
    in ChatGPT as a reference image and call it back by name for reruns. To fix
    something, send a follow-up that says "change only <X>; do not redesign the
    character" and repeats the defining details (outfit, skin, hair, eye).
-2. Save the sheet as `original_images/player/sheet.png` (or
-   `original_images/enemy/sheet.png`).
+2. Save the sheet in the character's `original_images/` folder: the player's
+   is `original_images/zombie/` (the shipped sheet is
+   `run-sheet.png`); the enemy has none yet, e.g.
+   `original_images/enemy/sheet.png`.
 3. Split, crop and resize into `public/assets/sprites/<target>/` (`3x2` =
    3 columns × 2 rows; a plain N = N frames in one row):
    ```
-   python3 tools/prep-run-frames.py --sheet 3x2 original_images/player/sheet.png
+   python3 tools/prep-run-frames.py --sheet 3x2 original_images/zombie/run-sheet.png
    python3 tools/prep-run-frames.py --sheet 2 original_images/enemy/sheet.png --target enemy
    ```
    The script cuts the sheet at the middle of each transparent gap (rows,

@@ -3,7 +3,7 @@ on a 1536x1024 canvas, attached to the ChatGPT sheet prompt in
 docs/run-sprite-prompt.md so the generated sheet copies its poses and layout
 (then `prep-run-frames.py --sheet 3x2` splits it).
 
-    python3 tools/gen-run-pose-guide.py                 # writes docs/run-pose-guide/player.png
+    python3 tools/gen-run-pose-guide.py                 # writes original_images/zombie/pose-guide.png
     python3 tools/gen-run-pose-guide.py --gif run.gif   # also a looping preview to check the motion
 
 The cycle is two steps, facing right: contact -> mid-stance -> push-off on the
@@ -94,7 +94,7 @@ def draw_frame(i, size=CELL, margin=22):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument('--out', default='docs/run-pose-guide/player.png')
+    ap.add_argument('--out', default='original_images/zombie/pose-guide.png')
     ap.add_argument('--gif', help='also write a looping preview GIF here')
     args = ap.parse_args()
 
