@@ -22,8 +22,8 @@ export const OBSTACLE_SPRITES = [
   {
     key: 'obs-kazuha-zombie',
     file: 'assets/sprites/obstacles/kazuha-zombie.png',
-    hh: 64,
-    hw: 54,
+    hh: 60,
+    hw: 51,
   },
   {
     key: 'obs-sakura-chainsaw',
@@ -36,5 +36,11 @@ export const OBSTACLE_SPRITES = [
     file: 'assets/sprites/obstacles/sakura-pikmin.png',
     hh: 60, // crouching, so shorter than the standing obstacles
     hw: 30,
+  },
+  {
+    key: 'obs-tomato-squad',
+    file: 'assets/sprites/obstacles/tomato-squad.png',
+    hh: 75,
+    hw: 54, // group shot: outstretched arms reach past the body mass
   },
 ];

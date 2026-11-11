@@ -28,7 +28,7 @@ h = `hh × 2`, from `gameConfig.js` / `OBSTACLE_SPRITES`):
 | Use | Logical box (px) | Notes |
 |---|---|---|
 | **Runner (player)** | collision 90 × 90, art `PLAYER_SPRITE_HH × 2` tall | `PLAYER_HW/HH = 45` for collision; art height comes from `PLAYER_SPRITE_HH` (`gameConfig.js`), width follows the source aspect; beat pulse squashes height to 85% |
-| Obstacle — character sprites | `hw × 2` wide × `hh × 2` tall, per entry in `OBSTACLE_SPRITES` | `hh` sets the art height (currently 62–70 → 124–140 px), `hw` the art half-width (collision is `hw × OBSTACLE_HITBOX_SCALE`); see below |
+| Obstacle — character sprites | `hw × 2` wide × `hh × 2` tall, per entry in `OBSTACLE_SPRITES` | `hh` sets the art height (currently 60–75 → 120–150 px), `hw` the art half-width (collision is `hw × OBSTACLE_HITBOX_SCALE`); see below |
 | **Chaser (enemy)** | collision 52 × 78, art `ENEMY_SPRITE_HH × 2` tall | `ENEMY_HW/HH = 26/39` for collision; art height comes from `ENEMY_SPRITE_HH` (`gameConfig.js`, defaults to matching collision height), width follows the source aspect |
 
 `waves.js` carries no sizes — an obstacle is only `{ timeOffset, row }`, and
