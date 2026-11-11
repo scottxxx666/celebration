@@ -4,6 +4,7 @@
     python3 tools/prep-scenery-image.py road    shot.png [--out public/assets/bg/road-day.png]
     python3 tools/prep-scenery-image.py scenery shot.png --offset -120
     python3 tools/prep-scenery-image.py road    shot.png --lanes   # paint the row dividers
+    python3 tools/prep-scenery-image.py scenery shot.png --horizon 0x1a1e2e  # fade into the road
 
 Image models only emit 1024x1024 / 1536x1024 / 1024x1536 and never tile, so every
 generated layer needs the same mechanical pass before the game can use it:
@@ -14,7 +15,9 @@ generated layer needs the same mechanical pass before the game can use it:
   3. force the left<->right seam so the tile actually repeats
   4. (road, --lanes) paint dashed lane dividers at the exact row boundaries — image
      models never put lines where the rows are, so prompt for a plain surface instead
-  5. report the edge-row colours to paste into SCENERY_THEMES (src/objects/Scenery.js)
+  5. (scenery, --horizon) fade the bottom rows into the road's top-row colour so the
+     horizon seam has no tone step
+  6. report the edge-row colours to paste into SCENERY_THEMES (src/objects/Scenery.js)
 
 See docs/image-assets.md. Needs pillow (pip3 install --user pillow).
 """
@@ -88,6 +91,35 @@ def paint_lanes(im):
     return out.convert('RGB')
 
 
+# --horizon fade height in 2x px, and its ease (>1 keeps most of the band as art)
+HORIZON_BAND = 22
+HORIZON_EASE = 1.6
+
+
+def fade_horizon(im, rgb):
+    """Blend the bottom HORIZON_BAND rows toward `rgb`, reaching it exactly on the last row."""
+    w, h = im.size
+    overlay = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(overlay)
+    for i in range(HORIZON_BAND):
+        a = round(255 * (i / (HORIZON_BAND - 1)) ** HORIZON_EASE)
+        d.line([(0, h - HORIZON_BAND + i), (w, h - HORIZON_BAND + i)], fill=tuple(rgb) + (a,))
+    out = im.convert('RGBA')
+    out.alpha_composite(overlay)
+    return out.convert('RGB')
+
+
+def parse_hex(text):
+    """'0x1a1e2e' / '#1a1e2e' / '1a1e2e' -> (26, 30, 46)."""
+    t = text.lower().removeprefix('0x').removeprefix('#')
+    if len(t) != 6:
+        raise argparse.ArgumentTypeError(f'expected a 6-digit hex colour, got {text!r}')
+    try:
+        return tuple(int(t[i:i + 2], 16) for i in (0, 2, 4))
+    except ValueError:
+        raise argparse.ArgumentTypeError(f'expected a 6-digit hex colour, got {text!r}') from None
+
+
 def seam_delta(im):
     """Max channel difference across the wrap (column w-1 vs column 0). 0 = exact."""
     w, h = im.size
@@ -117,9 +149,14 @@ def main():
                     help='seam cross-fade width in px (0 = leave the seam alone)')
     ap.add_argument('--lanes', action='store_true',
                     help='road only: paint dashed dividers at the row boundaries')
+    ap.add_argument('--horizon', type=parse_hex, metavar='HEX',
+                    help="scenery only: fade the bottom rows into this colour (the road "
+                         "PNG's top row, as printed when prepping the road)")
     args = ap.parse_args()
     if args.lanes and args.layer != 'road':
         ap.error('--lanes only applies to the road layer')
+    if args.horizon and args.layer != 'scenery':
+        ap.error('--horizon only applies to the scenery layer')
 
     tw, th = TARGETS[args.layer]
     src = Image.open(args.image).convert('RGB')
@@ -138,6 +175,10 @@ def main():
     if args.lanes:
         out = paint_lanes(out)
         print(f'  painted {ROWS - 1} lane dividers')
+
+    if args.horizon:
+        out = fade_horizon(out, args.horizon)
+        print('  faded horizon into 0x{:02x}{:02x}{:02x}'.format(*args.horizon))
 
     top_hex, top_rgb = row_hex(out, 0)
     bot_hex, bot_rgb = row_hex(out, th - 1)

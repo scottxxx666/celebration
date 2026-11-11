@@ -322,7 +322,7 @@ Requirements:
 | **Day city** | Sunlit grey asphalt street, warm mid-grey, faded white lane markings, light cracks and tar seams, occasional drain grate | Daytime city skyline: pale buildings and rooftops in soft haze, a few trees and street lamps, bright blue sky with flat cartoon clouds |
 | **Gym** | Indoor gym floor: pale honey-coloured wooden boards running left to right, faint painted court lines in red and blue, subtle polished sheen | Gym interior wall: racks of dumbbells and weight plates, a wall mirror, hanging championship banners and a scoreboard, all flat and muted |
 | **Disco / party** | Glossy black-and-white checkered dance floor with a wet mirror-like sheen, faint coloured light pools smeared across it | Nightclub interior: dark wall with stacked speakers, a DJ booth, a mirror ball, strings of party lights and confetti, silhouetted dancing crowd along the bottom |
-| **Suburb night** (`suburb` ships the background only) | Suburban asphalt street in the dead of night, very dark, matching the low brightness of the attached reference photo. The whole surface is one uniform worn asphalt road with faint cracks and tar seams, lit only by dim cool blue-green moonlight. At the very top edge only, a thin dark strip of concrete curb. Desaturated teal-grey colour grade. *(Swap the template's "3 equal lanes" line for "NO lane markings… uniform top to bottom" and prep with `--lanes`.)* | Quiet American suburb in the dead of night, very dark, cinematic and slightly eerie. A row of two-storey gabled houses (stucco and wooden siding, dark shingle roofs) set back across the street, almost lost in darkness, with a few warm amber lit windows and small porch/garage wall lamps casting soft yellow glows. Dark tree silhouettes between the houses, a low hill silhouette behind them. Heavy, wispy near-black clouds over a very dark blue-green night sky; overall mostly near-black, only windows and lamps bright. Desaturated, cool teal-grey colour grade with warm lamp light as the only accent. Painterly semi-realistic style. |
+| **Suburb night** (background shipped as `suburb`; road is procedural, see below) | Suburban asphalt street in the dead of night, very dark, matching the low brightness of the attached reference photo. The whole surface is one uniform worn asphalt road with faint cracks and tar seams, lit only by dim cool blue-green moonlight. At the very top edge only, a thin dark strip of concrete curb. Desaturated teal-grey colour grade. *(Swap the template's "3 equal lanes" line for "NO lane markings… uniform top to bottom" and prep with `--lanes`.)* | Quiet American suburb in the dead of night, very dark, cinematic and slightly eerie. A row of two-storey gabled houses (stucco and wooden siding, dark shingle roofs) set back across the street, almost lost in darkness, with a few warm amber lit windows and small porch/garage wall lamps casting soft yellow glows. Dark tree silhouettes between the houses, a low hill silhouette behind them. Heavy, wispy near-black clouds over a very dark charcoal-grey night sky. Desaturated neutral charcoal colour grade — no teal or green tint — with warm lamp light as the only accent. Painterly semi-realistic style. |
 
 The model's widest allowed aspect is 3:1, hence `1536 x 512` in both
 prompts; the prep script crops the widest 1600:360 band from the background
@@ -339,7 +339,9 @@ Seamless tiling is not guaranteed by the model, so `--blend` remains needed.
    ```
    Add `--lanes` on the road to paint dashed dividers at the exact row
    boundaries — models never place lane lines where the rows are, so prompt
-   for a plain surface and let the script draw them.
+   for a plain surface and let the script draw them. Add `--horizon HEX` on the
+   background (HEX = the road PNG's top row) to fade its bottom rows into the
+   road so the horizon seam has no tone step.
    It crops the widest band of the target aspect (`--offset` nudges the band
    vertically), resizes to exactly 1600×540 / 1600×360, forces the left↔right
    seam (`--blend`), and reports the edge-row colours to paste into the
@@ -352,14 +354,32 @@ Seamless tiling is not guaranteed by the model, so `--blend` remains needed.
    pair: add an entry to `SCENERY_THEMES` and point `SCENERY_THEME`
    (`gameConfig.js`) at it.
 
-The active `suburb` theme was generated with Codex's built-in image model
-(`codex exec -i <mood-ref.png> < prompt.txt`; pass the prompt on stdin, since
-`-i` takes several files and would swallow a trailing prompt argument), then
-prepped with `prep-scenery-image.py` (scenery `--offset 200` to keep the
-houses on the horizon); it reuses the `night` road PNG. The suburb road
-prompt above (prepped with `--lanes`) was tried and is not shipped. The `night` theme was not AI-generated: `tools/gen-night-assets.py`
-draws both layers procedurally (`--preview DIR` also dumps an in-game mock and
-the tiled-seam checks).
+The active `suburb` theme pairs its own procedural road, `road-suburb.png`
+(`tools/gen-suburb-road.py`, see below), with an AI background,
+`scenery-suburb.png`, generated with Codex's built-in image model:
+`codex exec -i style.png colour.png mood.png < prompt.txt` (pass the prompt on
+stdin, since `-i` takes several files and would swallow a trailing prompt
+argument). It was prepped with
+`prep-scenery-image.py scenery shot.png --offset 200 --horizon 0x1e2428`,
+where `--offset` keeps the houses on the horizon and `--horizon` fades the bottom
+rows into the suburb road's top row (re-run with the new hex after
+regenerating the road, `--blend 0 --out` on the shipped PNG). The background's Suburb `[SCENE]` block
+above is the shipped prompt. Ask for **neutral charcoal**, not "blue-green",
+which came out teal. The Suburb road block above (prep with `--lanes`) was an
+AI road that was tried and not shipped; the road in use is procedural instead.
+
+The suburb road is drawn by `tools/gen-suburb-road.py`
+(`uv run --with pillow python tools/gen-suburb-road.py [--preview DIR]`):
+charcoal teal-grey asphalt with aggregate grain, stone chips, cracks, tar
+seams and faint moonlit sheen running right up to the horizon (no curb: a
+lighter strip there reads as a hard edge under the houses), and worn dashed lane dividers at y = 180 / 360. It reuses the helpers of
+`gen-night-assets.py`, is deterministic, prints the seam check and the
+top/bottom row hexes (`ground` in `SCENERY_THEMES.suburb`; the top hex feeds
+`--horizon`), and is covered by `tests/tools/test_suburb_road.py`.
+
+The `night` theme was not AI-generated: `tools/gen-night-assets.py` draws both
+layers procedurally (`--preview DIR` also dumps an in-game mock and the
+tiled-seam checks).
 
 **Handling the rotate section**: the `rotate` section zooms the camera out to
 0.49 and spins it, which would otherwise reveal area outside the 800×450

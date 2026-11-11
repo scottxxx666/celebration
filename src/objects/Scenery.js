@@ -23,11 +23,11 @@ export const SCENERY_THEMES = {
     ground: 0x31374b, // matches the road PNG's bottom row — fill below it
   },
   suburb: {
-    // suburb backdrop over the night-city road
-    road: { key: 'road-night', file: 'assets/bg/road-night.png' },
+    // suburb backdrop over its own procedural asphalt road (tools/gen-suburb-road.py)
+    road: { key: 'road-suburb', file: 'assets/bg/road-suburb.png' },
     scenery: { key: 'scenery-suburb', file: 'assets/bg/scenery-suburb.png' },
-    sky: 0x0a191a,
-    ground: 0x31374b,
+    sky: 0x121316,
+    ground: 0x363e42,
   },
 };
 

@@ -378,6 +378,33 @@ class PaintLanesTest(unittest.TestCase):
         self.assertEqual(self.W % scenery.DASH_PERIOD, 0)
 
 
+class FadeHorizonTest(unittest.TestCase):
+    BG, ROAD = (16, 15, 16), (26, 30, 46)
+
+    def faded(self):
+        return scenery.fade_horizon(Image.new('RGB', (40, 360), self.BG), self.ROAD)
+
+    def test_last_row_is_road_colour(self):
+        self.assertEqual(self.faded().getpixel((5, 359)), self.ROAD)
+
+    def test_above_band_untouched(self):
+        im = self.faded()
+        self.assertEqual(im.getpixel((5, 359 - scenery.HORIZON_BAND)), self.BG)
+        self.assertEqual(im.getpixel((5, 0)), self.BG)
+
+    def test_band_ramps_monotonically(self):
+        im = self.faded()
+        blues = [im.getpixel((5, y))[2] for y in range(360 - scenery.HORIZON_BAND, 360)]
+        self.assertEqual(blues, sorted(blues))
+
+    def test_parse_hex_forms(self):
+        for t in ('0x1a1e2e', '#1A1E2E', '1a1e2e'):
+            self.assertEqual(scenery.parse_hex(t), (26, 30, 46))
+        for bad in ('0x1a1e', 'zzzzzz', ''):
+            with self.assertRaises(Exception):
+                scenery.parse_hex(bad)
+
+
 class SceneryCliTest(unittest.TestCase):
     def run_script(self, *args):
         return subprocess.run([sys.executable, SCENERY_SCRIPT, *args],
@@ -393,6 +420,22 @@ class SceneryCliTest(unittest.TestCase):
             with Image.open(out) as im:
                 self.assertEqual(im.size, (1600, 540))
                 self.assertNotEqual(im.getpixel((50, 180)), (20, 30, 30))
+
+    def test_scenery_horizon_end_to_end(self):
+        with tempfile.TemporaryDirectory() as d:
+            src, out = os.path.join(d, 's.png'), os.path.join(d, 'o.png')
+            Image.new('RGB', (1536, 512), (16, 15, 16)).save(src)
+            r = self.run_script('scenery', src, '--horizon', '0x1a1e2e', '--out', out)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn('bottom row 0x1a1e2e', r.stdout)
+
+    def test_horizon_rejected_for_road(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, 's.png')
+            Image.new('RGB', (1536, 512)).save(src)
+            r = self.run_script('road', src, '--horizon', '0x1a1e2e', '--out', os.path.join(d, 'o.png'))
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('--horizon only applies to the scenery', r.stderr)
 
     def test_lanes_rejected_for_scenery(self):
         with tempfile.TemporaryDirectory() as d:
