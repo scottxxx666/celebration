@@ -23,13 +23,13 @@ export const OBSTACLE_SPRITES = [
     key: 'obs-kazuha-zombie',
     file: 'assets/sprites/obstacles/kazuha-zombie.png',
     hh: 60,
-    hw: 51,
+    hw: 52,
   },
   {
     key: 'obs-sakura-chainsaw',
     file: 'assets/sprites/obstacles/sakura-chainsaw.png',
     hh: 70,
-    hw: 39,
+    hw: 62,
   },
   {
     key: 'obs-sakura-pikmin',
