@@ -55,11 +55,17 @@ class SuburbRoadTest(unittest.TestCase):
                                 y - 2, y + 2)
                 self.assertLess(gap, above + 12)
 
-    def test_top_edge_is_plain_asphalt(self):
-        # the horizon fades into the top row, so no lighter curb/edge band may sit there
-        top = band_mean(self.img, 0, W, 0, 16)
-        below = band_mean(self.img, 0, W, 24, 40)
-        self.assertLess(abs(top - below), 6)
+    def test_curb_is_subtle_and_confined_to_top_band(self):
+        curb = band_mean(self.img, 0, W, 2, road_mod.CURB_H - 2)
+        asphalt = band_mean(self.img, 0, W, 40, 60)
+        # a hint of kerb, not a light band under the horizon
+        self.assertGreater(curb, asphalt - 4)
+        self.assertLess(curb, asphalt + 12)
+        # top row (what the scenery horizon fades into) stays dark asphalt-toned
+        self.assertLess(band_mean(self.img, 0, W, 0, 1), asphalt + 15)
+        # below the gutter shadow the back lane is plain asphalt again
+        below = band_mean(self.img, 0, W, road_mod.CURB_H + 12, road_mod.CURB_H + 28)
+        self.assertLess(abs(below - asphalt), 6)
 
     def test_shadow_visible_on_asphalt(self):
         for y in (100, 270, 450):

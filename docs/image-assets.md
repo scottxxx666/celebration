@@ -360,7 +360,7 @@ The active `suburb` theme pairs its own procedural road, `road-suburb.png`
 `codex exec -i style.png colour.png mood.png < prompt.txt` (pass the prompt on
 stdin, since `-i` takes several files and would swallow a trailing prompt
 argument). It was prepped with
-`prep-scenery-image.py scenery shot.png --offset 200 --horizon 0x1e2428`,
+`prep-scenery-image.py scenery shot.png --offset 200 --horizon 0x2a3033`,
 where `--offset` keeps the houses on the horizon and `--horizon` fades the bottom
 rows into the suburb road's top row (re-run with the new hex after
 regenerating the road, `--blend 0 --out` on the shipped PNG). The background's Suburb `[SCENE]` block
@@ -371,8 +371,8 @@ AI road that was tried and not shipped; the road in use is procedural instead.
 The suburb road is drawn by `tools/gen-suburb-road.py`
 (`uv run --with pillow python tools/gen-suburb-road.py [--preview DIR]`):
 charcoal teal-grey asphalt with aggregate grain, stone chips, cracks, tar
-seams and faint moonlit sheen running right up to the horizon (no curb: a
-lighter strip there reads as a hard edge under the houses), and worn dashed lane dividers at y = 180 / 360. It reuses the helpers of
+seams and faint moonlit sheen, a curb in the top 14px kept only a few levels
+above the asphalt (a lighter one read as a hard edge under the houses), and worn dashed lane dividers at y = 180 / 360. It reuses the helpers of
 `gen-night-assets.py`, is deterministic, prints the seam check and the
 top/bottom row hexes (`ground` in `SCENERY_THEMES.suburb`; the top hex feeds
 `--horizon`), and is covered by `tests/tools/test_suburb_road.py`.

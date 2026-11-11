@@ -36,6 +36,14 @@ OUT = night.OUT
 ROAD_TOP = (30, 36, 40)
 ROAD_BOTTOM = (54, 62, 66)
 
+# Subtle curb: only a few levels above ROAD_TOP, so it hints at a kerb without
+# drawing a light band under the houses (the scenery horizon fades into its top row)
+CURB_H = 14
+CURB_COLOR = (38, 44, 47)
+CURB_LIP = (42, 48, 51)
+CURB_JOINT_PERIOD = 200  # divides W
+CURB_SHADOW_ALPHA = 60
+
 PAINT = (200, 206, 204)
 LINE_THICK = 6
 DASH_PERIOD = 100  # divides W
@@ -135,6 +143,21 @@ def make_road():
 
     wrapped(draw_tar, tar)
     road = over(road, wrap_blur(tar, 1.6))
+
+    # curb: faint concrete strip at the very top, soft gutter shadow below
+    curb = Image.new("RGBA", (W, ROAD_H), (0, 0, 0, 0))
+    cd = ImageDraw.Draw(curb)
+    for y in range(CURB_H):
+        cd.line([(0, y), (W, y)], fill=lerp(CURB_LIP, CURB_COLOR, y / (CURB_H - 1)) + (255,))
+    for x in range(CURB_JOINT_PERIOD // 2, W, CURB_JOINT_PERIOD):
+        cd.line([(x, 2), (x, CURB_H - 1)], fill=(26, 30, 33, 110), width=2)
+    shadow = Image.new("RGBA", (W, ROAD_H), (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shadow)
+    for i in range(8):
+        sd.line([(0, CURB_H + i), (W, CURB_H + i)],
+                fill=(6, 8, 10, int(CURB_SHADOW_ALPHA * (1 - i / 8) ** 2)))
+    road = over(road, wrap_blur(shadow, 1.2))
+    road = over(road, curb)
 
     # lane dividers: dashed worn paint, eroded by noise so the asphalt shows through
     paint = Image.new("L", (W, ROAD_H), 0)
