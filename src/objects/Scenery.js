@@ -22,6 +22,13 @@ export const SCENERY_THEMES = {
     sky: 0x271837, // matches the scenery PNG's top row — fill above it
     ground: 0x31374b, // matches the road PNG's bottom row — fill below it
   },
+  suburb: {
+    // suburb backdrop over the night-city road
+    road: { key: 'road-night', file: 'assets/bg/road-night.png' },
+    scenery: { key: 'scenery-suburb', file: 'assets/bg/scenery-suburb.png' },
+    sky: 0x0a191a,
+    ground: 0x31374b,
+  },
 };
 
 // Both PNGs are authored at 2× logical size (docs/image-assets.md), so a

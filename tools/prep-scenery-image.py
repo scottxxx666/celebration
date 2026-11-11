@@ -3,6 +3,7 @@
 
     python3 tools/prep-scenery-image.py road    shot.png [--out public/assets/bg/road-day.png]
     python3 tools/prep-scenery-image.py scenery shot.png --offset -120
+    python3 tools/prep-scenery-image.py road    shot.png --lanes   # paint the row dividers
 
 Image models only emit 1024x1024 / 1536x1024 / 1024x1536 and never tile, so every
 generated layer needs the same mechanical pass before the game can use it:
@@ -11,20 +12,30 @@ generated layer needs the same mechanical pass before the game can use it:
      of the frame are thrown away, which is what the prompts tell the model to expect)
   2. resize to the exact target box (road 1600x540, scenery 1600x360)
   3. force the left<->right seam so the tile actually repeats
-  4. report the edge-row colours to paste into SCENERY_THEMES (src/objects/Scenery.js)
+  4. (road, --lanes) paint dashed lane dividers at the exact row boundaries — image
+     models never put lines where the rows are, so prompt for a plain surface instead
+  5. report the edge-row colours to paste into SCENERY_THEMES (src/objects/Scenery.js)
 
 See docs/image-assets.md. Needs pillow (pip3 install --user pillow).
 """
 import argparse
 import os
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 # Target boxes, 2x the logical layer size (docs/image-assets.md)
 TARGETS = {
     'road': (1600, 540),
     'scenery': (1600, 360),
 }
+
+# Lane dividers (--lanes), in 2x px. The dash period must divide the 1600 width so
+# the dashes repeat across the seam; ROWS must match the game's row count.
+ROWS = 3
+DASH_PERIOD = 100
+DASH_LEN = 60
+DASH_THICKNESS = 6
+DASH_COLOR = (215, 225, 220, 120)  # pale, translucent — reads on dark asphalt, not loud
 
 
 def crop_band(im, aspect, offset):
@@ -61,6 +72,22 @@ def force_seam(im, blend):
     return out
 
 
+def paint_lanes(im):
+    """Dashed divider at each of the ROWS-1 inner row boundaries (equal-height rows)."""
+    w, h = im.size
+    overlay = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    d = ImageDraw.Draw(overlay)
+    half = DASH_THICKNESS // 2
+    start = (DASH_PERIOD - DASH_LEN) // 2  # centred in its period, so no dash straddles the seam
+    for i in range(1, ROWS):
+        y = round(h * i / ROWS)
+        for x in range(0, w, DASH_PERIOD):
+            d.rectangle((x + start, y - half, x + start + DASH_LEN - 1, y + half - 1), fill=DASH_COLOR)
+    out = im.convert('RGBA')
+    out.alpha_composite(overlay)
+    return out.convert('RGB')
+
+
 def seam_delta(im):
     """Max channel difference across the wrap (column w-1 vs column 0). 0 = exact."""
     w, h = im.size
@@ -88,7 +115,11 @@ def main():
                          'when the horizon or the road is not vertically centred')
     ap.add_argument('--blend', type=int, default=48,
                     help='seam cross-fade width in px (0 = leave the seam alone)')
+    ap.add_argument('--lanes', action='store_true',
+                    help='road only: paint dashed dividers at the row boundaries')
     args = ap.parse_args()
+    if args.lanes and args.layer != 'road':
+        ap.error('--lanes only applies to the road layer')
 
     tw, th = TARGETS[args.layer]
     src = Image.open(args.image).convert('RGB')
@@ -103,6 +134,10 @@ def main():
     out = force_seam(out, args.blend)
     print(f'  seam delta {before} -> {seam_delta(out)}'
           f'{" (blend %dpx)" % args.blend if args.blend else " (seam untouched)"}')
+
+    if args.lanes:
+        out = paint_lanes(out)
+        print(f'  painted {ROWS - 1} lane dividers')
 
     top_hex, top_rgb = row_hex(out, 0)
     bot_hex, bot_rgb = row_hex(out, th - 1)

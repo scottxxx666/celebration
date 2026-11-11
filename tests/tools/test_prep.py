@@ -24,6 +24,8 @@ def load(name, filename):
 runs = load('prep_run_frames', 'prep-run-frames.py')
 RUN_SCRIPT = os.path.join(TOOLS, 'prep-run-frames.py')
 OBSTACLE_SCRIPT = os.path.join(TOOLS, 'prep-obstacle-image.py')
+scenery = load('prep_scenery_image', 'prep-scenery-image.py')
+SCENERY_SCRIPT = os.path.join(TOOLS, 'prep-scenery-image.py')
 
 H = 100
 BLOB = (200, 50, 50, 255)
@@ -347,6 +349,58 @@ class NoisyCliTest(unittest.TestCase):
             r = self.run_script(RUN_SCRIPT, p, '--out-dir', os.path.join(d, 'o'))
             self.assertNotEqual(r.returncode, 0)
             self.assertIn('fully transparent', r.stderr)
+
+
+class PaintLanesTest(unittest.TestCase):
+    W, H = 1600, 540
+    BG = (20, 30, 30)
+
+    def painted(self):
+        return scenery.paint_lanes(Image.new('RGB', (self.W, self.H), self.BG))
+
+    def changed_rows(self, im, x):
+        return [y for y in range(self.H) if im.getpixel((x, y)) != self.BG]
+
+    def test_dividers_only_at_inner_row_boundaries(self):
+        im = self.painted()
+        x = (scenery.DASH_PERIOD - scenery.DASH_LEN) // 2  # first column of a dash
+        rows = self.changed_rows(im, x)
+        half = scenery.DASH_THICKNESS // 2
+        expected = [y for b in (180, 360) for y in range(b - half, b + half)]
+        self.assertEqual(rows, expected)  # nothing at the top/bottom edge
+
+    def test_gap_is_untouched(self):
+        self.assertEqual(self.changed_rows(self.painted(), 0), [])
+
+    def test_seam_holds(self):
+        im = self.painted()
+        self.assertEqual(scenery.seam_delta(im), 0)
+        self.assertEqual(self.W % scenery.DASH_PERIOD, 0)
+
+
+class SceneryCliTest(unittest.TestCase):
+    def run_script(self, *args):
+        return subprocess.run([sys.executable, SCENERY_SCRIPT, *args],
+                              capture_output=True, text=True)
+
+    def test_road_lanes_end_to_end(self):
+        with tempfile.TemporaryDirectory() as d:
+            src, out = os.path.join(d, 's.png'), os.path.join(d, 'o.png')
+            Image.new('RGB', (1536, 512), (20, 30, 30)).save(src)
+            r = self.run_script('road', src, '--lanes', '--out', out)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn('painted 2 lane dividers', r.stdout)
+            with Image.open(out) as im:
+                self.assertEqual(im.size, (1600, 540))
+                self.assertNotEqual(im.getpixel((50, 180)), (20, 30, 30))
+
+    def test_lanes_rejected_for_scenery(self):
+        with tempfile.TemporaryDirectory() as d:
+            src = os.path.join(d, 's.png')
+            Image.new('RGB', (1536, 512)).save(src)
+            r = self.run_script('scenery', src, '--lanes', '--out', os.path.join(d, 'o.png'))
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('--lanes only applies to the road', r.stderr)
 
 
 if __name__ == '__main__':
