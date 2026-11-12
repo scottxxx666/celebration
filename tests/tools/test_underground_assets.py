@@ -124,5 +124,56 @@ class UndergroundSceneryTest(unittest.TestCase):
         self.assertEqual(shipped.tobytes(), self.img.tobytes())
 
 
+class UndergroundFlickerTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.bg = mod.make_bg()
+        cls.img = mod.make_flicker(cls.bg)
+        lamps = tuple((x, mod.FLICKER_STRENGTH if x == mod.FLICKER_LAMP else s) for x, s in mod.LAMPS)
+        cls.lit = mod.make_bg(lamps)
+
+    def alpha_on(self, x0, x1):
+        a = self.img.getchannel('A')
+        return sum(1 for x in range(x0, x1) for y in range(BG_H) if a.getpixel((x, y)))
+
+    def test_size_and_mode(self):
+        self.assertEqual(self.img.size, (1600, 360))
+        self.assertEqual(self.img.mode, 'RGBA')
+
+    def test_deterministic(self):
+        self.assertEqual(self.img.tobytes(), mod.make_flicker().tobytes())
+
+    def test_alpha_is_binary(self):
+        self.assertLessEqual(set(self.img.getchannel('A').getdata()), {0, 255})
+
+    def test_clear_far_from_the_lamp(self):
+        self.assertEqual(self.alpha_on(100, 300), 0)
+
+    def test_covers_the_lamp_and_its_pool(self):
+        lamp = mod.FLICKER_LAMP
+        self.assertGreater(self.alpha_on(lamp - 60, lamp + 60), 0.5 * 120 * BG_H)
+        self.assertEqual(self.img.getpixel((lamp, mod.CEIL_H - 8))[3], 255)
+
+    def test_lit_lamp_is_brighter_than_the_dead_one(self):
+        lamp = mod.FLICKER_LAMP
+        y0, y1 = mod.CEIL_H + 20, mod.CEIL_H + 120
+        self.assertGreater(band_mean(self.lit, lamp - 40, lamp + 40, y0, y1),
+                           band_mean(self.bg, lamp - 40, lamp + 40, y0, y1) + 5)
+
+    def test_full_alpha_composite_equals_lit_render(self):
+        out = self.bg.copy()
+        out.paste(self.img.convert('RGB'), mask=self.img.getchannel('A'))
+        self.assertEqual(out.tobytes(), self.lit.tobytes())
+
+    def test_alpha_seam_is_consistent(self):
+        a = self.img.getchannel('A')
+        self.assertEqual([a.getpixel((0, y)) for y in range(BG_H)],
+                         [a.getpixel((W - 1, y)) for y in range(BG_H)])
+
+    def test_shipped_flicker_matches_generator(self):
+        shipped = Image.open(os.path.join(mod.OUT, 'scenery-underground-flicker.png')).convert('RGBA')
+        self.assertEqual(shipped.tobytes(), self.img.tobytes())
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -442,7 +442,14 @@ cold light alternate with darkness. Kept deliberately dark (low ambient, dim lam
 (joints at y = 180 / 360 mark the rows) with stains, sparse cracks and tiny
 dead-leaf debris, its top rows darkened as grime at the wall base (row 0 =
 the scenery's bottom row, 0x101312). Anything crossing the seam (grout,
-pilasters) is drawn on both sides of it. Covered by
+pilasters) is drawn on both sides of it. The generator also writes
+`scenery-underground-flicker.png`, an RGBA glow layer (RGB = the scenery with
+the x = 1000 lamp lit at `FLICKER_STRENGTH`, alpha 255 only where that differs
+from the normal scenery), so fading it in at alpha a over the strip gives
+lerp(normal, lit, a). The theme's optional `flicker` field preloads it and
+`Scenery` shows it as a single image pinned to one copy of the repeating strip (the
+first lamp to scroll in from the right, `flicker.lampX`) and drives its alpha with
+`lampFlicker()`, so only that one lamp flickers. Covered by
 `tests/tools/test_underground_assets.py`.
 
 **Handling the rotate section**: the `rotate` section zooms the camera out to

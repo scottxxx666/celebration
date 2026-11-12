@@ -11,6 +11,7 @@ import {
 } from '../config/gameConfig.js';
 import { rowBoundaryYs } from '../rowLayout.js';
 import { SCENERY_THEMES, multiplyColor } from '../config/sceneryThemes.js';
+import { firstCopyFromRight, copyScreenX } from '../lampFlicker.js';
 
 // Both PNGs are authored at 2× logical size (docs/image-assets.md), so a
 // tileSprite must be drawn at half scale to land back at logical pixels —
@@ -30,6 +31,10 @@ export class Scenery {
   constructor(scene, themeName) {
     const left = GAME_WIDTH / 2 - HALF_SPAN;
     const width = 2 * HALF_SPAN;
+    this.flickerLevel = 0;
+    this.blending = false;
+    this.stripLeft = left;
+    this.lampCopy = null;
 
     // Base layers show the `from` theme; the overlay set (hidden until a
     // crossfade) shows the `to` theme at alpha t. Overlay depths stay below
@@ -41,6 +46,16 @@ export class Scenery {
     // Aliases for the base set (the layers scroll() advances)
     this.scenery = this.base.scenery;
     this.road = this.base.road;
+
+    // The flicker glow is a single plain image, not a tiling layer: the strip repeats,
+    // but only one copy of the lamp is lit. Between the base (-10) and overlay (-9.9) strips.
+    this.glow = scene.add
+      .image(left, 0, SCENERY_THEMES[themeName].scenery.key)
+      .setOrigin(0, 0)
+      .setScale(SOURCE_SCALE)
+      .setDepth(-9.95)
+      .setVisible(false);
+    this.applyGlowTheme(themeName);
 
     // Dashed lane-line row dividers for dim sections — over the road art's own lines,
     // above the disco dim (-6) so they stay readable, below the beat flash (-5)
@@ -107,8 +122,56 @@ export class Scenery {
       if (tint === 0xffffff) layer.clearTint();
       else layer.setTint(tint);
     }
+    if (layers === this.base) this.applyGlowTheme(themeName);
     layers.sky.setFillStyle(multiplyColor(theme.sky, tint));
     layers.ground.setFillStyle(multiplyColor(theme.ground, tint));
+  }
+
+  // Base theme changed: re-point the glow image and forget the chosen lamp copy, so a
+  // later theme with a flicker picks its own.
+  applyGlowTheme(themeName) {
+    const theme = SCENERY_THEMES[themeName];
+    this.glowTheme = theme.flicker ? theme : null;
+    this.lampCopy = null;
+    if (!theme.flicker) return;
+    const tint = theme.tint ?? 0xffffff;
+    this.glow.setTexture(theme.flicker.key);
+    if (tint === 0xffffff) this.glow.clearTint();
+    else this.glow.setTint(tint);
+  }
+
+  // Pins the glow to the one chosen copy of the lamp, locked to the strip's scroll. Off
+  // during a stage crossfade: the glow is lit art of one theme with a hard-edged mask, so
+  // over a half-faded mix of two themes it shows as a patch. Once the chosen copy drifts
+  // off-screen left it just stays there; the later copies of the lamp are dead.
+  updateGlow() {
+    const flicker = this.glowTheme?.flicker;
+    const alpha = this.blending || !flicker ? 0 : this.flickerLevel;
+    if (alpha > 0 && this.lampCopy === null) {
+      this.lampCopy = firstCopyFromRight({
+        tilePositionX: this.scenery.tilePositionX,
+        stripLeft: this.stripLeft,
+        lampX: flicker.lampX,
+        texWidth: this.glow.width,
+        scale: SOURCE_SCALE,
+        rightEdge: GAME_WIDTH,
+      });
+    }
+    this.glow.setAlpha(alpha).setVisible(alpha > 0 && this.lampCopy !== null);
+    if (this.lampCopy !== null) {
+      this.glow.x = copyScreenX({
+        tilePositionX: this.scenery.tilePositionX,
+        stripLeft: this.stripLeft,
+        texWidth: this.glow.width,
+        scale: SOURCE_SCALE,
+        copy: this.lampCopy,
+      });
+    }
+  }
+
+  // level: 0–1 from lampFlicker(), applied on the next scroll()
+  setFlicker(level) {
+    this.flickerLevel = level;
   }
 
   setOverlayVisible(visible) {
@@ -119,7 +182,8 @@ export class Scenery {
   // Crossfade state from stageBlend: base shows `from`, overlay fades `to` in at
   // alpha t. Settled (t >= 1 or from === to): base shows `to`, overlay hidden.
   setBlend(from, to, t) {
-    if (t >= 1 || from === to) {
+    this.blending = t < 1 && from !== to;
+    if (!this.blending) {
       this.applyTheme(this.base, to);
       this.setOverlayVisible(false);
       return;
@@ -150,5 +214,6 @@ export class Scenery {
     }
     // Row-line texture is at logical size, so it moves by world pixels directly
     for (const line of this.rowLines) line.tilePositionX += dxWorldPx;
+    this.updateGlow();
   }
 }

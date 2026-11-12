@@ -3,6 +3,10 @@
 // the single source of truth for the file paths, so no string is duplicated.
 // Optional `tint` (0xRRGGBB) is multiplied onto the whole theme — strips via
 // setTint, sky/ground fills via multiplyColor; omitted = 0xffffff = unchanged.
+// Optional `flicker` ({ key, file, lampX }, preloaded like the strips): an RGBA glow
+// image the size of the scenery texture whose alpha Scenery drives with lampFlicker().
+// `lampX` is the lamp's x in texture pixels; only the first copy of the (tiling) strip
+// to scroll in from the right is lit, so one lamp flickers rather than every repeat.
 export const SCENERY_THEMES = {
   night: {
     road: { key: 'road-night', file: 'assets/bg/road-night.png' },
@@ -36,6 +40,7 @@ export const SCENERY_THEMES = {
     // dim tiled underpass, procedural road + scenery (tools/gen-underground-assets.py)
     road: { key: 'road-underground', file: 'assets/bg/road-underground.png' },
     scenery: { key: 'scenery-underground', file: 'assets/bg/scenery-underground.png' },
+    flicker: { key: 'scenery-underground-flicker', file: 'assets/bg/scenery-underground-flicker.png', lampX: 1000 },
     sky: 0x070c0b,
     ground: 0x262b29,
   },

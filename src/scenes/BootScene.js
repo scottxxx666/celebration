@@ -24,6 +24,7 @@ export class BootScene extends Phaser.Scene {
       const theme = SCENERY_THEMES[name];
       this.load.image(theme.road.key, theme.road.file);
       this.load.image(theme.scenery.key, theme.scenery.file);
+      if (theme.flicker) this.load.image(theme.flicker.key, theme.flicker.file);
     }
 
     OBSTACLE_SPRITES.forEach(sprite => this.load.image(sprite.key, sprite.file));

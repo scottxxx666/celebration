@@ -16,6 +16,20 @@ export const WALK_ZONE_TOP = GAME_HEIGHT * 0.4; // y=180; above is scenery
 // 0 = static backdrop, 1 = locked to the road
 export const SCENERY_PARALLAX = 0.2;
 
+// Flickering fluorescent lamp (theme `flicker` glow layer, src/lampFlicker.js):
+// time is cut into slots of 1/LAMP_FLICKER_SLOTS_PER_BEAT beat; a beat is a
+// burst beat with LAMP_FLICKER_BURST_CHANCE, where each slot is lit with
+// LAMP_FLICKER_BURST_ON_CHANCE at a level in LAMP_FLICKER_BURST_LEVEL_MIN..1;
+// outside bursts a slot blips with LAMP_FLICKER_BLIP_CHANCE at a level in
+// LAMP_FLICKER_BLIP_LEVEL_MIN..MAX; every other slot is dark (0).
+export const LAMP_FLICKER_SLOTS_PER_BEAT = 8;
+export const LAMP_FLICKER_BURST_CHANCE = 0.25;
+export const LAMP_FLICKER_BURST_ON_CHANCE = 0.6;
+export const LAMP_FLICKER_BURST_LEVEL_MIN = 0.6;
+export const LAMP_FLICKER_BLIP_CHANCE = 0.03;
+export const LAMP_FLICKER_BLIP_LEVEL_MIN = 0.25;
+export const LAMP_FLICKER_BLIP_LEVEL_MAX = 0.5;
+
 // Crossfade length when the stage theme changes, in game beats (BEAT_MS); 0 = hard cut
 export const STAGE_FADE_BEATS = 4;
 

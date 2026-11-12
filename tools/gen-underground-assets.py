@@ -5,6 +5,8 @@
 
 Writes public/assets/bg/road-underground.png     1600x540  tiles left<->right, not vertically
        public/assets/bg/scenery-underground.png  1600x360  tiles left<->right
+       public/assets/bg/scenery-underground-flicker.png  1600x360 RGBA glow layer: the
+           scenery with the dead lamp lit, alpha only where it differs (Scenery fades it in and out)
 
 A neglected pedestrian underpass at night, a little scary: a long wall of
 pale teal glazed tiles (stack bond, grout lines, stained and chipped) with a
@@ -78,6 +80,9 @@ PAPER = (196, 196, 178)
 FOG = (70, 92, 86)
 
 LAMPS = ((200, 0.8), (600, 0.55), (1000, 0.0), (1400, 0.7))  # (x, strength); 1000 is dead
+FLICKER_LAMP = 1000             # the dead lamp x: its flicker glow layer lights it up
+FLICKER_STRENGTH = 0.75         # lamp strength in the fully lit flicker frame
+FLICKER_CLEAR = 400             # px around the flicker lamp left out of the ceiling-top averaging
 PASSAGE = (930, 1070)           # dark side opening under the dead lamp
 EDGE_ROWS = 3
 
@@ -193,14 +198,14 @@ def make_road():
 
 
 # ---------------------------------------------------------------- scenery
-def light_map():
+def light_map(lamps=LAMPS):
     """Wall illumination 0..1: cold pools under the live fixtures, deep
     darkness between them and under the dead one, darker toward the ceiling."""
     m = Image.new("L", (W, BG_H))
     px = m.load()
     for x in range(W):
         col = [0.0] * BG_H
-        for lx, s in LAMPS:
+        for lx, s in lamps:
             if s <= 0:
                 continue
             dx = wrap_dx(x, lx)
@@ -314,7 +319,7 @@ def notices(d, dx):
         d.line([(x0 + 9, y0 + k), (x0 + 37, y0 + k)], fill=(80, 70, 60, 170), width=1)
 
 
-def make_bg():
+def make_bg(lamps=LAMPS):
     wall = make_wall()
     wall = over(wall, stains_layer())
     details = Image.new("RGBA", (W, BG_H), PAPER + (0,))
@@ -333,7 +338,7 @@ def make_bg():
         pd.line([(x0 + 20 + k * 6, y), (x1 - 20 - k * 6, y)], fill=(26, 32, 30), width=2)
 
     # lighting
-    lit = light_map()
+    lit = light_map(lamps)
     black = Image.new("RGBA", (W, BG_H), (4, 6, 6, 255))
     wall = Image.composite(wall, black, lit)
 
@@ -341,7 +346,7 @@ def make_bg():
     fx = Image.new("RGBA", (W, BG_H), (200, 240, 220, 0))
 
     def draw_fixtures(d, dx):
-        for lx, s in LAMPS:
+        for lx, s in lamps:
             x = lx + dx
             d.rectangle([x - 46, CEIL_H - 12, x + 46, CEIL_H - 4], fill=(30, 34, 34, 255))
             tube = (215, 245, 228) if s > 0 else (70, 76, 74)
@@ -351,7 +356,7 @@ def make_bg():
     glow = Image.new("RGBA", (W, BG_H), (170, 230, 210, 0))
 
     def draw_glow(d, dx):
-        for lx, s in LAMPS:
+        for lx, s in lamps:
             if s > 0:
                 d.ellipse([lx + dx - 90, CEIL_H - 24, lx + dx + 90, CEIL_H + 14], fill=(170, 230, 210, int(110 * s)))
 
@@ -377,7 +382,9 @@ def make_bg():
 
     # ceiling top rows flat so the sky fill above the strip has no seam
     fix = ImageDraw.Draw(bg)
-    top = tuple(round(sum(c) / len(c)) for c in zip(*(bg.getpixel((x, 0)) for x in range(W))))
+    # the flicker lamp's light never reaches the averaged columns, so the lit frame leaves rows 0-5 alone far from it
+    top = tuple(round(sum(c) / len(c)) for c in zip(*(bg.getpixel((x, 0)) for x in range(W)
+                                                      if wrap_dx(x, FLICKER_LAMP) > FLICKER_CLEAR)))
     for y in range(6):
         for x in range(W):
             fix.point((x, y), lerp(bg.getpixel((x, y)), top, 1 - y / 6))
@@ -389,9 +396,29 @@ def make_bg():
     return bg
 
 
-def write_preview(road, bg, prev_dir):
+def make_flicker(bg=None):
+    """RGBA glow layer for the flickering lamp: RGB = the scenery with the lamp lit,
+    alpha 255 where that differs from `bg`. Drawn at alpha a over the normal
+    scenery it equals lerp(normal, lit, a)."""
+    if bg is None:
+        bg = make_bg()
+    lamps = tuple((x, FLICKER_STRENGTH if x == FLICKER_LAMP else s) for x, s in LAMPS)
+    lit = make_bg(lamps)
+    diff = ImageChops.difference(lit, bg)
+    r, g, b = diff.split()
+    mask = ImageChops.lighter(ImageChops.lighter(r, g), b).point(lambda v: 255 if v else 0)
+    out = lit.convert("RGBA")
+    out.putalpha(mask)
+    return out
+
+
+def write_preview(road, bg, prev_dir, flicker=None):
     os.makedirs(prev_dir, exist_ok=True)
     day.write_preview(road, bg, prev_dir)
+    if flicker is not None:
+        lit = bg.copy()
+        lit.paste(flicker.convert("RGB"), mask=flicker.getchannel("A"))
+        lit.save(os.path.join(prev_dir, "flicker-on.png"))
 
 
 if __name__ == "__main__":
@@ -400,6 +427,8 @@ if __name__ == "__main__":
     bg = make_bg()
     road.save(os.path.join(OUT, "road-underground.png"))
     bg.save(os.path.join(OUT, "scenery-underground.png"))
+    flicker = make_flicker(bg)
+    flicker.save(os.path.join(OUT, "scenery-underground-flicker.png"))
     seam_check(road, "road")
     seam_check(bg, "scenery")
     print("sky (scenery top row)", hex_of(row_avg(bg, 0)),
@@ -407,4 +436,4 @@ if __name__ == "__main__":
     print("horizon: scenery bottom row", hex_of(row_avg(bg, BG_H - 1)),
           " road top row", hex_of(row_avg(road, 0)))
     if "--preview" in sys.argv:
-        write_preview(road, bg, sys.argv[sys.argv.index("--preview") + 1])
+        write_preview(road, bg, sys.argv[sys.argv.index("--preview") + 1], flicker)
