@@ -3,7 +3,6 @@ import {
   GAME_HEIGHT,
   WALK_ZONE_TOP,
   ROTATE_ZOOM,
-  SCENERY_THEME,
   SCENERY_PARALLAX,
   DIM_ROW_LINE_ALPHA,
   DIM_ROW_LINE_THICKNESS,
@@ -11,25 +10,7 @@ import {
   DIM_ROW_LINE_GAP,
 } from '../config/gameConfig.js';
 import { rowBoundaryYs } from '../rowLayout.js';
-
-// Theme table — a road+background pair swaps as a set (docs/image-assets.md
-// "Road & background"). BootScene reads `road`/`scenery` to preload; this is
-// the single source of truth for the file paths, so no string is duplicated.
-export const SCENERY_THEMES = {
-  night: {
-    road: { key: 'road-night', file: 'assets/bg/road-night.png' },
-    scenery: { key: 'scenery-night', file: 'assets/bg/scenery-night.png' },
-    sky: 0x271837, // matches the scenery PNG's top row — fill above it
-    ground: 0x31374b, // matches the road PNG's bottom row — fill below it
-  },
-  suburb: {
-    // suburb backdrop over its own procedural asphalt road (tools/gen-suburb-road.py)
-    road: { key: 'road-suburb', file: 'assets/bg/road-suburb.png' },
-    scenery: { key: 'scenery-suburb', file: 'assets/bg/scenery-suburb.png' },
-    sky: 0x121316,
-    ground: 0x363e42,
-  },
-};
+import { SCENERY_THEMES } from '../config/sceneryThemes.js';
 
 // Both PNGs are authored at 2× logical size (docs/image-assets.md), so a
 // tileSprite must be drawn at half scale to land back at logical pixels —
@@ -46,8 +27,9 @@ const HALF_SPAN = Math.hypot(GAME_WIDTH / ROTATE_ZOOM, GAME_HEIGHT / ROTATE_ZOOM
 const ROW_LINE_KEY = 'dim-row-line';
 
 export class Scenery {
-  constructor(scene) {
-    const theme = SCENERY_THEMES[SCENERY_THEME];
+  constructor(scene, themeName) {
+    const theme = SCENERY_THEMES[themeName];
+    this.themeName = themeName;
 
     const left = GAME_WIDTH / 2 - HALF_SPAN;
     const width = 2 * HALF_SPAN;
@@ -90,17 +72,29 @@ export class Scenery {
 
     // Sky fill — above the scenery strip, out to the swept circle
     const skyTop = GAME_HEIGHT / 2 - HALF_SPAN;
-    scene.add
+    this.sky = scene.add
       .rectangle(left, skyTop, width, 0 - skyTop, theme.sky)
       .setOrigin(0, 0)
       .setDepth(-11);
 
     // Ground fill — below the road, out to the swept circle
     const groundBottom = GAME_HEIGHT / 2 + HALF_SPAN;
-    scene.add
+    this.ground = scene.add
       .rectangle(left, GAME_HEIGHT, width, groundBottom - GAME_HEIGHT, theme.ground)
       .setOrigin(0, 0)
       .setDepth(-11);
+  }
+
+  // Hard cut to another theme (no crossfade); a no-op unless it changed, so it is
+  // safe to call every frame. tilePositionX and tileScale survive setTexture.
+  setTheme(themeName) {
+    if (themeName === this.themeName) return;
+    const theme = SCENERY_THEMES[themeName];
+    this.themeName = themeName;
+    this.scenery.setTexture(theme.scenery.key);
+    this.road.setTexture(theme.road.key);
+    this.sky.setFillStyle(theme.sky);
+    this.ground.setFillStyle(theme.ground);
   }
 
   // fade: 0–1 share of the dim currently applied (GameScene's dim ramp), so the

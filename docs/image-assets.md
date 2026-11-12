@@ -351,10 +351,10 @@ Seamless tiling is not guaranteed by the model, so `--blend` remains needed.
    30% black ellipse on it — if the shadow vanishes, the road is too dark; if
    the sprite gets lost, the road is too busy.
 4. Keep one road + one background per variant so a theme can be swapped as a
-   pair: add an entry to `SCENERY_THEMES` and point `SCENERY_THEME`
-   (`gameConfig.js`) at it.
+   pair: add an entry to `SCENERY_THEMES` and point a stage in
+   `STAGES` (`src/config/stages.js`) at it.
 
-The active `suburb` theme pairs its own procedural road, `road-suburb.png`
+The `suburb` theme pairs its own procedural road, `road-suburb.png`
 (`tools/gen-suburb-road.py`, see below), with an AI background,
 `scenery-suburb.png`, generated with Codex's built-in image model:
 `codex exec -i style.png colour.png mood.png < prompt.txt` (pass the prompt on
@@ -396,8 +396,8 @@ Everything lives under `public/assets/` alongside `intro.mp4` / `music.m4a`:
 - `sprites/obstacles/<slug>.png` — obstacle character sprites
 - `bg/road-<theme>.png`, `bg/scenery-<theme>.png` — scenery pair
 
-`BootScene` loads the active theme's pair via the `SCENERY_THEMES` table in
-`src/objects/Scenery.js`, which owns both layers. The road and the background
+`BootScene` loads the pair of every theme used in `STAGES` via the
+`SCENERY_THEMES` table in `src/config/sceneryThemes.js`; `Scenery` owns both layers. The road and the background
 are **both** `add.tileSprite` (not `add.image`) — the background needs one too
 because of the rotate-section oversizing above and its own slow scroll; both
 scroll via `tilePositionX` (`Scenery.scroll`), the background at

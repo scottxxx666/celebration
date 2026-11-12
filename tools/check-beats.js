@@ -1,5 +1,5 @@
-// Verifies every live section time (sections.js) and every wave/obstacle time
-// (waves.js, plus the frozen wavesHard.js, which is only reported, never fixed)
+// Verifies every live section time (sections.js), scenery stage time (stages.js,
+// report only) and every wave/obstacle time (waves.js, plus the frozen wavesHard.js, which is only reported, never fixed)
 // sits on a real track beat. Obstacle timeOffset is in real track beats and may
 // subdivide the beat down to 1/WAVE_BEAT_DIVISIONS. Usage: yarn check:beats [--fix]
 // --fix snaps off-grid section times (sections.js) and wave times (waves.js)
@@ -7,6 +7,7 @@
 // tools/gen-waves.py overwrites such edits.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { SECTIONS } from '../src/config/sections.js';
+import { STAGES } from '../src/config/stages.js';
 import { WAVES } from '../src/config/waves.js';
 import { WAVES_HARD } from '../src/config/wavesHard.js';
 import { snapToTrackBeat, trackBeatOf } from '../src/Conductor.js';
@@ -94,6 +95,23 @@ function checkWaves(prefix, waves, track) {
   return { failures, changes };
 }
 
+// Stage cuts: startMs 0 is the run's origin and exempt from the beat check.
+let stageFailures = 0;
+console.log('');
+for (const stage of STAGES) {
+  const label = `stages.${stage.name}.startMs`;
+  const ms = stage.startMs;
+  if (ms === 0) {
+    console.log(`✓ ${label} 0 (run start, exempt)`);
+  } else if (Math.abs(snapToTrackBeat(ms) - ms) > TOLERANCE_MS) {
+    stageFailures++;
+    const snapped = Math.round(snapToTrackBeat(ms));
+    console.log(`✗ ${label} ${ms} (nearest beat ${trackBeatOf(ms)} at ${snapped}, off ${ms - snapped} ms; fix by hand)`);
+  } else {
+    console.log(`✓ ${label} ${ms} (${beatTag(ms).tag})`);
+  }
+}
+
 const { failures: waveFailures, changes: waveChanges } = checkWaves('waves', WAVES, true);
 const { failures: hardFailures } = checkWaves('wavesHard', WAVES_HARD, false);
 
@@ -169,4 +187,4 @@ if (fix) {
   }
   process.exit(0);
 }
-process.exit(waveFailures || hardFailures || changes.length ? 1 : 0);
+process.exit(waveFailures || hardFailures || stageFailures || changes.length ? 1 : 0);

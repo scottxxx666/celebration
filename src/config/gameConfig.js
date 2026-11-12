@@ -12,8 +12,6 @@ export const DECEL_PER_SEC = 125; // speed lost per second when not tapping
 // Walking zone — player/obstacles confined to this vertical band
 export const WALK_ZONE_TOP = GAME_HEIGHT * 0.4; // y=180; above is scenery
 
-// Active road+background pair — see SCENERY_THEMES in src/objects/Scenery.js
-export const SCENERY_THEME = 'suburb';
 // Share of the road's scroll the background scenery moves at (parallax):
 // 0 = static backdrop, 1 = locked to the road
 export const SCENERY_PARALLAX = 0.2;

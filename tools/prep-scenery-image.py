@@ -17,7 +17,7 @@ generated layer needs the same mechanical pass before the game can use it:
      models never put lines where the rows are, so prompt for a plain surface instead
   5. (scenery, --horizon) fade the bottom rows into the road's top-row colour so the
      horizon seam has no tone step
-  6. report the edge-row colours to paste into SCENERY_THEMES (src/objects/Scenery.js)
+  6. report the edge-row colours to paste into SCENERY_THEMES (src/config/sceneryThemes.js)
 
 See docs/image-assets.md. Needs pillow (pip3 install --user pillow).
 """

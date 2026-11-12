@@ -5,6 +5,7 @@ import { Enemy } from '../objects/Enemy.js';
 import { DiscoLights } from '../objects/DiscoLights.js';
 import { Afterimages } from '../objects/Afterimages.js';
 import { Scenery } from '../objects/Scenery.js';
+import { stageAt } from '../config/stages.js';
 import { SpinBikes } from '../objects/SpinBikes.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
@@ -74,7 +75,7 @@ export class GameScene extends Phaser.Scene {
     // zoom-out) — see src/objects/Scenery.js. No horizon divider needed: the
     // scenery PNG's bottom row and the road PNG's top row are the same colour
     // by construction (docs/image-assets.md).
-    this.scenery = new Scenery(this);
+    this.scenery = new Scenery(this, stageAt(getStartMs()).theme);
 
     // Song = level: the track plays once; reaching its end clears the run
     this.music = this.sound.add('music', { loop: false });
@@ -286,6 +287,7 @@ export class GameScene extends Phaser.Scene {
 
     // Scroll background — global world multiplier from the current section
     const worldDx = this.player.speed * section.speedMult * (delta / 1000);
+    this.scenery.setTheme(stageAt(songMs).theme);
     this.scenery.scroll(worldDx);
     this.spinBikes.update(section, songMs, worldDx);
 
