@@ -32,6 +32,13 @@ export const SCENERY_THEMES = {
     sky: 0x8f8973,
     ground: 0x7f6d55,
   },
+  underground: {
+    // dim tiled underpass, procedural road + scenery (tools/gen-underground-assets.py)
+    road: { key: 'road-underground', file: 'assets/bg/road-underground.png' },
+    scenery: { key: 'scenery-underground', file: 'assets/bg/scenery-underground.png' },
+    sky: 0x070c0b,
+    ground: 0x383e3a,
+  },
 };
 
 // Per-channel multiply of two 0xRRGGBB colours (white tint = unchanged).

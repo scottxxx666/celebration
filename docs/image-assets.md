@@ -429,6 +429,22 @@ dusty, no road / people / vehicles. Prepped with
 (it printed `sky` 0x8f8973). Covered by `tests/tools/test_desert_assets.py`
 (road, the drawing, and the shipped PNG's size, seam and edge rows).
 
+The `underground` theme (stage 4 from 59134 ms) is fully procedural for now:
+`tools/gen-underground-assets.py`
+(`uv run --with pillow python tools/gen-underground-assets.py [--preview DIR]`)
+writes both `road-underground.png` and `scenery-underground.png`. The scenery
+is a dim pedestrian-underpass wall: pale teal stack-bond tiles with a
+rust-orange band, blue-grey pilasters every 400 px, peeling notices and a
+red warning sign, a dark ceiling soffit with four fluorescent fixtures (the one
+at x = 1000 dead, over a black side passage), water/rust streaks, mould above a
+rust-red skirting and low floor fog, lit by a periodic light map so pools of
+cold light alternate with darkness. Kept deliberately dark (low ambient, dim lamps, a crushed grade) for a scary mood. The road is dark damp concrete slabs
+(joints at y = 180 / 360 mark the rows) with stains, sparse cracks and tiny
+dead-leaf debris, its top rows darkened as grime at the wall base (row 0 =
+the scenery's bottom row, 0x181c1b). Anything crossing the seam (grout,
+pilasters) is drawn on both sides of it. Covered by
+`tests/tools/test_underground_assets.py`.
+
 **Handling the rotate section**: the `rotate` section zooms the camera out to
 0.49 and spins it, which would otherwise reveal area outside the 800×450
 world. `Scenery` (`src/objects/Scenery.js`) handles this in code, not art: both
