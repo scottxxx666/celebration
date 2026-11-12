@@ -10,7 +10,7 @@ import {
   DIM_ROW_LINE_GAP,
 } from '../config/gameConfig.js';
 import { rowBoundaryYs } from '../rowLayout.js';
-import { SCENERY_THEMES } from '../config/sceneryThemes.js';
+import { SCENERY_THEMES, multiplyColor } from '../config/sceneryThemes.js';
 
 // Both PNGs are authored at 2× logical size (docs/image-assets.md), so a
 // tileSprite must be drawn at half scale to land back at logical pixels —
@@ -78,8 +78,8 @@ export class Scenery {
     const skyTop = GAME_HEIGHT / 2 - HALF_SPAN;
     // Ground fill — below the road, out to the swept circle
     const groundBottom = GAME_HEIGHT / 2 + HALF_SPAN;
-    return {
-      themeName,
+    const layers = {
+      themeName: null,
       scenery: strip(0, WALK_ZONE_TOP, theme.scenery.key),
       road: strip(WALK_ZONE_TOP, GAME_HEIGHT - WALK_ZONE_TOP, theme.road.key),
       sky: scene.add
@@ -91,6 +91,8 @@ export class Scenery {
         .setOrigin(0, 0)
         .setDepth(fillDepth),
     };
+    this.applyTheme(layers, themeName);
+    return layers;
   }
 
   // Only touches the layers when the theme actually changed, so it is cheap to
@@ -99,10 +101,14 @@ export class Scenery {
     if (layers.themeName === themeName) return;
     const theme = SCENERY_THEMES[themeName];
     layers.themeName = themeName;
-    layers.scenery.setTexture(theme.scenery.key);
-    layers.road.setTexture(theme.road.key);
-    layers.sky.setFillStyle(theme.sky);
-    layers.ground.setFillStyle(theme.ground);
+    const tint = theme.tint ?? 0xffffff;
+    for (const [layer, art] of [[layers.scenery, theme.scenery], [layers.road, theme.road]]) {
+      layer.setTexture(art.key);
+      if (tint === 0xffffff) layer.clearTint();
+      else layer.setTint(tint);
+    }
+    layers.sky.setFillStyle(multiplyColor(theme.sky, tint));
+    layers.ground.setFillStyle(multiplyColor(theme.ground, tint));
   }
 
   setOverlayVisible(visible) {

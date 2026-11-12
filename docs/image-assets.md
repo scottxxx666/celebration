@@ -352,7 +352,8 @@ Seamless tiling is not guaranteed by the model, so `--blend` remains needed.
    the sprite gets lost, the road is too busy.
 4. Keep one road + one background per variant so a theme can be swapped as a
    pair: add an entry to `SCENERY_THEMES` and point a stage in
-   `STAGES` (`src/config/stages.js`) at it.
+   `STAGES` (`src/config/stages.js`) at it. An optional `tint` (0xRRGGBB) on the
+   entry darkens a too-light theme in code (multiplied onto strips and fills).
 
 The `suburb` theme pairs its own procedural road, `road-suburb.png`
 (`tools/gen-suburb-road.py`, see below), with an AI background,

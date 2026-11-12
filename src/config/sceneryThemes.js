@@ -1,6 +1,8 @@
 // Theme table — a road+background pair swaps as a set (docs/image-assets.md
 // "Road & background"). BootScene reads `road`/`scenery` to preload; this is
 // the single source of truth for the file paths, so no string is duplicated.
+// Optional `tint` (0xRRGGBB) is multiplied onto the whole theme — strips via
+// setTint, sky/ground fills via multiplyColor; omitted = 0xffffff = unchanged.
 export const SCENERY_THEMES = {
   night: {
     road: { key: 'road-night', file: 'assets/bg/road-night.png' },
@@ -21,5 +23,12 @@ export const SCENERY_THEMES = {
     scenery: { key: 'scenery-suburb-day', file: 'assets/bg/scenery-suburb-day.png' },
     sky: 0xc8d3d4,
     ground: 0x928d83,
+    tint: 0xd0d0d0, // darkens the too-light AI day art; tune here
   },
 };
+
+// Per-channel multiply of two 0xRRGGBB colours (white tint = unchanged).
+export function multiplyColor(color, tint) {
+  const ch = shift => Math.round((((color >> shift) & 0xff) * ((tint >> shift) & 0xff)) / 255);
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+}
