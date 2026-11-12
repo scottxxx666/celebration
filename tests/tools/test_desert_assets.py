@@ -103,11 +103,9 @@ class DesertSceneryTest(unittest.TestCase):
     def test_horizon_meets_road_top_row(self):
         self.assertEqual(mod.row_avg(self.img, BG_H - 1), mod.row_avg(self.road, 0))
 
-    def test_theme_hexes_match_edge_rows(self):
-        for got, want in ((mod.row_avg(self.img, 0), theme_hex('sky')),
-                          (mod.row_avg(self.road, ROAD_H - 1), theme_hex('ground'))):
-            for a, b in zip(got, want):
-                self.assertLessEqual(abs(a - b), 2)
+    def test_road_bottom_row_matches_theme_ground(self):
+        for a, b in zip(mod.row_avg(self.road, ROAD_H - 1), theme_hex('ground')):
+            self.assertLessEqual(abs(a - b), 2)
 
     def test_overcast_sky_plain_at_the_top(self):
         # clouds fade out before the top rows, so the sky fill above the strip has no seam
@@ -120,10 +118,32 @@ class DesertSceneryTest(unittest.TestCase):
         r, g, b = mod.row_avg(self.img, BG_H - 20)
         self.assertGreater(r, b + 25)
 
-    def test_shipped_files_match_generator(self):
-        for name, im in (('scenery-desert.png', self.img), ('road-desert.png', self.road)):
-            shipped = Image.open(os.path.join(mod.OUT, name)).convert('RGB')
-            self.assertEqual(shipped.tobytes(), im.tobytes(), name)
+    def test_shipped_road_matches_generator(self):
+        shipped = Image.open(os.path.join(mod.OUT, 'road-desert.png')).convert('RGB')
+        self.assertEqual(shipped.tobytes(), self.road.tobytes())
+
+
+class ShippedDesertSceneryTest(unittest.TestCase):
+    """The shipped scenery is the prepped AI image, not make_bg()'s drawing."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.img = Image.open(os.path.join(mod.OUT, 'scenery-desert.png')).convert('RGB')
+        cls.road = mod.make_road()
+
+    def test_size(self):
+        self.assertEqual(self.img.size, (W, BG_H))
+
+    def test_tiles_left_right(self):
+        self.assertLess(max(col_delta(self.img, 0, W - 1)), 12)
+
+    def test_horizon_meets_road_top_row(self):
+        for a, b in zip(mod.row_avg(self.img, BG_H - 1), mod.row_avg(self.road, 0)):
+            self.assertLessEqual(abs(a - b), 2)
+
+    def test_top_row_matches_theme_sky(self):
+        for a, b in zip(mod.row_avg(self.img, 0), theme_hex('sky')):
+            self.assertLessEqual(abs(a - b), 3)
 
 
 if __name__ == '__main__':

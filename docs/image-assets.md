@@ -405,20 +405,27 @@ vehicles. Prepped with
 before running the AI step. Covered by `tests/tools/test_suburb_day_assets.py`
 (road, the drawing, and the shipped PNG's size, seam and edge rows).
 
-The `desert` theme (`road-desert.png` / `scenery-desert.png`, stage 3 from
-53156 ms) is fully procedural, drawn by `tools/gen-desert-assets.py`
-(`uv run --with pillow python tools/gen-desert-assets.py [--preview DIR]`),
-which writes both files. An overcast, dusty desert: a low brown-grey dust sky of
-soft cloud masses (faded out before the top rows so the `sky` fill has no
-seam), three layers of smooth skewed dunes fading into the haze (far
-grey-green, near warm sand, lee faces shaded, light from the left), sparse dry
-scrub and a bleached skull on the foreground sand. The road is an old
-sun-bleached highway with sand drifting over it, a sandy shoulder in the top
-rows (row 0 is exactly the scenery's last row) and faded dashed dividers at
-y = 180 / 360. Soft-focus, warm desaturated grade, no grain; every blurred
-layer's transparent pixels carry the layer colour so the non-premultiplied
-blur adds no dark fringe. Covered by `tests/tools/test_desert_assets.py`
-(including that the shipped PNGs equal the generator's output).
+The `desert` theme (stage 3 from 53156 ms) is made in two steps, like
+`suburbDay`. `tools/gen-desert-assets.py`
+(`uv run --with pillow python tools/gen-desert-assets.py [--preview DIR]`)
+draws the procedural road `road-desert.png` (an old sun-bleached dusty-brown
+highway with sand drifting over it, a sandy shoulder in the top rows — row 0 is
+the scenery's horizon colour 0xb89e74 — and faded dashed dividers at
+y = 180 / 360) and a **layout drawing** of the scenery (written only to
+`DIR/scenery-full.png`, never shipped): a low brown-grey dust sky, three layers
+of skewed dunes fading into the haze with shaded lee faces, sparse scrub and a
+bleached skull on the foreground sand. Every blurred layer's transparent pixels
+carry the layer colour so the non-premultiplied blur adds no dark fringe.
+The shipped `scenery-desert.png` is that drawing restyled by Codex's image
+model (`codex exec --skip-git-repo-check --sandbox workspace-write -i style1.png
+-i layout.png < prompt.txt`): style1.png was an overcast hazy desert film still
+(the person in it ignored), and the prompt asked to copy layout.png's dunes,
+scrub and skull exactly, painterly semi-realistic, straight-on with a level
+horizon, the band in the lower half of a 1536x1024 frame, moderately dark and
+dusty, no road / people / vehicles. Prepped with
+`prep-scenery-image.py scenery shot.png --offset 120 --horizon 0xb89e74`
+(it printed `sky` 0x8f8973). Covered by `tests/tools/test_desert_assets.py`
+(road, the drawing, and the shipped PNG's size, seam and edge rows).
 
 **Handling the rotate section**: the `rotate` section zooms the camera out to
 0.49 and spins it, which would otherwise reveal area outside the 800×450

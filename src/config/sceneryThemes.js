@@ -26,10 +26,10 @@ export const SCENERY_THEMES = {
     tint: 0xd0d0d0, // darkens the too-light AI day art; tune here
   },
   desert: {
-    // hazy overcast dunes over a sand-drifted highway, both procedural (tools/gen-desert-assets.py)
+    // AI hazy-dune backdrop drawn from the procedural layout (tools/gen-desert-assets.py), procedural road
     road: { key: 'road-desert', file: 'assets/bg/road-desert.png' },
     scenery: { key: 'scenery-desert', file: 'assets/bg/scenery-desert.png' },
-    sky: 0x84806d,
+    sky: 0x8f8973,
     ground: 0x7d6f5d,
   },
 };

@@ -4,7 +4,10 @@
     uv run --with pillow python tools/gen-desert-assets.py [--preview DIR]
 
 Writes public/assets/bg/road-desert.png    1600x540  tiles left<->right, not vertically
-       public/assets/bg/scenery-desert.png 1600x360  tiles left<->right, bottom = horizon
+
+The scenery drawn here is NOT shipped: it is the layout reference given to the
+AI image model, whose output (prepped) is the shipped scenery-desert.png
+(docs/image-assets.md). --preview writes it to DIR/scenery-full.png.
 
 An overcast, dusty desert: a low brown-grey dust sky of soft cloud masses,
 layers of smooth dunes fading into the haze (far grey-green, near warm sand,
@@ -13,8 +16,8 @@ sand. The road is an old sun-bleached desert highway with sand drifting over
 it and faded, half-buried dashed dividers at y = 180 / 360. Soft focus, warm
 desaturated grade, no grain.
 
-Prints the seam checks and the edge-row hexes: scenery top row -> `sky`, road
-bottom row -> `ground` in SCENERY_THEMES.desert. --preview also dumps an
+Prints the seam checks and the edge-row hexes: road bottom row -> `ground` in
+SCENERY_THEMES.desert (`sky` comes from the prep script run on the AI scenery). --preview also dumps an
 800x450 in-game mock and the swapped-halves seam checks to DIR.
 Helpers (lerp, wrap_blur, wrapped, vgradient, noise_gray) come from gen-night-assets.py.
 """
@@ -366,7 +369,6 @@ if __name__ == "__main__":
     road = make_road()
     bg = make_bg()
     road.save(os.path.join(OUT, "road-desert.png"))
-    bg.save(os.path.join(OUT, "scenery-desert.png"))
     seam_check(road, "road")
     seam_check(bg, "scenery")
     print("sky (scenery top row)", hex_of(row_avg(bg, 0)),
