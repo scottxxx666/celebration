@@ -16,6 +16,9 @@ export const WALK_ZONE_TOP = GAME_HEIGHT * 0.4; // y=180; above is scenery
 // 0 = static backdrop, 1 = locked to the road
 export const SCENERY_PARALLAX = 0.2;
 
+// Crossfade length when the stage theme changes, in game beats (BEAT_MS); 0 = hard cut
+export const STAGE_FADE_BEATS = 4;
+
 // Player half-dimensions
 export const PLAYER_HW = 45;
 export const PLAYER_HH = 45;

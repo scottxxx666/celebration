@@ -28,27 +28,19 @@ const ROW_LINE_KEY = 'dim-row-line';
 
 export class Scenery {
   constructor(scene, themeName) {
-    const theme = SCENERY_THEMES[themeName];
-    this.themeName = themeName;
-
     const left = GAME_WIDTH / 2 - HALF_SPAN;
     const width = 2 * HALF_SPAN;
 
-    // Scenery strip — scrolled by scroll() below at SCENERY_PARALLAX. Only
-    // widened in x (rotate can swing far-off-screen x into view at this y
-    // band) — its logical height (WALK_ZONE_TOP) is unchanged.
-    this.scenery = scene.add
-      .tileSprite(left, 0, width, WALK_ZONE_TOP, theme.scenery.key)
-      .setOrigin(0, 0)
-      .setTileScale(SOURCE_SCALE, SOURCE_SCALE)
-      .setDepth(-10);
+    // Base layers show the `from` theme; the overlay set (hidden until a
+    // crossfade) shows the `to` theme at alpha t. Overlay depths stay below
+    // SpinBikes (-9.5), the dim (-6) and the row lines (-5.5).
+    this.base = this.createLayers(scene, themeName, left, width, -10, -11);
+    this.overlay = this.createLayers(scene, themeName, left, width, -9.9, -10.9);
+    this.setOverlayVisible(false);
 
-    // Road — scrolled by scroll() below. Same x-only widening as scenery.
-    this.road = scene.add
-      .tileSprite(left, WALK_ZONE_TOP, width, GAME_HEIGHT - WALK_ZONE_TOP, theme.road.key)
-      .setOrigin(0, 0)
-      .setTileScale(SOURCE_SCALE, SOURCE_SCALE)
-      .setDepth(-10);
+    // Aliases for the base set (the layers scroll() advances)
+    this.scenery = this.base.scenery;
+    this.road = this.base.road;
 
     // Dashed lane-line row dividers for dim sections — over the road art's own lines,
     // above the disco dim (-6) so they stay readable, below the beat flash (-5)
@@ -69,32 +61,68 @@ export class Scenery {
         .setAlpha(0)
         .setDepth(-5.5),
     );
+  }
+
+  // One full layer set for a theme. Strips are only widened in x (rotate can
+  // swing far-off-screen x into view at those bands) — logical heights unchanged.
+  createLayers(scene, themeName, left, width, stripDepth, fillDepth) {
+    const theme = SCENERY_THEMES[themeName];
+    const strip = (y, height, key) =>
+      scene.add
+        .tileSprite(left, y, width, height, key)
+        .setOrigin(0, 0)
+        .setTileScale(SOURCE_SCALE, SOURCE_SCALE)
+        .setDepth(stripDepth);
 
     // Sky fill — above the scenery strip, out to the swept circle
     const skyTop = GAME_HEIGHT / 2 - HALF_SPAN;
-    this.sky = scene.add
-      .rectangle(left, skyTop, width, 0 - skyTop, theme.sky)
-      .setOrigin(0, 0)
-      .setDepth(-11);
-
     // Ground fill — below the road, out to the swept circle
     const groundBottom = GAME_HEIGHT / 2 + HALF_SPAN;
-    this.ground = scene.add
-      .rectangle(left, GAME_HEIGHT, width, groundBottom - GAME_HEIGHT, theme.ground)
-      .setOrigin(0, 0)
-      .setDepth(-11);
+    return {
+      themeName,
+      scenery: strip(0, WALK_ZONE_TOP, theme.scenery.key),
+      road: strip(WALK_ZONE_TOP, GAME_HEIGHT - WALK_ZONE_TOP, theme.road.key),
+      sky: scene.add
+        .rectangle(left, skyTop, width, 0 - skyTop, theme.sky)
+        .setOrigin(0, 0)
+        .setDepth(fillDepth),
+      ground: scene.add
+        .rectangle(left, GAME_HEIGHT, width, groundBottom - GAME_HEIGHT, theme.ground)
+        .setOrigin(0, 0)
+        .setDepth(fillDepth),
+    };
   }
 
-  // Hard cut to another theme (no crossfade); a no-op unless it changed, so it is
-  // safe to call every frame. tilePositionX and tileScale survive setTexture.
-  setTheme(themeName) {
-    if (themeName === this.themeName) return;
+  // Only touches the layers when the theme actually changed, so it is cheap to
+  // call every frame. tilePositionX and tileScale survive setTexture.
+  applyTheme(layers, themeName) {
+    if (layers.themeName === themeName) return;
     const theme = SCENERY_THEMES[themeName];
-    this.themeName = themeName;
-    this.scenery.setTexture(theme.scenery.key);
-    this.road.setTexture(theme.road.key);
-    this.sky.setFillStyle(theme.sky);
-    this.ground.setFillStyle(theme.ground);
+    layers.themeName = themeName;
+    layers.scenery.setTexture(theme.scenery.key);
+    layers.road.setTexture(theme.road.key);
+    layers.sky.setFillStyle(theme.sky);
+    layers.ground.setFillStyle(theme.ground);
+  }
+
+  setOverlayVisible(visible) {
+    const { scenery, road, sky, ground } = this.overlay;
+    for (const layer of [scenery, road, sky, ground]) layer.setVisible(visible);
+  }
+
+  // Crossfade state from stageBlend: base shows `from`, overlay fades `to` in at
+  // alpha t. Settled (t >= 1 or from === to): base shows `to`, overlay hidden.
+  setBlend(from, to, t) {
+    if (t >= 1 || from === to) {
+      this.applyTheme(this.base, to);
+      this.setOverlayVisible(false);
+      return;
+    }
+    this.applyTheme(this.base, from);
+    this.applyTheme(this.overlay, to);
+    const { scenery, road, sky, ground } = this.overlay;
+    for (const layer of [scenery, road, sky, ground]) layer.setAlpha(t);
+    this.setOverlayVisible(true);
   }
 
   // fade: 0–1 share of the dim currently applied (GameScene's dim ramp), so the
@@ -110,8 +138,10 @@ export class Scenery {
   // *texture* pixels, so it must be divided by SOURCE_SCALE to move by logical pixels;
   // Phaser wraps tilePositionX itself, no manual bookkeeping needed.
   scroll(dxWorldPx) {
-    this.road.tilePositionX += dxWorldPx / SOURCE_SCALE;
-    this.scenery.tilePositionX += (dxWorldPx * SCENERY_PARALLAX) / SOURCE_SCALE;
+    for (const { road, scenery } of [this.base, this.overlay]) {
+      road.tilePositionX += dxWorldPx / SOURCE_SCALE;
+      scenery.tilePositionX += (dxWorldPx * SCENERY_PARALLAX) / SOURCE_SCALE;
+    }
     // Row-line texture is at logical size, so it moves by world pixels directly
     for (const line of this.rowLines) line.tilePositionX += dxWorldPx;
   }

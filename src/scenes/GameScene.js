@@ -5,7 +5,7 @@ import { Enemy } from '../objects/Enemy.js';
 import { DiscoLights } from '../objects/DiscoLights.js';
 import { Afterimages } from '../objects/Afterimages.js';
 import { Scenery } from '../objects/Scenery.js';
-import { stageAt } from '../config/stages.js';
+import { stageAt, stageBlend } from '../config/stages.js';
 import { SpinBikes } from '../objects/SpinBikes.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
@@ -60,6 +60,8 @@ import {
   GHOST_SWAY_BEATS,
   TRAIL_DRIFT,
   WIN_MS,
+  STAGE_FADE_BEATS,
+  BEAT_MS,
 } from '../config/gameConfig.js';
 
 const HUD_REFRESH_MS = 100; // debug readout re-renders a text texture, so throttle it
@@ -287,7 +289,8 @@ export class GameScene extends Phaser.Scene {
 
     // Scroll background — global world multiplier from the current section
     const worldDx = this.player.speed * section.speedMult * (delta / 1000);
-    this.scenery.setTheme(stageAt(songMs).theme);
+    const { from, to, t } = stageBlend(songMs, STAGE_FADE_BEATS * BEAT_MS);
+    this.scenery.setBlend(from, to, t);
     this.scenery.scroll(worldDx);
     this.spinBikes.update(section, songMs, worldDx);
 

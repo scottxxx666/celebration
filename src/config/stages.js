@@ -1,8 +1,8 @@
-// Song-time scenery stages: the road+background pair hard-cuts to `theme`
-// (a SCENERY_THEMES key) at each startMs. Arrival-sorted, first starts at 0.
+// Song-time scenery stages: the road+background pair crossfades to `theme`
+// (a SCENERY_THEMES key) starting at each startMs (see stageBlend). Arrival-sorted, first starts at 0.
 // Placeholders reusing existing themes until the new stage art exists.
-// Times must sit on a real track beat (yarn check:beats): 26055 = end of
-// highlight1b, 89822 = blackout start (cut hidden in the dark), 123697 =
+// Times must sit on a real track beat (yarn check:beats): 27251 = 3 beats
+// after highlight1b ends (26055), 89822 = blackout start (change hidden in the dark), 123697 =
 // final_highlight start.
 export const STAGES = [
   { name: 'stage1', startMs: 0, theme: 'suburb' },
@@ -19,6 +19,19 @@ export function stageAt(songMs) {
     else break;
   }
   return current;
+}
+
+// Crossfade state at songMs: the fade runs from the stage's startMs for fadeMs,
+// blending the previous stage's theme (`from`) into the current one (`to`) at
+// t 0..1; outside a fade from === to and t = 1. fadeMs <= 0 is a hard cut.
+export function stageBlend(songMs, fadeMs) {
+  const stage = stageAt(songMs);
+  const to = stage.theme;
+  const index = STAGES.indexOf(stage);
+  if (index === 0 || !(fadeMs > 0)) return { from: to, to, t: 1 };
+  const elapsed = songMs - stage.startMs;
+  if (elapsed >= fadeMs) return { from: to, to, t: 1 };
+  return { from: STAGES[index - 1].theme, to, t: elapsed / fadeMs };
 }
 
 // Unique themes used by STAGES, for preloading.

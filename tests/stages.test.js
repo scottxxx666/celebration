@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { STAGES, stageAt, stageThemeNames } from '../src/config/stages.js';
+import { STAGES, stageAt, stageBlend, stageThemeNames } from '../src/config/stages.js';
 import { SCENERY_THEMES } from '../src/config/sceneryThemes.js';
 
 test('stages are strictly ascending and start at 0', () => {
@@ -44,4 +44,42 @@ test('stageThemeNames dedupes themes', () => {
   const names = stageThemeNames();
   assert.equal(new Set(names).size, names.length);
   assert.deepEqual(new Set(names), new Set(STAGES.map(s => s.theme)));
+});
+
+// First boundary whose theme differs from the previous stage's
+const changeIndex = STAGES.findIndex((s, i) => i > 0 && s.theme !== STAGES[i - 1].theme);
+const FADE_MS = 1000;
+
+test('stageBlend: before a boundary is settled on the previous theme', () => {
+  const prev = STAGES[changeIndex - 1].theme;
+  const b = stageBlend(STAGES[changeIndex].startMs - 1, FADE_MS);
+  assert.deepEqual(b, { from: prev, to: prev, t: 1 });
+});
+
+test('stageBlend: exactly at startMs the fade begins from the previous theme', () => {
+  const b = stageBlend(STAGES[changeIndex].startMs, FADE_MS);
+  assert.deepEqual(b, { from: STAGES[changeIndex - 1].theme, to: STAGES[changeIndex].theme, t: 0 });
+});
+
+test('stageBlend: mid-fade is halfway', () => {
+  const b = stageBlend(STAGES[changeIndex].startMs + FADE_MS / 2, FADE_MS);
+  assert.equal(b.from, STAGES[changeIndex - 1].theme);
+  assert.equal(b.to, STAGES[changeIndex].theme);
+  assert.ok(Math.abs(b.t - 0.5) < 1e-9);
+});
+
+test('stageBlend: at startMs + fadeMs the fade is done', () => {
+  const { theme, startMs } = STAGES[changeIndex];
+  assert.deepEqual(stageBlend(startMs + FADE_MS, FADE_MS), { from: theme, to: theme, t: 1 });
+});
+
+test('stageBlend: first stage (including negative song time) never fades', () => {
+  const first = STAGES[0].theme;
+  assert.deepEqual(stageBlend(0, FADE_MS), { from: first, to: first, t: 1 });
+  assert.deepEqual(stageBlend(-250, FADE_MS), { from: first, to: first, t: 1 });
+});
+
+test('stageBlend: fadeMs 0 is a hard cut', () => {
+  const { theme, startMs } = STAGES[changeIndex];
+  assert.deepEqual(stageBlend(startMs, 0), { from: theme, to: theme, t: 1 });
 });
