@@ -58,17 +58,17 @@ class UndergroundRoadTest(unittest.TestCase):
         for y in LINES:
             joint = band_mean(self.img, 0, W, y - 1, y + 1)
             slab = band_mean(self.img, 0, W, y + 12, y + 20)
-            self.assertLess(joint, slab - 8)
+            self.assertLess(joint, slab - 5)
 
     def test_wall_base_grime_at_top_row(self):
         self.assertEqual(self.img.getpixel((W // 3, 0)), mod.FLOOR_LIP)
-        self.assertLess(band_mean(self.img, 0, W, 0, 6), band_mean(self.img, 0, W, 80, 100) - 15)
+        self.assertLess(band_mean(self.img, 0, W, 0, 6), band_mean(self.img, 0, W, 80, 100) - 6)
 
     def test_mid_dark_so_black_shadow_still_reads(self):
         for y in (100, 270, 450):
             m = band_mean(self.img, 0, W, y, y + 10)
-            self.assertGreater(m, 35)
-            self.assertLess(m, 80)
+            self.assertGreater(m, 20)
+            self.assertLess(m, 55)
 
     def test_shipped_road_matches_generator(self):
         shipped = Image.open(os.path.join(mod.OUT, 'road-underground.png')).convert('RGB')

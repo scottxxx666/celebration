@@ -55,11 +55,11 @@ OUT = night.OUT
 
 # ---------------------------------------------------------------- road
 # damp grey-green concrete, mid-dark so a 30% black shadow still reads
-ROAD_TOP = (40, 46, 44)
-ROAD_BOTTOM = (58, 64, 60)
-FLOOR_LIP = (24, 28, 27)        # road row 0 == scenery last row (grime at the wall base)
-JOINT = (22, 26, 25)
-STAIN = (18, 22, 20)
+ROAD_TOP = (26, 30, 29)
+ROAD_BOTTOM = (40, 44, 42)
+FLOOR_LIP = (16, 19, 18)        # road row 0 == scenery last row (grime at the wall base)
+JOINT = (12, 14, 14)
+STAIN = (10, 12, 12)
 LEAF = (58, 46, 32)
 SLAB_W = 200                    # divides W
 

@@ -441,7 +441,7 @@ rust-red skirting and low floor fog, lit by a periodic light map so pools of
 cold light alternate with darkness. Kept deliberately dark (low ambient, dim lamps, a crushed grade) for a scary mood. The road is dark damp concrete slabs
 (joints at y = 180 / 360 mark the rows) with stains, sparse cracks and tiny
 dead-leaf debris, its top rows darkened as grime at the wall base (row 0 =
-the scenery's bottom row, 0x181c1b). Anything crossing the seam (grout,
+the scenery's bottom row, 0x101312). Anything crossing the seam (grout,
 pilasters) is drawn on both sides of it. Covered by
 `tests/tools/test_underground_assets.py`.
 
