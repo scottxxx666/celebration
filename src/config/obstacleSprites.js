@@ -43,4 +43,10 @@ export const OBSTACLE_SPRITES = [
     hh: 75,
     hw: 54, // group shot: outstretched arms reach past the body mass
   },
+  {
+    key: 'obs-yunjin-mask',
+    file: 'assets/sprites/obstacles/yunjin-mask.png',
+    hh: 58, // 54 before the crown was restored; +4 keeps the body the same size
+    hw: 36, // waist-up photo cutout: widest at the scarf/shoulders
+  },
 ];
