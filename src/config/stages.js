@@ -1,14 +1,15 @@
 // Song-time scenery stages: the road+background pair crossfades to `theme`
 // (a SCENERY_THEMES key) starting at each startMs (see stageBlend). Arrival-sorted, first starts at 0.
-// Placeholders reusing existing themes until the new stage art exists.
+// Stages 4-5 are placeholders reusing existing themes until their art exists.
 // Times must sit on a real track beat (yarn check:beats): 27251 = 3 beats
-// after highlight1b ends (26055), 89822 = blackout start (change hidden in the dark), 123697 =
-// final_highlight start.
+// after highlight1b ends (26055), 53156 = the beat nearest 53 s, 89822 =
+// blackout start (change hidden in the dark), 123697 = final_highlight start.
 export const STAGES = [
   { name: 'stage1', startMs: 0, theme: 'suburb' },
   { name: 'stage2', startMs: 27251, theme: 'suburbDay' },
-  { name: 'stage3', startMs: 89822, theme: 'suburb' },
-  { name: 'stage4', startMs: 123697, theme: 'night' },
+  { name: 'stage3', startMs: 53156, theme: 'desert' },
+  { name: 'stage4', startMs: 89822, theme: 'suburb' },
+  { name: 'stage5', startMs: 123697, theme: 'night' },
 ];
 
 // Last stage whose startMs <= songMs; negative songMs (latency at run start) is stage 1.
