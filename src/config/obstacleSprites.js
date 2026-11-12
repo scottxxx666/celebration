@@ -46,7 +46,8 @@ export const OBSTACLE_SPRITES = [
   {
     key: 'obs-yunjin-mask',
     file: 'assets/sprites/obstacles/yunjin-mask.png',
-    hh: 58, // 54 before the crown was restored; +4 keeps the body the same size
-    hw: 36, // waist-up photo cutout: widest at the scarf/shoulders
+    hh: 50, // waist-up close-up: big head, no legs, so kept shorter than the
+            // full-body sprites or it reads as thin and tall
+    hw: 31, // widest at the scarf/shoulders
   },
 ];
