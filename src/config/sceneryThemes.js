@@ -16,10 +16,10 @@ export const SCENERY_THEMES = {
     ground: 0x363e42,
   },
   suburbDay: {
-    // the suburb street on a sunny afternoon, both layers procedural (tools/gen-suburb-day-assets.py)
+    // AI backdrop drawn from the procedural layout (tools/gen-suburb-day-assets.py), procedural road
     road: { key: 'road-suburb-day', file: 'assets/bg/road-suburb-day.png' },
     scenery: { key: 'scenery-suburb-day', file: 'assets/bg/scenery-suburb-day.png' },
-    sky: 0x7d9fb8,
+    sky: 0xc8d3d4,
     ground: 0x928d83,
   },
 };

@@ -4,7 +4,10 @@
     uv run --with pillow python tools/gen-suburb-day-assets.py [--preview DIR]
 
 Writes public/assets/bg/road-suburb-day.png     1600x540  tiles left<->right, not vertically
-       public/assets/bg/scenery-suburb-day.png  1600x360  tiles left<->right, bottom = horizon
+
+The scenery drawn here is NOT shipped: it is the layout reference given to the
+AI image model, whose output (prepped) is the shipped scenery-suburb-day.png
+(docs/image-assets.md). --preview writes it to DIR/scenery-full.png.
 
 The same street as the night `suburb` theme (scenery-suburb.png), on a sunny
 afternoon: a row of two-storey gabled houses in weathered wood siding and
@@ -14,7 +17,8 @@ posts, lawn + sidewalk + grass verge meeting the road's curb. Flat cel shading,
 light from the upper left, a warm, gently desaturated grade, no grain.
 
 Prints the seam checks and the edge-row hexes: scenery top row -> `sky`, road
-bottom row -> `ground` in SCENERY_THEMES.suburbDay. --preview also dumps an
+bottom row -> `ground` in SCENERY_THEMES.suburbDay (`sky` comes from the
+prep script run on the AI scenery). --preview also dumps an
 800x450 in-game mock and the swapped-halves seam checks to DIR.
 Helpers (lerp, wrap_blur, wrapped, vgradient, noise_gray) come from gen-night-assets.py.
 """
@@ -756,7 +760,6 @@ if __name__ == "__main__":
     road = make_road()
     bg = make_bg()
     road.save(os.path.join(OUT, "road-suburb-day.png"))
-    bg.save(os.path.join(OUT, "scenery-suburb-day.png"))
     seam_check(road, "road")
     seam_check(bg, "scenery")
     print("sky (scenery top row)", hex_of(row_avg(bg, 0)),

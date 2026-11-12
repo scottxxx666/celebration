@@ -3,6 +3,8 @@ import os
 import re
 import unittest
 
+from PIL import Image
+
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 spec = importlib.util.spec_from_file_location(
     'gen_suburb_day_assets', os.path.join(ROOT, 'tools', 'gen-suburb-day-assets.py'))
@@ -110,11 +112,9 @@ class SuburbDaySceneryTest(unittest.TestCase):
     def test_horizon_meets_road_top_row(self):
         self.assertEqual(mod.row_avg(self.img, BG_H - 1), mod.row_avg(self.road, 0))
 
-    def test_theme_hexes_match_edge_rows(self):
-        for got, want in ((mod.row_avg(self.img, 0), theme_hex('sky')),
-                          (mod.row_avg(self.road, ROAD_H - 1), theme_hex('ground'))):
-            for a, b in zip(got, want):
-                self.assertLessEqual(abs(a - b), 2)
+    def test_road_bottom_row_matches_theme_ground(self):
+        for a, b in zip(mod.row_avg(self.road, ROAD_H - 1), theme_hex('ground')):
+            self.assertLessEqual(abs(a - b), 2)
 
     def test_sky_is_blue_and_plain_at_the_top(self):
         r, g, b = mod.row_avg(self.img, 0)
@@ -135,6 +135,30 @@ class SuburbDaySceneryTest(unittest.TestCase):
         self.assertGreater(g, r)
         self.assertGreater(g, b)
         self.assertEqual(mod.row_avg(self.img, BG_H - 1), mod.CURB_LIP)
+
+class ShippedSceneryTest(unittest.TestCase):
+    """The shipped scenery is the prepped AI image, not make_bg()'s drawing."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.img = Image.open(os.path.join(ROOT, 'public', 'assets', 'bg', 'scenery-suburb-day.png')).convert('RGB')
+        cls.road = mod.make_road()
+
+    def test_size(self):
+        self.assertEqual(self.img.size, (1600, 360))
+
+    def test_horizon_meets_road_top_row(self):
+        for a, b in zip(mod.row_avg(self.img, BG_H - 1), mod.row_avg(self.road, 0)):
+            self.assertLessEqual(abs(a - b), 2)
+
+    def test_top_row_matches_theme_sky(self):
+        for a, b in zip(mod.row_avg(self.img, 0), theme_hex('sky')):
+            self.assertLessEqual(abs(a - b), 2)
+
+    def test_seam_tiles(self):
+        seam = col_delta(self.img, 0, W - 1)
+        self.assertLess(sum(seam) / BG_H, 8)
+
 
 if __name__ == '__main__':
     unittest.main()

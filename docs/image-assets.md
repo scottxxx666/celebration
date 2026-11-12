@@ -381,23 +381,28 @@ The `night` theme was not AI-generated: `tools/gen-night-assets.py` draws both
 layers procedurally (`--preview DIR` also dumps an in-game mock and the
 tiled-seam checks).
 
-The `suburbDay` theme (`road-suburb-day.png` / `scenery-suburb-day.png`) is
-the `suburb` street in daylight, fully procedural, drawn by
+The `suburbDay` theme is the `suburb` street in daylight, made in two steps.
 `tools/gen-suburb-day-assets.py`
-(`uv run --with pillow python tools/gen-suburb-day-assets.py [--preview DIR]`).
-It keeps the night backdrop's composition: a row of two-storey gabled houses in
-weathered grey / muted yellow-green lap siding and stucco, with porches, garage
-doors and a chimney, big leafy trees between them, and hazy low hills behind.
-On top of that it adds a blue sky with soft cumulus, wooden plank fences, black
-cast-iron lamp posts, and a lawn, sidewalk and grass verge along the bottom. It is
-flat cel-shaded with a warm, gently desaturated grade and deliberately **no
-grain**: per-pixel speckle over a pale haze read as snow. The road is pale
-sun-bleached warm-grey asphalt with fine cracks, repair patches and tar seams,
-a light concrete curb in the top 14px (row 0 is exactly the scenery's last row,
-so the horizon has no step), and worn dashed dividers at y = 180 / 360. It reuses
-the `gen-night-assets.py` helpers, is deterministic, prints the seam checks and
-the `sky`/`ground` hexes for `SCENERY_THEMES.suburbDay`, and is covered by
-`tests/tools/test_suburb_day_assets.py`.
+(`uv run --with pillow python tools/gen-suburb-day-assets.py [--preview DIR]`)
+draws the procedural road `road-suburb-day.png` (pale sun-bleached warm-grey
+asphalt, fine cracks and patches, a light curb in the top 14px, worn dashed
+dividers at y = 180 / 360) and a flat cel-shaded **layout drawing** of the
+scenery (written only to `DIR/scenery-full.png`, never shipped): five two-storey
+gabled houses in stucco and grey / yellow-green lap siding with porches, garages
+and a chimney, leafy trees between them, plank fences, two black lamp posts,
+hills, lawn, sidewalk and verge. Keep it free of per-pixel grain — speckle over
+a pale haze read as snow.
+The shipped `scenery-suburb-day.png` is that drawing restyled by Codex's image
+model (`codex exec -i style1.png -i style2.png -i layout.png < prompt.txt`):
+the two style references were sunny film stills of the same street (blue sky
+with big cumulus, sunlit yellow-green trees, weathered siding, warm desaturated
+cinematic grade) and the prompt asked to copy layout.png's architecture and
+layout exactly, painterly semi-realistic, straight-on, no road / people /
+vehicles. Prepped with
+`prep-scenery-image.py scenery shot.png --offset 200 --horizon 0xc4c0b4`
+(0xc4c0b4 = the road's top row; it printed `sky` 0xc8d3d4). Approve the drawing
+before running the AI step. Covered by `tests/tools/test_suburb_day_assets.py`
+(road, the drawing, and the shipped PNG's size, seam and edge rows).
 
 **Handling the rotate section**: the `rotate` section zooms the camera out to
 0.49 and spins it, which would otherwise reveal area outside the 800×450
