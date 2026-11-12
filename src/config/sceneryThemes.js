@@ -30,7 +30,7 @@ export const SCENERY_THEMES = {
     road: { key: 'road-desert', file: 'assets/bg/road-desert.png' },
     scenery: { key: 'scenery-desert', file: 'assets/bg/scenery-desert.png' },
     sky: 0x8f8973,
-    ground: 0x7d6f5d,
+    ground: 0x7f6d55,
   },
 };
 

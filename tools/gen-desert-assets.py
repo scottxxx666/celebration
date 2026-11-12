@@ -55,13 +55,13 @@ OUT = night.OUT
 
 # ---------------------------------------------------------------- road
 # dusty warm-grey asphalt, mid value so a 30% black shadow still reads
-ROAD_TOP = (118, 106, 90)
-ROAD_BOTTOM = (126, 112, 94)
+ROAD_TOP = (132, 113, 88)
+ROAD_BOTTOM = (128, 110, 86)
 SAND_ROAD = (172, 146, 106)     # drifted sand over the asphalt
 SHOULDER_H = 16                 # sandy shoulder band at the top of the road
 SHOULDER_LIP = (184, 158, 116)  # road row 0 == scenery last row
 
-PAINT = (222, 210, 180)
+PAINT = (214, 198, 164)
 LINE_THICK = 6
 DASH_PERIOD = 100  # divides W
 DASH_LEN = 60
@@ -105,7 +105,8 @@ def make_road():
     road = vgradient(W, ROAD_H, ROAD_TOP, ROAD_BOTTOM).convert("RGB")
 
     # soft aggregate grain, overlay-blended: texture, never speckle
-    for block, strength, seed in ((2, 0.18, 201), (8, 0.16, 202), (20, 0.12, 203)):
+    # faint fine grain only: the AI backdrop is smooth, so coarse mottling read as fur
+    for block, strength, seed in ((2, 0.10, 201), (8, 0.04, 202)):
         n = noise_gray(W, ROAD_H, block, seed).point(lambda v: 128 + (v - 128) // 3)
         n = wrap_blur(n.convert("RGB"), 1.0 if block <= 2 else 2.4)
         road = Image.blend(road, ImageChops.overlay(road, n), strength)
@@ -177,11 +178,11 @@ def make_road():
         y = i * LANE_H
         for x0 in range(start, W, DASH_PERIOD):
             pd.rectangle([x0, y - LINE_THICK // 2, x0 + DASH_LEN - 1, y + LINE_THICK // 2 - 1],
-                         fill=r.randrange(150, 205))
+                         fill=r.randrange(130, 175))
     wear = noise_gray(W, ROAD_H, 2, 261).point(lambda v: 130 + v * 125 // 255)
     wear2 = noise_gray(W, ROAD_H, 10, 262).point(lambda v: 150 + v * 105 // 255)
     paint = ImageChops.multiply(ImageChops.multiply(paint, wear), wear2)
-    paint = wrap_blur(paint.point(lambda v: min(255, v * 255 // 210)), 0.8)
+    paint = wrap_blur(paint.point(lambda v: min(255, v * 255 // 210)), 1.2)
     layer = Image.new("RGBA", (W, ROAD_H), PAINT + (0,))
     layer.putalpha(paint)
     road = over(road, layer)
@@ -189,16 +190,16 @@ def make_road():
     # sandy shoulder: solid sand at row 0 fading into the asphalt, ragged edge
     shoulder = Image.new("RGBA", (W, ROAD_H), SAND_ROAD + (0,))
     sd = ImageDraw.Draw(shoulder)
-    edge = [SHOULDER_H + 5 * math.sin(2 * math.pi * 5 * x / W) + 3 * math.sin(2 * math.pi * 17 * x / W + 1.3)
-            + 2 * math.sin(2 * math.pi * 43 * x / W + 0.4) + 1.5 * math.sin(2 * math.pi * 97 * x / W + 2.1)
+    # smooth low-frequency edge: high-frequency raggedness read as a grass fringe
+    edge = [SHOULDER_H + 5 * math.sin(2 * math.pi * 3 * x / W) + 3 * math.sin(2 * math.pi * 7 * x / W + 1.3)
             for x in range(W)]
     for x in range(W):
         e = edge[x]
-        for y in range(int(e) + 16):
-            t = y / (e + 16)
-            a = 255 if y < e - 8 else int(255 * max(0.0, 1 - (y - (e - 8)) / 22) ** 1.2)
+        for y in range(int(e) + 40):
+            t = y / (e + 40)
+            a = 255 if y < e - 8 else int(255 * max(0.0, 1 - (y - (e - 8)) / 48) ** 1.6)
             sd.point((x, y), fill=lerp(SHOULDER_LIP, SAND_ROAD, t) + (a,))
-    shoulder = wrap_blur(shoulder, 1.4)
+    shoulder = wrap_blur(shoulder, 3.0)
     road = over(road, shoulder)
     # row 0 exactly the lip colour so the horizon has no step
     ImageDraw.Draw(road).line([(0, 0), (W, 0)], fill=SHOULDER_LIP + (255,))

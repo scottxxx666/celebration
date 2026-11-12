@@ -409,9 +409,11 @@ The `desert` theme (stage 3 from 53156 ms) is made in two steps, like
 `suburbDay`. `tools/gen-desert-assets.py`
 (`uv run --with pillow python tools/gen-desert-assets.py [--preview DIR]`)
 draws the procedural road `road-desert.png` (an old sun-bleached dusty-brown
-highway with sand drifting over it, a sandy shoulder in the top rows — row 0 is
-the scenery's horizon colour 0xb89e74 — and faded dashed dividers at
-y = 180 / 360) and a **layout drawing** of the scenery (written only to
+highway warmed toward the sand's hue, with sand drifting over it, a sandy
+shoulder with a smooth, long soft fade in the top rows — row 0 is the scenery's
+horizon colour 0xb89e74 — and soft faded dashed dividers at y = 180 / 360; only
+faint fine grain, since coarse mottling and a ragged shoulder edge read as fur /
+a grass fringe against the smooth AI backdrop) and a **layout drawing** of the scenery (written only to
 `DIR/scenery-full.png`, never shipped): a low brown-grey dust sky, three layers
 of skewed dunes fading into the haze with shaded lee faces, sparse scrub and a
 bleached skull on the foreground sand. Every blurred layer's transparent pixels
