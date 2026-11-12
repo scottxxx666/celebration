@@ -381,6 +381,24 @@ The `night` theme was not AI-generated: `tools/gen-night-assets.py` draws both
 layers procedurally (`--preview DIR` also dumps an in-game mock and the
 tiled-seam checks).
 
+The `suburbDay` theme (`road-suburb-day.png` / `scenery-suburb-day.png`) is
+the `suburb` street in daylight, fully procedural, drawn by
+`tools/gen-suburb-day-assets.py`
+(`uv run --with pillow python tools/gen-suburb-day-assets.py [--preview DIR]`).
+It keeps the night backdrop's composition: a row of two-storey gabled houses in
+weathered grey / muted yellow-green lap siding and stucco, with porches, garage
+doors and a chimney, big leafy trees between them, and hazy low hills behind.
+On top of that it adds a blue sky with soft cumulus, wooden plank fences, black
+cast-iron lamp posts, and a lawn, sidewalk and grass verge along the bottom. It is
+flat cel-shaded with a warm, gently desaturated grade and deliberately **no
+grain**: per-pixel speckle over a pale haze read as snow. The road is pale
+sun-bleached warm-grey asphalt with fine cracks, repair patches and tar seams,
+a light concrete curb in the top 14px (row 0 is exactly the scenery's last row,
+so the horizon has no step), and worn dashed dividers at y = 180 / 360. It reuses
+the `gen-night-assets.py` helpers, is deterministic, prints the seam checks and
+the `sky`/`ground` hexes for `SCENERY_THEMES.suburbDay`, and is covered by
+`tests/tools/test_suburb_day_assets.py`.
+
 **Handling the rotate section**: the `rotate` section zooms the camera out to
 0.49 and spins it, which would otherwise reveal area outside the 800×450
 world. `Scenery` (`src/objects/Scenery.js`) handles this in code, not art: both

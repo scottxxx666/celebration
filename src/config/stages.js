@@ -6,7 +6,7 @@
 // final_highlight start.
 export const STAGES = [
   { name: 'stage1', startMs: 0, theme: 'suburb' },
-  { name: 'stage2', startMs: 26055, theme: 'night' },
+  { name: 'stage2', startMs: 26055, theme: 'suburbDay' },
   { name: 'stage3', startMs: 89822, theme: 'suburb' },
   { name: 'stage4', startMs: 123697, theme: 'night' },
 ];
