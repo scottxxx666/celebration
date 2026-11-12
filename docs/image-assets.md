@@ -360,7 +360,7 @@ The active `suburb` theme pairs its own procedural road, `road-suburb.png`
 `codex exec -i style.png colour.png mood.png < prompt.txt` (pass the prompt on
 stdin, since `-i` takes several files and would swallow a trailing prompt
 argument). It was prepped with
-`prep-scenery-image.py scenery shot.png --offset 200 --horizon 0x2a3033`,
+`prep-scenery-image.py scenery shot.png --offset 118 --horizon 0x2a3033`,
 where `--offset` keeps the houses on the horizon and `--horizon` fades the bottom
 rows into the suburb road's top row (re-run with the new hex after
 regenerating the road, `--blend 0 --out` on the shipped PNG). The background's Suburb `[SCENE]` block

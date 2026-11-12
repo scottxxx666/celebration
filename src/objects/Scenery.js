@@ -26,7 +26,7 @@ export const SCENERY_THEMES = {
     // suburb backdrop over its own procedural asphalt road (tools/gen-suburb-road.py)
     road: { key: 'road-suburb', file: 'assets/bg/road-suburb.png' },
     scenery: { key: 'scenery-suburb', file: 'assets/bg/scenery-suburb.png' },
-    sky: 0x121316,
+    sky: 0x171718,
     ground: 0x363e42,
   },
 };
