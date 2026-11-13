@@ -31,7 +31,7 @@ export const LAMP_FLICKER_BLIP_LEVEL_MIN = 0.25;
 export const LAMP_FLICKER_BLIP_LEVEL_MAX = 0.5;
 
 // Crossfade length when the stage theme changes, in game beats (BEAT_MS); 0 = hard cut
-export const STAGE_FADE_BEATS = 4;
+export const STAGE_FADE_BEATS = 3;
 
 // Player half-dimensions
 export const PLAYER_HW = 45;
@@ -324,7 +324,7 @@ export const BIKE_HAIR = [0x2b1b12, 0x120c08, 0xc9822b, 0x4a2a14, 0x1a1a1a];
 // Wall break (WallBreak, pure maths in src/wallBreak.js): a wall seen edge-on — a thin black vertical line — scrolls
 // in with the road at the end of the underground stage and the runner smashes through it at WALL_BREAK_MS (highlight2
 // start = stage5, which hard-cuts to the next theme under the flash). Drawn procedurally (no wall textures).
-export const WALL_BREAK_MS = 65909;          // song time of the impact; must sit on a real track beat
+export const WALL_BREAK_MS = 65511;          // song time of the impact; must sit on a real track beat
 export const WALL_LINE_WIDTH = 6;            // logical px: the wall's thickness, seen edge-on
 export const WALL_LINE_TOP = 18;             // y where the line starts, under its concrete cap
 export const WALL_LINE_COLOR = 0x040507;     // near-black slab
