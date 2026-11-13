@@ -365,3 +365,43 @@ export const WALL_CRACK_COUNT = 10;         // polylines radiating from the line
 export const WALL_CRACK_SEGMENTS = 4;
 export const WALL_CRACK_SEGMENT_PX = 14;
 export const WALL_CRACK_LIGHT_COLOR = 0xd7e1e6; // alternate near-white / WALL_LINE_COLOR strokes
+
+// Station building (StationBuilding, positioning in src/stationBuilding.js): a procedural subway entrance whose left
+// side is the wall, scrolling in with it, so the underground the runner breaks into reads as hidden inside it.
+// Stands on the ground behind the road (bottom = WALK_ZONE_TOP), roof level with the wall's cap. Local x from the
+// wall's left edge; gone from WALL_BREAK_MS on.
+export const STATION_DEPTH = -9;             // above the scenery strips (-10/-9.9) and SpinBikes (-9.5), below the
+                                             // disco dim (-6), every row (0..2) and the wall line (WALL_DEPTH)
+export const STATION_WIDTH = 820;            // > GAME_WIDTH - wallX(WALL_BREAK_MS) + pad: always runs off the right edge
+export const STATION_FACADE_COLOR = 0x59606a;  // cold grey concrete/tile
+export const STATION_JOINT_COLOR = 0x474d55;   // tile joints and panel seams
+export const STATION_TILE_PX = 10;           // tile course height
+export const STATION_PANEL_PX = 48;          // vertical seam spacing
+export const STATION_ROOF_COLOR = WALL_CAP_COLOR; // flat-roof parapet, matches the wall's cap
+export const STATION_ROOF_HEIGHT = 8;
+export const STATION_PLINTH_COLOR = 0x2c3136;  // dark base course along the ground
+export const STATION_PLINTH_HEIGHT = 7;
+export const STATION_WINDOW_COLOR = 0x161b20;  // dark window slits under the roof
+export const STATION_WINDOW_LIT_COLOR = 0x9fc6d8; // faint cold sill glow along their bottom edge
+export const STATION_WINDOW_Y = 36;
+export const STATION_WINDOW_W = 34;
+export const STATION_WINDOW_H = 7;
+export const STATION_WINDOW_STEP = 62;
+export const STATION_DOOR_X = 150;           // stairwell opening, local x / width
+export const STATION_DOOR_W = 120;
+export const STATION_DOOR_TOP = 118;
+export const STATION_DOOR_COLOR = 0x06080a;
+export const STATION_STAIR_COLOR = 0x1d2329;   // treads fading down into the dark
+export const STATION_CANOPY_OVERHANG = 26;   // canopy slab sticks out this far past the doorway on each side
+export const STATION_CANOPY_Y = 100;
+export const STATION_CANOPY_H = 9;
+export const STATION_CANOPY_COLOR = 0x353b42;
+export const STATION_TUBE_COLOR = 0xe6f6ff;    // fluorescent tube under the canopy
+export const STATION_SPILL_COLOR = 0xbfe4ff;   // its cold light spill on the doorway and pavement
+export const STATION_SPILL_ALPHA = 0.16;
+export const STATION_SIGN_W = 92;            // lit sign panel centred over the doorway
+export const STATION_SIGN_H = 24;
+export const STATION_SIGN_Y = 66;
+export const STATION_SIGN_COLOR = 0xdcebf2;
+export const STATION_SIGN_FRAME_COLOR = 0x23292f;
+export const STATION_GLYPH_COLOR = 0x1d3a52;   // generic down-arrow + block-letter bars (no real brand)

@@ -1,5 +1,5 @@
 import {
-  GAME_WIDTH, PLAYER_X, PLAYER_HH, PLAYER_SPRITE_HH, OBSTACLE_TIMING_SPEED,
+  PLAYER_X, PLAYER_HH, PLAYER_SPRITE_HH, OBSTACLE_TIMING_SPEED,
   WALL_BREAK_MS, WALL_IMPACT_X, WALL_LINE_WIDTH, WALL_GAP_PAD_TOP, WALL_GAP_PAD_BOTTOM,
   WALL_SHAKE_PX, WALL_SHAKE_MS, WALL_SHAKE_REROLL_MS,
   WALL_DEBRIS_COUNT, WALL_DEBRIS_SPEED_MIN, WALL_DEBRIS_SPEED_MAX, WALL_DEBRIS_LIFT_MIN, WALL_DEBRIS_LIFT_MAX,
@@ -10,7 +10,6 @@ import {
 } from './config/gameConfig.js';
 import { rowLayout } from './rowLayout.js';
 import { rand } from './cameraDance.js';
-import { stageAt } from './config/stages.js';
 
 const STILL = Object.freeze({ x: 0, y: 0 });
 export const WALL_OFFSCREEN_PAD = 40; // WallBreak keeps drawing this far past each screen edge (camera shake / zoom punch)
@@ -24,19 +23,6 @@ const between = (seed, min, max) => min + rand(seed) * (max - min);
 // only uses that for the first broken frame, then follows the road's actual scroll.
 export function wallX(songMs) {
   return PLAYER_X + WALL_IMPACT_X + ((WALL_BREAK_MS - songMs) * OBSTACLE_TIMING_SPEED) / 1000;
-}
-
-// Split reveal during the approach: what lies beyond the wall (the stage starting at WALL_BREAK_MS) shows to the
-// right of its left edge, so the stage's cut at the impact reads as continuous. `blend` is this frame's
-// stageBlend(); returns { x, theme } (screen x of the left edge, theme beyond it) or null when there is nothing to
-// split: the wall is still off-screen right, already hit, mid-crossfade (Scenery's overlay set is busy), or the
-// theme beyond it is the one already showing. Stateless from song time.
-export function wallSplit(songMs, blend) {
-  if (songMs >= WALL_BREAK_MS || blend.t < 1) return null;
-  const x = wallX(songMs);
-  if (x >= GAME_WIDTH + WALL_OFFSCREEN_PAD) return null;
-  const theme = stageAt(WALL_BREAK_MS).theme;
-  return theme === blend.to ? null : { x, theme };
 }
 
 // Camera scroll offset from the impact: a random jolt of up to WALL_SHAKE_PX per axis, re-rolled every

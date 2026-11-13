@@ -8,7 +8,8 @@ import { Scenery } from '../objects/Scenery.js';
 import { stageAt, stageBlend } from '../config/stages.js';
 import { SpinBikes } from '../objects/SpinBikes.js';
 import { WallBreak } from '../objects/WallBreak.js';
-import { wallShake, wallSplit } from '../wallBreak.js';
+import { StationBuilding } from '../objects/StationBuilding.js';
+import { wallShake } from '../wallBreak.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
@@ -145,6 +146,7 @@ export class GameScene extends Phaser.Scene {
     this.enemy = new Enemy(this, ENEMY_START_X);
     this.disco = new DiscoLights(this);
     this.wallBreak = new WallBreak(this);
+    this.station = new StationBuilding(this);
 
     // Speed + song-time readout (debug HUD) — above all gameplay depths
     this.speedText = this.add.text(10, 10, '', { fontSize: '14px', color: '#ffffff' }).setDepth(10);
@@ -297,9 +299,9 @@ export class GameScene extends Phaser.Scene {
     const { from, to, t } = stageBlend(songMs, STAGE_FADE_BEATS * BEAT_MS);
     this.scenery.setFlicker(lampFlicker(songMs, BEAT_MS));
     this.scenery.setBlend(from, to, t);
-    this.scenery.setWallSplit(wallSplit(songMs, { to, t }));
     this.scenery.scroll(worldDx);
     this.spinBikes.update(section, songMs, worldDx);
+    this.station.update(songMs);
     // The runner smashes through the wall: a one-shot white flash covers the stage's hard cut
     if (this.wallBreak.update(songMs, worldDx, this.player.row)) {
       this.strobeOverlay.setAlpha(Math.max(this.strobeOverlay.alpha, WALL_FLASH_ALPHA));
