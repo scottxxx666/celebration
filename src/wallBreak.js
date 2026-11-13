@@ -6,7 +6,7 @@ import {
   WALL_DEBRIS_DRAG, WALL_DEBRIS_GRAVITY, WALL_DEBRIS_SPIN, WALL_DEBRIS_LIFE_MS, WALL_DEBRIS_FADE_MS, WALL_DEBRIS_COLORS,
   WALL_DUST_COUNT, WALL_DUST_ALPHA, WALL_DUST_LIFE_MS,
   WALL_CRACK_MS, WALL_CRACK_FADE_MS, WALL_CRACK_COUNT, WALL_CRACK_SEGMENTS, WALL_CRACK_SEGMENT_PX,
-  WALL_CRACK_LIGHT_COLOR, WALL_LINE_COLOR,
+  WALL_CRACK_LIGHT_COLOR, WALL_LINE_COLOR, WALL_CLEAR_BEATS, TRACK_BEAT_MS,
 } from './config/gameConfig.js';
 import { rowLayout } from './rowLayout.js';
 import { rand } from './cameraDance.js';
@@ -23,6 +23,14 @@ const between = (seed, min, max) => min + rand(seed) * (max - min);
 // only uses that for the first broken frame, then follows the road's actual scroll.
 export function wallX(songMs) {
   return PLAYER_X + WALL_IMPACT_X + ((WALL_BREAK_MS - songMs) * OBSTACLE_TIMING_SPEED) / 1000;
+}
+
+// True when an obstacle arriving at arrivalMs would be unfair: at or within WALL_CLEAR_BEATS track beats after the
+// break it is still hidden behind StationBuilding until the break, then revealed too close. 1 ms tolerance either
+// side because wave times are rounded to whole ms while the beat length is not.
+export function inWallClearWindow(arrivalMs) {
+  const sinceBreak = arrivalMs - WALL_BREAK_MS;
+  return sinceBreak > -1 && sinceBreak < WALL_CLEAR_BEATS * TRACK_BEAT_MS - 1;
 }
 
 // Camera scroll offset from the impact: a random jolt of up to WALL_SHAKE_PX per axis, re-rolled every

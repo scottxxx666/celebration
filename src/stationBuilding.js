@@ -1,5 +1,9 @@
-import { GAME_WIDTH, WALL_BREAK_MS, STATION_WIDTH } from './config/gameConfig.js';
+import { GAME_WIDTH, GAME_HEIGHT, WALL_BREAK_MS, STATION_WIDTH } from './config/gameConfig.js';
 import { wallX, WALL_OFFSCREEN_PAD } from './wallBreak.js';
+
+// The front runs down past the screen bottom like the wall line, so it covers the whole road right of the wall
+// even under camera shake / zoom punch.
+export const STATION_BOTTOM = GAME_HEIGHT + WALL_OFFSCREEN_PAD;
 
 // Screen x of the station's left edge, or null when it isn't drawn. The building's left side is the wall
 // (WallBreak), so it rides on wallX() — stateless from song time, `?t=` seeks just work — and is gone from

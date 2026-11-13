@@ -19,6 +19,11 @@ export function spriteFor(wi, oi) {
   return OBSTACLE_SPRITES[index];
 }
 
+// Song time an authored obstacle reaches the runner (timeOffset is in real track beats after its wave's songTime).
+export function obstacleArrivalMs(wave, obs) {
+  return wave.songTime + obs.timeOffset * TRACK_BEAT_MS;
+}
+
 // Collision uses the row-center y and a hh that strictly blocks only one row:
 // PLAYER_HH + collisionHh < ROW_HEIGHT → collisionHh < ROW_HEIGHT - PLAYER_HH = 19
 const COLLISION_HH = ROW_HEIGHT - PLAYER_HH - 1;
@@ -49,7 +54,7 @@ export class ObstacleSpawner {
       wave.obstacles.forEach((obs, oi) => {
         const sprite = spriteFor(wi, oi);
         this.pending.push({
-          arrivalMs: wave.songTime + obs.timeOffset * TRACK_BEAT_MS, // timeOffset is in real track beats
+          arrivalMs: obstacleArrivalMs(wave, obs),
           row: obs.row,
           hw: sprite ? sprite.hw : FALLBACK_HW,
           sprite,

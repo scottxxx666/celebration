@@ -125,8 +125,6 @@ export const WAVES = [
       { timeOffset: 13, row: 0 },
       { timeOffset: 13, row: 2 },
 
-      { timeOffset: 16, row: 1 },
-      { timeOffset: 16, row: 2 },
       { timeOffset: 18, row: 0 },
       { timeOffset: 20, row: 1 },
       { timeOffset: 22, row: 0 },

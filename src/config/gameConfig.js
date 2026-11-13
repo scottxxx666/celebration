@@ -325,6 +325,10 @@ export const BIKE_HAIR = [0x2b1b12, 0x120c08, 0xc9822b, 0x4a2a14, 0x1a1a1a];
 // in with the road at the end of the desert stage and the runner smashes through it at WALL_BREAK_MS (= stage4, which
 // hard-cuts to underground under the flash). Drawn procedurally (no wall textures).
 export const WALL_BREAK_MS = 59134;          // song time of the impact; must sit on a real track beat
+export const WALL_CLEAR_BEATS = 2;           // no obstacle may arrive at or within this many real track beats after WALL_BREAK_MS:
+                                             // until the break StationBuilding hides everything right of the wall, so one
+                                             // arriving D ms after it is revealed only D x OBSTACLE_TIMING_SPEED px ahead
+                                             // (2 beats ~ 464 px, about a normal spawn's reveal). tools/gen-waves.py mirrors it
 export const WALL_LINE_WIDTH = 6;            // logical px: the wall's thickness, seen edge-on
 export const WALL_LINE_TOP = 18;             // y where the line starts, under its concrete cap
 export const WALL_LINE_COLOR = 0x040507;     // near-black slab
@@ -367,11 +371,12 @@ export const WALL_CRACK_SEGMENT_PX = 14;
 export const WALL_CRACK_LIGHT_COLOR = 0xd7e1e6; // alternate near-white / WALL_LINE_COLOR strokes
 
 // Station building (StationBuilding, positioning in src/stationBuilding.js): a procedural subway entrance whose left
-// side is the wall, scrolling in with it, so the underground the runner breaks into reads as hidden inside it.
-// Stands on the ground behind the road (bottom = WALK_ZONE_TOP), roof level with the wall's cap. Local x from the
-// wall's left edge; gone from WALL_BREAK_MS on.
-export const STATION_DEPTH = -9;             // above the scenery strips (-10/-9.9) and SpinBikes (-9.5), below the
-                                             // disco dim (-6), every row (0..2) and the wall line (WALL_DEPTH)
+// side is the wall, scrolling in with it, so the underground the runner breaks into reads as hidden inside it. Its
+// front covers everything right of the wall — scenery, road, lane lines, shadows and obstacles — from the wall's cap
+// height down past the screen bottom (STATION_BOTTOM), so the underground is only seen after the break. Local x from
+// the wall's left edge, y is screen y; gone from WALL_BREAK_MS on.
+export const STATION_DEPTH = 2.5;            // above every row (0..2), their shadows (row - 0.5) and afterimages (row - 0.25),
+                                             // below the wall line (WALL_DEPTH 3), the strobe (8) and the HUD
 export const STATION_WIDTH = 820;            // > GAME_WIDTH - wallX(WALL_BREAK_MS) + pad: always runs off the right edge
 export const STATION_FACADE_COLOR = 0x59606a;  // cold grey concrete/tile
 export const STATION_JOINT_COLOR = 0x474d55;   // tile joints and panel seams
@@ -379,29 +384,42 @@ export const STATION_TILE_PX = 10;           // tile course height
 export const STATION_PANEL_PX = 48;          // vertical seam spacing
 export const STATION_ROOF_COLOR = WALL_CAP_COLOR; // flat-roof parapet, matches the wall's cap
 export const STATION_ROOF_HEIGHT = 8;
-export const STATION_PLINTH_COLOR = 0x2c3136;  // dark base course along the ground
-export const STATION_PLINTH_HEIGHT = 7;
-export const STATION_WINDOW_COLOR = 0x161b20;  // dark window slits under the roof
+export const STATION_WINDOW_COLOR = 0x161b20;  // dark window slits on the upper floors
 export const STATION_WINDOW_LIT_COLOR = 0x9fc6d8; // faint cold sill glow along their bottom edge
-export const STATION_WINDOW_Y = 36;
+export const STATION_WINDOW_YS = [40, 96];   // one row of slits per upper floor
 export const STATION_WINDOW_W = 34;
-export const STATION_WINDOW_H = 7;
+export const STATION_WINDOW_H = 8;
 export const STATION_WINDOW_STEP = 62;
-export const STATION_DOOR_X = 150;           // stairwell opening, local x / width
-export const STATION_DOOR_W = 120;
-export const STATION_DOOR_TOP = 118;
+export const STATION_BAND_Y = 132;           // string course separating the upper floors from the ground floor
+export const STATION_BAND_H = 7;
+export const STATION_BAND_COLOR = 0x4b525b;
+export const STATION_SHADE_TOP = 300;        // the ground floor darkens from here down to the plinth (ambient occlusion)
+export const STATION_SHADE_ALPHA = 0.28;     // its darkness just above the plinth
+export const STATION_PLINTH_COLOR = 0x2c3136;  // dark base course along the bottom of the screen
+export const STATION_PLINTH_HEIGHT = 26;     // above GAME_HEIGHT (it continues down to STATION_BOTTOM)
+export const STATION_KERB_COLOR = 0x80888f;    // lit top edge of the plinth
+export const STATION_DOOR_X = 150;           // stairwell opening, local x / width; runs down to the plinth
+export const STATION_DOOR_W = 150;
+export const STATION_DOOR_TOP = 218;
 export const STATION_DOOR_COLOR = 0x06080a;
-export const STATION_STAIR_COLOR = 0x1d2329;   // treads fading down into the dark
-export const STATION_CANOPY_OVERHANG = 26;   // canopy slab sticks out this far past the doorway on each side
-export const STATION_CANOPY_Y = 100;
-export const STATION_CANOPY_H = 9;
+export const STATION_STAIR_COLOR = 0x39424b;   // treads fading down into the dark
+export const STATION_STAIR_COUNT = 11;
+export const STATION_CANOPY_OVERHANG = 28;   // canopy slab sticks out this far past the doorway on each side
+export const STATION_CANOPY_Y = 198;
+export const STATION_CANOPY_H = 10;
 export const STATION_CANOPY_COLOR = 0x353b42;
 export const STATION_TUBE_COLOR = 0xe6f6ff;    // fluorescent tube under the canopy
-export const STATION_SPILL_COLOR = 0xbfe4ff;   // its cold light spill on the doorway and pavement
+export const STATION_SPILL_COLOR = 0xbfe4ff;   // its cold light spill down the doorway and the facade either side
 export const STATION_SPILL_ALPHA = 0.16;
 export const STATION_SIGN_W = 92;            // lit sign panel centred over the doorway
 export const STATION_SIGN_H = 24;
-export const STATION_SIGN_Y = 66;
+export const STATION_SIGN_Y = 158;
 export const STATION_SIGN_COLOR = 0xdcebf2;
 export const STATION_SIGN_FRAME_COLOR = 0x23292f;
 export const STATION_GLYPH_COLOR = 0x1d3a52;   // generic down-arrow + block-letter bars (no real brand)
+export const STATION_MAP_XS = [40, 344];     // backlit route-map panels either side of the doorway (local x)
+export const STATION_MAP_Y = 262;
+export const STATION_MAP_W = 70;
+export const STATION_MAP_H = 92;
+export const STATION_MAP_COLOR = 0xc9dce6;
+export const STATION_MAP_LINE_COLORS = [0x2f6f9f, 0xb0503c, 0x4f8a4a]; // generic route lines (no real network)
