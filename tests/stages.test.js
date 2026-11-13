@@ -46,8 +46,8 @@ test('stageThemeNames dedupes themes', () => {
   assert.deepEqual(new Set(names), new Set(STAGES.map(s => s.theme)));
 });
 
-// First boundary whose theme differs from the previous stage's
-const changeIndex = STAGES.findIndex((s, i) => i > 0 && s.theme !== STAGES[i - 1].theme);
+// First crossfading boundary whose theme differs from the previous stage's
+const changeIndex = STAGES.findIndex((s, i) => i > 0 && !s.cut && s.theme !== STAGES[i - 1].theme);
 const FADE_MS = 1000;
 
 test('stageBlend: before a boundary is settled on the previous theme', () => {
@@ -82,4 +82,25 @@ test('stageBlend: first stage (including negative song time) never fades', () =>
 test('stageBlend: fadeMs 0 is a hard cut', () => {
   const { theme, startMs } = STAGES[changeIndex];
   assert.deepEqual(stageBlend(startMs, 0), { from: theme, to: theme, t: 1 });
+});
+
+const cutIndex = STAGES.findIndex((s, i) => i > 0 && s.cut && s.theme !== STAGES[i - 1].theme);
+
+test('stage5 hard-cuts on the wall break', async () => {
+  const { WALL_BREAK_MS } = await import('../src/config/gameConfig.js');
+  const stage5 = STAGES.find(s => s.name === 'stage5');
+  assert.equal(stage5.cut, true);
+  assert.equal(stage5.startMs, WALL_BREAK_MS);
+});
+
+test('stageBlend: a cut stage is settled on the previous theme until startMs', () => {
+  const prev = STAGES[cutIndex - 1].theme;
+  assert.deepEqual(stageBlend(STAGES[cutIndex].startMs - 1, FADE_MS), { from: prev, to: prev, t: 1 });
+});
+
+test('stageBlend: a cut stage is fully on its theme from startMs, never mid-fade', () => {
+  const { theme, startMs } = STAGES[cutIndex];
+  for (const ms of [startMs, startMs + 1, startMs + FADE_MS / 2, startMs + FADE_MS]) {
+    assert.deepEqual(stageBlend(ms, FADE_MS), { from: theme, to: theme, t: 1 }, `at ${ms}`);
+  }
 });

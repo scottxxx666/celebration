@@ -320,3 +320,42 @@ export const BIKE_SKINS = [0xf1c27d, 0x8d5524, 0xe0ac69, 0xc68642, 0xffdbac];
 export const BIKE_TOPS = [0x39ff14, 0xff8c1a, 0xff4fb0, 0xffffff, 0xb266ff]; // tee / tank colours
 export const BIKE_SHORTS = [0x15151f, 0x1f2a6b, 0x15151f, 0x00b3a4, 0xffe14d];
 export const BIKE_HAIR = [0x2b1b12, 0x120c08, 0xc9822b, 0x4a2a14, 0x1a1a1a];
+
+// Wall break (WallBreak, pure maths in src/wallBreak.js): a wall seen edge-on — a thin black vertical line — scrolls
+// in with the road at the end of the underground stage and the runner smashes through it at WALL_BREAK_MS (highlight2
+// start = stage5, which hard-cuts to the next theme under the flash). Drawn procedurally (no wall textures).
+export const WALL_BREAK_MS = 65909;          // song time of the impact; must sit on a real track beat
+export const WALL_LINE_WIDTH = 6;            // logical px: the wall's thickness, seen edge-on
+export const WALL_LINE_TOP = 18;             // y where the line starts, under its concrete cap
+export const WALL_LINE_COLOR = 0x040507;     // near-black slab
+export const WALL_RIM_COLOR = 0x8aa2b0;      // 1px cold rim light on the left edge (faces the runner)
+export const WALL_CAP_COLOR = 0x5a6268;      // small concrete cap on top, WALL_CAP_OVERHANG px wider each side
+export const WALL_CAP_OVERHANG = 3;
+export const WALL_CAP_HEIGHT = 6;
+export const WALL_GLOW_WIDTH = 26;           // dark shadow strip on the line's right side, fading out over this many px
+export const WALL_GLOW_ALPHA = 0.45;         // its opacity next to the line
+export const WALL_GAP_PAD_TOP = 4;           // the gap broken out on the runner's row spans head - top pad .. feet + bottom pad
+export const WALL_GAP_PAD_BOTTOM = 6;
+export const WALL_IMPACT_X = 36;             // the line's left edge is this far right of PLAYER_X at impact (the runner's leading arm/knee)
+export const WALL_DEPTH = 3;                 // above every row (0..2); below the strobe (8)
+export const WALL_LATE_MS = 120;             // a run that first sees the wall later than this after impact (a ?t= seek) shows it broken, no burst/flash
+export const WALL_FLASH_ALPHA = 0.9;         // one-shot white flash on the strobe overlay at impact (decays by STROBE_DECAY)
+export const WALL_SHAKE_PX = 9;              // camera shake per axis at impact, decaying linearly
+export const WALL_SHAKE_MS = 360;            // shake duration after WALL_BREAK_MS
+export const WALL_SHAKE_REROLL_MS = 30;      // shake offset is re-rolled this often
+export const WALL_DEBRIS_COUNT = 46;         // shards per burst
+export const WALL_DEBRIS_SPEED_MIN = 250;    // px/s, forward (rightward, world frame — the road itself scrolls left under it)
+export const WALL_DEBRIS_SPEED_MAX = 1150;
+export const WALL_DEBRIS_LIFT_MIN = 60;      // px/s, initial upward speed
+export const WALL_DEBRIS_LIFT_MAX = 520;
+export const WALL_DEBRIS_DRAG = 2.2;         // 1/s, exponential horizontal air drag until a shard lands
+export const WALL_DEBRIS_GRAVITY = 1500;     // px/s²
+export const WALL_DEBRIS_SPIN = 14;          // rad/s, max spin while airborne
+export const WALL_DEBRIS_LIFE_MS = 1700;     // shards (landed ones lie on the road as rubble) fade out over the last WALL_DEBRIS_FADE_MS
+export const WALL_DEBRIS_FADE_MS = 500;
+export const WALL_DEBRIS_COLORS = [0x08090c, 0x08090c, 0x1e242a, 0x363e44]; // black / dark grey, like the line
+export const WALL_DEBRIS_EDGE_COLOR = 0x5a6973; // light outline so dark shards read on the night road
+export const WALL_DUST_COUNT = 7;            // soft dust puffs per burst
+export const WALL_DUST_COLOR = 0x8ea0b4;     // bluish grey tint on the white dust texture (drawn at runtime by WallBreak)
+export const WALL_DUST_ALPHA = 0.75;         // peak alpha (the texture itself is soft and ~35% opaque)
+export const WALL_DUST_LIFE_MS = 1100;
