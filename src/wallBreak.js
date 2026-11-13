@@ -5,6 +5,8 @@ import {
   WALL_DEBRIS_COUNT, WALL_DEBRIS_SPEED_MIN, WALL_DEBRIS_SPEED_MAX, WALL_DEBRIS_LIFT_MIN, WALL_DEBRIS_LIFT_MAX,
   WALL_DEBRIS_DRAG, WALL_DEBRIS_GRAVITY, WALL_DEBRIS_SPIN, WALL_DEBRIS_LIFE_MS, WALL_DEBRIS_FADE_MS, WALL_DEBRIS_COLORS,
   WALL_DUST_COUNT, WALL_DUST_ALPHA, WALL_DUST_LIFE_MS,
+  WALL_CRACK_MS, WALL_CRACK_FADE_MS, WALL_CRACK_COUNT, WALL_CRACK_SEGMENTS, WALL_CRACK_SEGMENT_PX,
+  WALL_CRACK_LIGHT_COLOR, WALL_LINE_COLOR,
 } from './config/gameConfig.js';
 import { rowLayout } from './rowLayout.js';
 import { rand } from './cameraDance.js';
@@ -142,4 +144,32 @@ export function dustState(p, tMs) {
     scale: p.scale0 + (p.scale1 - p.scale0) * ease,
     alpha: WALL_DUST_ALPHA * fadeIn * (1 - u) ** 1.5,
   };
+}
+
+// Impact crack lines radiating from the line at the runner's chest height (mid head..feet): WALL_CRACK_COUNT
+// polylines of WALL_CRACK_SEGMENTS wandering segments, fanning up/down (+-80 deg about the vertical, alternating
+// sides of the horizontal), strokes alternating near-white / near-black. Returns [{ color, pts: [x0, y0, x1, y1, ...] }],
+// x relative to the line's left edge, y screen. Deterministic.
+export function crackLines(row) {
+  const { head, feet } = runnerSpan(row);
+  const cy = (head + feet) / 2;
+  return Array.from({ length: WALL_CRACK_COUNT }, (_, i) => {
+    let a = Math.PI / 2 + between(6100 + i * 3.1, -1.4, 1.4) + (i % 2 ? Math.PI : 0);
+    let x = WALL_LINE_WIDTH / 2;
+    let y = cy;
+    const pts = [x, y];
+    for (let s = 0; s < WALL_CRACK_SEGMENTS; s++) {
+      a += between(6100 + i * 3.1 + (s + 1) * 0.37, -0.5, 0.5);
+      x += Math.cos(a) * WALL_CRACK_SEGMENT_PX;
+      y += Math.sin(a) * WALL_CRACK_SEGMENT_PX;
+      pts.push(x, y);
+    }
+    return { color: i % 2 ? WALL_LINE_COLOR : WALL_CRACK_LIGHT_COLOR, pts };
+  });
+}
+
+// Cracks' opacity `tMs` after the impact: full, then linear fade over the last WALL_CRACK_FADE_MS; 0 outside [0, WALL_CRACK_MS).
+export function crackAlpha(tMs) {
+  if (tMs < 0 || tMs >= WALL_CRACK_MS) return 0;
+  return Math.min(1, (WALL_CRACK_MS - tMs) / WALL_CRACK_FADE_MS);
 }

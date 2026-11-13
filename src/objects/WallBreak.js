@@ -1,9 +1,9 @@
 import {
   GAME_WIDTH, GAME_HEIGHT, WALL_BREAK_MS, WALL_DEPTH, WALL_LATE_MS, WALL_DEBRIS_LIFE_MS, WALL_DUST_LIFE_MS, WALL_DUST_COLOR,
   WALL_LINE_WIDTH, WALL_LINE_TOP, WALL_LINE_COLOR, WALL_RIM_COLOR, WALL_CAP_COLOR, WALL_CAP_OVERHANG, WALL_CAP_HEIGHT,
-  WALL_GLOW_WIDTH, WALL_GLOW_ALPHA, WALL_DEBRIS_EDGE_COLOR,
+  WALL_GLOW_WIDTH, WALL_GLOW_ALPHA, WALL_DEBRIS_EDGE_COLOR, WALL_CRACK_MS,
 } from '../config/gameConfig.js';
-import { wallX, wallGap, gapStubs, debrisPieces, debrisState, dustPuffs, dustState, DUST_MAX_DELAY_MS } from '../wallBreak.js';
+import { wallX, wallGap, gapStubs, crackLines, crackAlpha, debrisPieces, debrisState, dustPuffs, dustState, DUST_MAX_DELAY_MS } from '../wallBreak.js';
 
 const OFFSCREEN_PAD = 40;   // keep drawing this far past each screen edge (camera shake / zoom punch)
 const LINE_BOTTOM = GAME_HEIGHT + OFFSCREEN_PAD;
@@ -21,6 +21,7 @@ export class WallBreak {
     if (!scene.textures.exists(DUST_KEY)) makeDustTexture(scene);
     this.line = scene.add.graphics().setDepth(WALL_DEPTH).setVisible(false);
     this.draw(null);
+    this.cracks = scene.add.graphics().setDepth(WALL_DEPTH + 0.05).setVisible(false);
     this.broken = false;
     this.x = 0;
     this.done = false;
@@ -79,12 +80,17 @@ export class WallBreak {
       this.x = wallX(songMs);
       this.draw(wallGap(row), row);
       impact = songMs - WALL_BREAK_MS <= WALL_LATE_MS;
-      if (impact) this.burst(row);
+      if (impact) { this.burst(row); this.drawCracks(row); }
     } else {
       this.x -= worldDx;
     }
 
     const t = songMs - WALL_BREAK_MS;
+    if (this.cracking) {
+      const a = crackAlpha(t);
+      this.cracks.setPosition(this.x, 0).setAlpha(a).setVisible(a > 0);
+      if (t >= WALL_CRACK_MS) this.cracking = false;
+    }
     this.line.setX(this.x).setVisible(this.onScreen(this.x));
     if (this.bursting) {
       for (const { piece, rect } of this.shards) {
@@ -103,10 +109,22 @@ export class WallBreak {
     if (!this.onScreen(this.x) && this.x < 0 && effectsOver) {
       this.done = true;
       this.line.setVisible(false);
+      this.cracks.setVisible(false);
       for (const { rect } of this.shards) rect.setVisible(false);
       for (const { image } of this.puffs) image.setVisible(false);
     }
     return impact;
+  }
+
+  // Drawn once at impact (static relative to the line); update() moves and fades it for WALL_CRACK_MS.
+  drawCracks(row) {
+    this.cracking = true;
+    const g = this.cracks.clear();
+    for (const { color, pts } of crackLines(row)) {
+      g.lineStyle(1, color, 1).beginPath().moveTo(pts[0], pts[1]);
+      for (let i = 2; i < pts.length; i += 2) g.lineTo(pts[i], pts[i + 1]);
+      g.strokePath();
+    }
   }
 
   burst(row) {

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  wallX, wallShake, runnerSpan, wallGap, gapStubs, debrisPiece, debrisPieces, debrisState, dustPuffs, dustState, DUST_MAX_DELAY_MS,
+  wallX, wallShake, runnerSpan, wallGap, gapStubs, debrisPiece, debrisPieces, crackLines, crackAlpha, debrisState, dustPuffs, dustState, DUST_MAX_DELAY_MS,
 } from '../src/wallBreak.js';
 import { sectionAt } from '../src/config/sections.js';
 import { snapToTrackBeat } from '../src/Conductor.js';
@@ -9,6 +9,7 @@ import {
   PLAYER_X, GAME_WIDTH, NUM_ROWS, OBSTACLE_TIMING_SPEED, OBSTACLE_TIMING_SWITCH_MS, PLAYER_HH, PLAYER_SPRITE_HH,
   WALL_BREAK_MS, WALL_IMPACT_X, WALL_SHAKE_MS, WALL_SHAKE_PX, WALL_DEBRIS_COUNT, WALL_DEBRIS_LIFE_MS,
   WALL_DEBRIS_FADE_MS, WALL_DUST_COUNT, WALL_DUST_LIFE_MS, WALL_DUST_ALPHA,
+  WALL_CRACK_MS, WALL_CRACK_COUNT, WALL_CRACK_SEGMENTS, WALL_CRACK_SEGMENT_PX,
   WALL_LINE_WIDTH, WALL_LINE_TOP, WALL_GAP_PAD_TOP, WALL_GAP_PAD_BOTTOM, WALL_DEBRIS_COLORS, GAME_HEIGHT,
 } from '../src/config/gameConfig.js';
 import { rowLayout } from '../src/rowLayout.js';
@@ -164,4 +165,35 @@ test('dust: swells and drifts forward, alpha within (0, WALL_DUST_ALPHA], gone a
       assert.ok(s.alpha >= 0 && s.alpha <= WALL_DUST_ALPHA);
     }
   }
+});
+
+test('crackLines: deterministic, right counts, all anchored at the line at chest height', () => {
+  for (let row = 0; row < NUM_ROWS; row++) {
+    const lines = crackLines(row);
+    assert.deepEqual(lines, crackLines(row));
+    assert.equal(lines.length, WALL_CRACK_COUNT);
+    const { head, feet } = runnerSpan(row);
+    for (const { pts } of lines) {
+      assert.equal(pts.length, (WALL_CRACK_SEGMENTS + 1) * 2);
+      assert.equal(pts[0], WALL_LINE_WIDTH / 2);
+      assert.ok(Math.abs(pts[1] - (head + feet) / 2) < 1e-9);
+      for (let i = 2; i < pts.length; i += 2) {
+        assert.ok(Math.abs(Math.hypot(pts[i] - pts[i - 2], pts[i + 1] - pts[i - 1]) - WALL_CRACK_SEGMENT_PX) < 1e-9);
+      }
+    }
+  }
+  assert.equal(new Set(crackLines(1).map(l => l.color)).size, 2);
+});
+
+test('crackAlpha: 0 outside the window, full at impact, then non-increasing to 0', () => {
+  assert.equal(crackAlpha(-1), 0);
+  assert.equal(crackAlpha(WALL_CRACK_MS), 0);
+  assert.equal(crackAlpha(0), 1);
+  let prev = 1;
+  for (let t = 0; t < WALL_CRACK_MS; t += 5) {
+    const a = crackAlpha(t);
+    assert.ok(a <= prev && a > 0);
+    prev = a;
+  }
+  assert.ok(crackAlpha(WALL_CRACK_MS - 1) < 0.1);
 });
