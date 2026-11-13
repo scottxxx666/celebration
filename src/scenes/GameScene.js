@@ -302,6 +302,7 @@ export class GameScene extends Phaser.Scene {
     // The runner smashes through the wall: a one-shot white flash covers the stage's hard cut
     if (this.wallBreak.update(songMs, worldDx, this.player.row)) {
       this.strobeOverlay.setAlpha(Math.max(this.strobeOverlay.alpha, WALL_FLASH_ALPHA));
+      this.sound.play('breakwall');
     }
 
     this.enemy.trackRow(this.player.row, this.conductor.beatCrossed, beatSyncOn);
