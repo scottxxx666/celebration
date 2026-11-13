@@ -8,7 +8,7 @@ import { Scenery } from '../objects/Scenery.js';
 import { stageAt, stageBlend } from '../config/stages.js';
 import { SpinBikes } from '../objects/SpinBikes.js';
 import { WallBreak } from '../objects/WallBreak.js';
-import { wallShake } from '../wallBreak.js';
+import { wallShake, wallSplit } from '../wallBreak.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
@@ -297,6 +297,7 @@ export class GameScene extends Phaser.Scene {
     const { from, to, t } = stageBlend(songMs, STAGE_FADE_BEATS * BEAT_MS);
     this.scenery.setFlicker(lampFlicker(songMs, BEAT_MS));
     this.scenery.setBlend(from, to, t);
+    this.scenery.setWallSplit(wallSplit(songMs, { to, t }));
     this.scenery.scroll(worldDx);
     this.spinBikes.update(section, songMs, worldDx);
     // The runner smashes through the wall: a one-shot white flash covers the stage's hard cut

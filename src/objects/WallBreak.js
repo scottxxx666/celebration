@@ -3,9 +3,8 @@ import {
   WALL_LINE_WIDTH, WALL_LINE_TOP, WALL_LINE_COLOR, WALL_RIM_COLOR, WALL_CAP_COLOR, WALL_CAP_OVERHANG, WALL_CAP_HEIGHT,
   WALL_GLOW_WIDTH, WALL_GLOW_ALPHA, WALL_DEBRIS_EDGE_COLOR, WALL_CRACK_MS,
 } from '../config/gameConfig.js';
-import { wallX, wallGap, gapStubs, crackLines, crackAlpha, debrisPieces, debrisState, dustPuffs, dustState, DUST_MAX_DELAY_MS } from '../wallBreak.js';
+import { wallX, wallGap, gapStubs, crackLines, crackAlpha, debrisPieces, debrisState, dustPuffs, dustState, DUST_MAX_DELAY_MS, WALL_OFFSCREEN_PAD as OFFSCREEN_PAD } from '../wallBreak.js';
 
-const OFFSCREEN_PAD = 40;   // keep drawing this far past each screen edge (camera shake / zoom punch)
 const LINE_BOTTOM = GAME_HEIGHT + OFFSCREEN_PAD;
 const GLOW_STEPS = 8;       // the right-side shadow fades out in this many strips
 const DUST_KEY = 'wall-dust';

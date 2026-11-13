@@ -86,11 +86,11 @@ test('stageBlend: fadeMs 0 is a hard cut', () => {
 
 const cutIndex = STAGES.findIndex((s, i) => i > 0 && s.cut && s.theme !== STAGES[i - 1].theme);
 
-test('stage5 hard-cuts on the wall break', async () => {
+test('stage4 hard-cuts on the wall break', async () => {
   const { WALL_BREAK_MS } = await import('../src/config/gameConfig.js');
-  const stage5 = STAGES.find(s => s.name === 'stage5');
-  assert.equal(stage5.cut, true);
-  assert.equal(stage5.startMs, WALL_BREAK_MS);
+  const stage4 = STAGES.find(s => s.name === 'stage4');
+  assert.equal(stage4.cut, true);
+  assert.equal(stage4.startMs, WALL_BREAK_MS);
 });
 
 test('stageBlend: a cut stage is settled on the previous theme until startMs', () => {

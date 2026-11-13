@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  wallX, wallShake, runnerSpan, wallGap, gapStubs, debrisPiece, debrisPieces, crackLines, crackAlpha, debrisState, dustPuffs, dustState, DUST_MAX_DELAY_MS,
+  wallX, wallSplit, WALL_OFFSCREEN_PAD, wallShake, runnerSpan, wallGap, gapStubs, debrisPiece, debrisPieces, crackLines, crackAlpha, debrisState, dustPuffs, dustState, DUST_MAX_DELAY_MS,
 } from '../src/wallBreak.js';
 import { sectionAt } from '../src/config/sections.js';
 import { snapToTrackBeat } from '../src/Conductor.js';
@@ -10,9 +10,10 @@ import {
   WALL_BREAK_MS, WALL_IMPACT_X, WALL_SHAKE_MS, WALL_SHAKE_PX, WALL_DEBRIS_COUNT, WALL_DEBRIS_LIFE_MS,
   WALL_DEBRIS_FADE_MS, WALL_DUST_COUNT, WALL_DUST_LIFE_MS, WALL_DUST_ALPHA,
   WALL_CRACK_MS, WALL_CRACK_COUNT, WALL_CRACK_SEGMENTS, WALL_CRACK_SEGMENT_PX,
-  WALL_LINE_WIDTH, WALL_LINE_TOP, WALL_GAP_PAD_TOP, WALL_GAP_PAD_BOTTOM, WALL_DEBRIS_COLORS, GAME_HEIGHT,
+  WALL_LINE_WIDTH, WALL_LINE_TOP, WALL_GAP_PAD_TOP, WALL_GAP_PAD_BOTTOM, WALL_DEBRIS_COLORS, GAME_HEIGHT, STAGE_FADE_BEATS, BEAT_MS,
 } from '../src/config/gameConfig.js';
 import { rowLayout } from '../src/rowLayout.js';
+import { stageAt, stageBlend } from '../src/config/stages.js';
 
 const approachMs = ((GAME_WIDTH - wallX(WALL_BREAK_MS)) / OBSTACLE_TIMING_SPEED) * 1000;
 
@@ -196,4 +197,35 @@ test('crackAlpha: 0 outside the window, full at impact, then non-increasing to 0
     prev = a;
   }
   assert.ok(crackAlpha(WALL_CRACK_MS - 1) < 0.1);
+});
+
+const blendAt = ms => stageBlend(ms, STAGE_FADE_BEATS * BEAT_MS);
+const beyond = stageAt(WALL_BREAK_MS).theme;
+
+test('wallSplit: off while the wall is still off-screen right', () => {
+  const early = WALL_BREAK_MS - approachMs - (WALL_OFFSCREEN_PAD / OBSTACLE_TIMING_SPEED) * 1000 - 1;
+  assert.equal(wallSplit(early, blendAt(early)), null);
+});
+
+test('wallSplit: during the approach, shows the theme beyond the wall right of its left edge', () => {
+  const ms = WALL_BREAK_MS - 500;
+  assert.notEqual(stageAt(ms).theme, beyond);
+  assert.deepEqual(wallSplit(ms, blendAt(ms)), { x: wallX(ms), theme: beyond });
+});
+
+test('wallSplit: off from the impact on (the stage cut takes over)', () => {
+  assert.equal(wallSplit(WALL_BREAK_MS, blendAt(WALL_BREAK_MS)), null);
+  assert.equal(wallSplit(WALL_BREAK_MS + 1000, blendAt(WALL_BREAK_MS + 1000)), null);
+});
+
+test('wallSplit: yields to a crossfade and to a theme already showing', () => {
+  const ms = WALL_BREAK_MS - 500;
+  assert.equal(wallSplit(ms, { to: 'desert', t: 0.5 }), null);
+  assert.equal(wallSplit(ms, { to: beyond, t: 1 }), null);
+});
+
+test('wallSplit: the wall approach does not overlap a stage crossfade', () => {
+  for (let ms = WALL_BREAK_MS - approachMs; ms < WALL_BREAK_MS; ms += 10) {
+    assert.equal(blendAt(ms).t, 1, `crossfading at ${ms}`);
+  }
 });

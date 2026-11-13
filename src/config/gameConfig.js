@@ -322,9 +322,9 @@ export const BIKE_SHORTS = [0x15151f, 0x1f2a6b, 0x15151f, 0x00b3a4, 0xffe14d];
 export const BIKE_HAIR = [0x2b1b12, 0x120c08, 0xc9822b, 0x4a2a14, 0x1a1a1a];
 
 // Wall break (WallBreak, pure maths in src/wallBreak.js): a wall seen edge-on — a thin black vertical line — scrolls
-// in with the road at the end of the underground stage and the runner smashes through it at WALL_BREAK_MS (highlight2
-// start = stage5, which hard-cuts to the next theme under the flash). Drawn procedurally (no wall textures).
-export const WALL_BREAK_MS = 65511;          // song time of the impact; must sit on a real track beat
+// in with the road at the end of the desert stage and the runner smashes through it at WALL_BREAK_MS (= stage4, which
+// hard-cuts to underground under the flash). Drawn procedurally (no wall textures).
+export const WALL_BREAK_MS = 59134;          // song time of the impact; must sit on a real track beat
 export const WALL_LINE_WIDTH = 6;            // logical px: the wall's thickness, seen edge-on
 export const WALL_LINE_TOP = 18;             // y where the line starts, under its concrete cap
 export const WALL_LINE_COLOR = 0x040507;     // near-black slab

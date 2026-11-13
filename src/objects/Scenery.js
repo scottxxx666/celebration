@@ -43,6 +43,15 @@ export class Scenery {
     this.overlay = this.createLayers(scene, themeName, left, width, -9.9, -10.9);
     this.setOverlayVisible(false);
 
+    // Wall split reveal (setWallSplit): a world-space rectangle from the wall's left edge rightwards, used as a
+    // geometry mask on the overlay set. Off the display list; the mask is drawn through the rendering camera,
+    // so it follows zoom/rotation like the layers it clips.
+    const skyTop = GAME_HEIGHT / 2 - HALF_SPAN;
+    this.splitShape = scene.make.graphics({ add: false }).fillStyle(0xffffff).fillRect(0, skyTop, width, 2 * HALF_SPAN);
+    this.splitMask = this.splitShape.createGeometryMask();
+    this.splitting = false;
+    scene.events.once('shutdown', () => this.splitShape.destroy());
+
     // Aliases for the base set (the layers scroll() advances)
     this.scenery = this.base.scenery;
     this.road = this.base.road;
@@ -192,6 +201,23 @@ export class Scenery {
     this.applyTheme(this.overlay, to);
     const { scenery, road, sky, ground } = this.overlay;
     for (const layer of [scenery, road, sky, ground]) layer.setAlpha(t);
+    this.setOverlayVisible(true);
+  }
+
+  // Called after setBlend. split: wallSplit()'s { x, theme } or null. Shows the overlay set with `theme` at
+  // alpha 1, clipped to world x >= split.x; both sets scroll together, so the road lines up across the wall.
+  setWallSplit(split) {
+    const layers = [this.overlay.scenery, this.overlay.road, this.overlay.sky, this.overlay.ground];
+    if (!split) {
+      if (this.splitting) for (const layer of layers) layer.clearMask();
+      this.splitting = false;
+      return;
+    }
+    if (!this.splitting) for (const layer of layers) layer.setMask(this.splitMask);
+    this.splitting = true;
+    this.applyTheme(this.overlay, split.theme);
+    this.splitShape.x = split.x;
+    for (const layer of layers) layer.setAlpha(1);
     this.setOverlayVisible(true);
   }
 
