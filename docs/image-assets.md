@@ -429,6 +429,35 @@ dusty, no road / people / vehicles. Prepped with
 (it printed `sky` 0x8f8973). Covered by `tests/tools/test_desert_assets.py`
 (road, the drawing, and the shipped PNG's size, seam and edge rows).
 
+## Station building
+
+`public/assets/station-building.png` (1640x944 = 2x `STATION_WIDTH` x (`STATION_BOTTOM` - `WALL_LINE_TOP`)) is the
+subway entrance `StationBuilding` draws over the road after the wall (stage 3 -> 4). It is an AI restyle of a flat
+export of the earlier procedural drawing (layout.png: the old `StationBuilding` Graphics rendered 1:1 at 2x with no
+background), so the doorway, canopy, sign, map panels, window slits, plinth and sand heap keep the positions the game
+code assumes (`STATION_DOOR_*`, `STATION_CANOPY_OVERHANG`). The image model only emits 1536x1024, so the layout was
+stretched to 1536x1024 (layout-ref.png) before generation and the result is resized back to 1640x944, which undoes
+the stretch. Style reference: a photo of an old grey concrete wall (its people and street furniture ignored). Generated
+with `codex exec --skip-git-repo-check --sandbox workspace-write -i style.png -i layout-ref.png < prompt.txt` (variant
+v3 of three runs of the same prompt; `OUTFILE` in the prompt is the raw output name), shipped prompt:
+
+> Restyle layout-ref.png as a photorealistic, straight-on flat elevation photograph (orthographic, no perspective, no vanishing point, no lens distortion) of an old, heavily weathered concrete subway entrance building standing in a dry desert, several decades old.
+>
+> LAYOUT: copy layout-ref.png EXACTLY. Keep the same position, size and shape of every element: the tall near-black doorway with a stairway going down into darkness, the canopy slab over it with its fluorescent tube and the two small corner brackets, the sign panel above the canopy (pale on the left with a down-arrow and generic block glyphs, its right end dead/dark), the two route-map panels either side of the doorway (left one a faded pale map with a few coloured route lines, right one dead and dark with a crack), the two rows of dark window slits across the upper wall, the string course band, the parapet along the very top, and the dark plinth strip along the very bottom. Keep the sand drifted against the base, spilling over the kerb and heaped into the doorway over the top steps, plus the small tumbleweed on the left and the half-buried wooden crate to the right of the doorway. Do not add, remove or move elements. The reference image is horizontally squeezed on purpose; output it at the same 1536x1024 size with the same composition.
+>
+> MATERIAL: take the concrete material, tone, staining and grain from style.png (the large grey wall in the centre: subtle mottled tone, faint panel joints, soft stains, fine pitting). IGNORE everything else in style.png: the dancers/people, the bicycle, fences, bins, poles, trash, street, other buildings. Make the wall stained, sun-bleached and sand-scoured, patchy repainted concrete with fine grain, hairline cracks, small patches of peeling plaster showing darker concrete, a few short dry rust streaks at the canopy brackets, faded and chalky signage and maps, warm ochre dust thickening toward the ground. The grid of tile joints in the reference should be only faintly visible, like old panel seams.
+>
+> GRADE: warm desaturated overcast film look matching a hazy dusty desert (muted tan sand, brown-grey haze), natural flat daylight, no strong shadows, no glare.
+>
+> STRICT: no people, no vehicles, no animals, no readable text or letters other than the generic block glyph already on the sign (no real brand, no logos), no sky, no ground beyond the sand at the base: the facade fills the frame edge to edge.
+>
+> Save the final image as a PNG file named OUTFILE in the current directory.
+
+`tools/prep-station-image.py raw.png` resizes it back, then weathers the dark plinth band along the bottom (the model
+paints it as flat slabs): grain, low-frequency tone, sand dust fading down from its top edge and a lighter worn kerb
+edge (none over the doorway's sand column); finally it quantises to a 192-colour palette (about 1 MB). Covered by
+`tests/tools/test_station_assets.py` (size, file size, dark doorway).
+
 The `underground` theme (stage 4 from 59134 ms) is fully procedural for now:
 `tools/gen-underground-assets.py`
 (`uv run --with pillow python tools/gen-underground-assets.py [--preview DIR]`)

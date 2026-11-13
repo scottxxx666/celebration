@@ -4,6 +4,7 @@ import { SCENERY_THEMES } from '../config/sceneryThemes.js';
 import { stageThemeNames } from '../config/stages.js';
 import { OBSTACLE_SPRITES } from '../config/obstacleSprites.js';
 import { PLAYER_FRAMES, ENEMY_FRAMES } from '../config/runFrames.js';
+import { STATION_IMAGE } from '../config/gameConfig.js';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -27,6 +28,8 @@ export class BootScene extends Phaser.Scene {
       this.load.image(theme.scenery.key, theme.scenery.file);
       if (theme.flicker) this.load.image(theme.flicker.key, theme.flicker.file);
     }
+
+    this.load.image(STATION_IMAGE.key, STATION_IMAGE.file);
 
     OBSTACLE_SPRITES.forEach(sprite => this.load.image(sprite.key, sprite.file));
     PLAYER_FRAMES.forEach(frame => this.load.image(frame.key, frame.file));

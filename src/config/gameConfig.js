@@ -370,123 +370,18 @@ export const WALL_CRACK_SEGMENTS = 4;
 export const WALL_CRACK_SEGMENT_PX = 14;
 export const WALL_CRACK_LIGHT_COLOR = 0xd7e1e6; // alternate near-white / WALL_LINE_COLOR strokes
 
-// Station building (StationBuilding, positioning in src/stationBuilding.js): a procedural subway entrance whose left
-// side is the wall, scrolling in with it, so the underground the runner breaks into reads as hidden inside it. Its
-// front covers everything right of the wall — scenery, road, lane lines, shadows and obstacles — from the wall's cap
-// height down past the screen bottom (STATION_BOTTOM), so the underground is only seen after the break. Local x from
-// the wall's left edge, y is screen y; gone from WALL_BREAK_MS on.
+// Station building (StationBuilding, positioning in src/stationBuilding.js): a subway entrance whose left side is the
+// wall, scrolling in with it, so the underground the runner breaks into reads as hidden inside it. Its front covers
+// everything right of the wall — scenery, road, lane lines, shadows and obstacles — from the wall's cap height down
+// past the screen bottom (STATION_BOTTOM), so the underground is only seen after the break. It is one AI-restyled
+// image (tools/prep-station-image.py, docs/image-assets.md "Station building"); local x from the wall's left edge,
+// y is screen y; gone from WALL_BREAK_MS on. The door/canopy values below describe where that image draws them.
+export const STATION_IMAGE = { key: 'station-building', file: 'assets/station-building.png' }; // authored at 2x
 export const STATION_DEPTH = 2.5;            // above every row (0..2), their shadows (row - 0.5) and afterimages (row - 0.25),
                                              // below the wall line (WALL_DEPTH 3), the strobe (8) and the HUD
 export const STATION_WIDTH = 820;            // > GAME_WIDTH - wallX(WALL_BREAK_MS) + pad: always runs off the right edge
-export const STATION_FACADE_COLOR = 0x59606a;  // cold grey concrete/tile
-export const STATION_JOINT_COLOR = 0x474d55;   // tile joints and panel seams
-export const STATION_TILE_PX = 10;           // tile course height
-export const STATION_PANEL_PX = 48;          // vertical seam spacing
-export const STATION_ROOF_COLOR = WALL_CAP_COLOR; // flat-roof parapet, matches the wall's cap
-export const STATION_ROOF_HEIGHT = 8;
-export const STATION_WINDOW_COLOR = 0x161b20;  // dark window slits on the upper floors
-export const STATION_WINDOW_LIT_COLOR = 0x9fc6d8; // faint cold sill glow along their bottom edge
-export const STATION_WINDOW_YS = [40, 96];   // one row of slits per upper floor
-export const STATION_WINDOW_W = 34;
-export const STATION_WINDOW_H = 8;
-export const STATION_WINDOW_STEP = 62;
-export const STATION_BAND_Y = 132;           // string course separating the upper floors from the ground floor
-export const STATION_BAND_H = 7;
-export const STATION_BAND_COLOR = 0x4b525b;
-export const STATION_SHADE_TOP = 300;        // the ground floor darkens from here down to the plinth (ambient occlusion)
-export const STATION_SHADE_ALPHA = 0.28;     // its darkness just above the plinth
-export const STATION_PLINTH_COLOR = 0x2c3136;  // dark base course along the bottom of the screen
-export const STATION_PLINTH_HEIGHT = 26;     // above GAME_HEIGHT (it continues down to STATION_BOTTOM)
-export const STATION_KERB_COLOR = 0x80888f;    // lit top edge of the plinth
+export const STATION_PLINTH_HEIGHT = 26;     // dark base band along the bottom of the screen (it continues down to STATION_BOTTOM)
 export const STATION_DOOR_X = 150;           // stairwell opening, local x / width; runs down to the plinth
 export const STATION_DOOR_W = 150;
 export const STATION_DOOR_TOP = 218;
-export const STATION_DOOR_COLOR = 0x06080a;
-export const STATION_STAIR_COLOR = 0x39424b;   // treads fading down into the dark
-export const STATION_STAIR_COUNT = 11;
 export const STATION_CANOPY_OVERHANG = 28;   // canopy slab sticks out this far past the doorway on each side
-export const STATION_CANOPY_Y = 198;
-export const STATION_CANOPY_H = 10;
-export const STATION_CANOPY_COLOR = 0x353b42;
-export const STATION_TUBE_COLOR = 0xe6f6ff;    // fluorescent tube under the canopy
-export const STATION_SPILL_COLOR = 0xbfe4ff;   // its cold light spill down the doorway and the facade either side
-export const STATION_SPILL_ALPHA = 0.16;
-export const STATION_SIGN_W = 92;            // lit sign panel centred over the doorway
-export const STATION_SIGN_H = 24;
-export const STATION_SIGN_Y = 158;
-export const STATION_SIGN_COLOR = 0xdcebf2;
-export const STATION_SIGN_FRAME_COLOR = 0x23292f;
-export const STATION_GLYPH_COLOR = 0x1d3a52;   // generic down-arrow + block-letter bars (no real brand)
-export const STATION_MAP_XS = [40, 344];     // backlit route-map panels either side of the doorway (local x)
-export const STATION_MAP_Y = 262;
-export const STATION_MAP_W = 70;
-export const STATION_MAP_H = 92;
-export const STATION_MAP_COLOR = 0xc9dce6;
-export const STATION_MAP_LINE_COLORS = [0x2f6f9f, 0xb0503c, 0x4f8a4a]; // generic route lines (no real network)
-
-// Station desert wear (StationBuilding.weather): a deterministic, seeded pass over the finished facade so the building
-// reads as years of sun, dust and blown sand in the desert it stands in. Everything is subtle and low-alpha: grain,
-// soft tonal drift and small ragged fragments rather than bold shapes. Counts are shapes drawn once.
-export const STATION_WEAR_SEED = 20240611;
-export const STATION_WEAR_JOINT_ALPHA = 0.35;       // tile joints / panel seams are drawn this strong, so the grid reads less
-export const STATION_WEAR_BLEACH_TINT = 0xb9a47f;   // warm beige wash over the whole facade
-export const STATION_WEAR_BLEACH_ALPHA = 0.2;
-export const STATION_WEAR_BLEACH_PATCH_COUNT = 5;   // large soft lighter / darker tonal patches (irregular, low alpha)
-export const STATION_WEAR_BLEACH_LIGHT = 0xd6ccb4;
-export const STATION_WEAR_BLEACH_DARK = 0x6b6455;
-export const STATION_WEAR_BLEACH_PATCH_ALPHA = 0.055;
-export const STATION_WEAR_DUST_COLOR = 0xc79a55;    // ochre dust film over the lower two thirds, thicker toward the ground
-export const STATION_WEAR_DUST_ALPHA = 0.5;         // its strength just above the plinth
-export const STATION_WEAR_DUST_BANDS = 60;
-export const STATION_WEAR_GRAIN_COUNT = 900;        // 1-3px light/dark specks and short strokes, denser low down
-export const STATION_WEAR_GRAIN_LIGHT = 0xd8cdb8;
-export const STATION_WEAR_GRAIN_DARK = 0x3a342c;
-export const STATION_WEAR_GRAIN_ALPHA = 0.14;
-export const STATION_WEAR_LEDGE_DUST_COLOR = 0xcdb48a; // thin dust on parapet, string course, canopy and sills
-export const STATION_WEAR_LEDGE_DUST_ALPHA = 0.35;
-export const STATION_WEAR_PIT_COUNT = 260;          // sand-blasted pits, worst low down and on the left (windward) side
-export const STATION_WEAR_PIT_COLOR = 0x3a3128;
-export const STATION_WEAR_PIT_ALPHA = 0.4;
-export const STATION_WEAR_STRIP_COUNT = 10;        // stripped-paint clusters of small pale flecks, same bias
-export const STATION_WEAR_STRIP_FLECKS = 24;
-export const STATION_WEAR_STRIP_COLOR = 0xb3a893;
-export const STATION_WEAR_STRIP_ALPHA = 0.3;
-export const STATION_WEAR_PEEL_COUNT = 6;           // peeling plaster: a few small clusters of ragged fragments
-export const STATION_WEAR_PEEL_FRAGMENTS = 14;
-export const STATION_WEAR_PEEL_COLOR = 0x7d6e62;    // muted brick/concrete showing through
-export const STATION_WEAR_PEEL_ALPHA = 0.5;
-export const STATION_WEAR_PEEL_EDGE_COLOR = 0x2a241f; // thin shadow edge on the top/left of each fragment
-export const STATION_WEAR_CRACK_COUNT = 4;          // long thermal cracks
-export const STATION_WEAR_CRACK_SEGMENTS = 12;
-export const STATION_WEAR_CRACK_COLOR = 0x15191d;
-export const STATION_WEAR_CRACK_ALPHA = 0.5;
-export const STATION_WEAR_SPALL_COLOR = 0x6e6558;   // darker concrete exposed at chipped corners
-export const STATION_WEAR_RUST_COLOR = 0x9a5a2c;    // dry orange-brown, short, only at the canopy ends and sign brackets
-export const STATION_WEAR_RUST_ALPHA = 0.55;
-export const STATION_WEAR_RUST_MAX_PX = 16;
-export const STATION_WEAR_FADE_COLOR = 0xe3d9c2;    // chalky bleach over the sign and maps
-export const STATION_WEAR_SIGN_FADE_ALPHA = 0.5;
-export const STATION_WEAR_MAP_FADE_ALPHA = 0.55;
-export const STATION_WEAR_TOP_FADE_EXTRA = 0.25;    // extra fade on the upper half: the sun hits the top hardest
-export const STATION_WEAR_DEAD_MAP = 1;             // index in STATION_MAP_XS of the panel that has gone dark
-export const STATION_WEAR_DEAD_MAP_COLOR = 0x20262b;
-export const STATION_WEAR_DEAD_SIGN_PX = 28;        // right-hand part of the sign that has died
-export const STATION_WEAR_SAND_COLOR = 0xa59775;    // sampled from the desert backdrop sand (scenery-desert.png median / mid-dune)
-export const STATION_WEAR_SAND_LIGHT = 0xbfab84;    // slopes facing the upper-left light
-export const STATION_WEAR_SAND_SHADOW = 0x7a6c52;   // slopes facing away from it, and wind ripples
-export const STATION_WEAR_SAND_MAX_PX = 34;         // drift height at the left edge, falling off to the right
-export const STATION_WEAR_SAND_MIN_PX = 10;
-export const STATION_WEAR_SAND_SPILL_PX = 14;       // sand spilling over the kerb onto the plinth
-export const STATION_WEAR_SAND_LAYERS = 4;          // stacked low-alpha layers, each a few px lower, for a soft top edge
-export const STATION_WEAR_SAND_LAYER_ALPHA = 0.26;
-export const STATION_WEAR_SAND_FADE_PX = 24;        // dust fading up the wall from the top of the sand
-export const STATION_WEAR_SAND_GRAIN = 260;
-export const STATION_WEAR_SAND_RIPPLES = 5;
-export const STATION_WEAR_STAIR_SAND_PX = 12;       // extra height of the sand heaped over the top steps, peaking mid-doorway, flush with the drift at the jambs
-export const STATION_WEAR_WEED_X = 100;             // tumbleweed on the drift (local x of its centre) and its radius
-export const STATION_WEAR_WEED_R = 14;
-export const STATION_WEAR_WEED_COLORS = [0x3b2d1b, 0x6b5636];
-export const STATION_WEAR_CRATE_X = 304;            // half-buried crate (left edge) and its size
-export const STATION_WEAR_CRATE_W = 40;
-export const STATION_WEAR_CRATE_H = 36;
-export const STATION_WEAR_CRATE_COLOR = 0x7a5c38;
