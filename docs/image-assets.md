@@ -489,9 +489,10 @@ writes `road-concert.png` and `scenery-concert.png` (same 1600x540 / 1600x360,
 crowd side: lighting truss with ten lamp heads (six lit in magenta / purple /
 cyan, faint haze cones), speaker stacks, a central LED wall with an equaliser
 pattern, drifting haze and two ranks of crowd silhouettes (some with raised
-arms) along the bottom. Top row is flat 0x020305 (`sky`), the bottom rows ease
+arms, rim-lit from the stage) along the bottom. The LED wall is bright and bleeds a soft glow onto the truss and
+speakers; lit lamp heads have large halos. Top row is flat 0x020305 (`sky`), the bottom rows ease
 into 0x09090c. The road is dark stage-floor boards with very faint coloured
-reflections; like the underground road it bakes only a faint dark seam at
+reflections and broad magenta / cyan / purple light-spill pools under the lit heads; like the underground road it bakes only a faint dark seam at
 y = 180 / 360 (no bright lane lines), top row 0x09090c, bottom row 0x242427
 (`ground`). Accents are kept dim so the runner, obstacles and DiscoLights
 beams stay readable.

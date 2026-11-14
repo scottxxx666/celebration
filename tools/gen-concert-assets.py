@@ -85,6 +85,20 @@ def make_road():
     wrapped(draw_refl, refl)
     road = over(road, wrap_blur(refl, 12.0))
 
+    # coloured light spill from the rig: broad pools, kept low so shadows and sprites read
+    spill = Image.new("RGBA", (W, ROAD_H), (0, 0, 0, 0))
+
+    def draw_spill(d, dx):
+        for i, x in enumerate(LAMP_XS):
+            if i in LIT:
+                col = ACCENTS[i % 3]
+                d.ellipse([x + dx - 130, 10, x + dx + 130, 300], fill=col + (30,))
+                d.ellipse([x + dx - 60, 30, x + dx + 60, 160], fill=col + (22,))
+        d.ellipse([560 + dx, 0, 1040 + dx, 240], fill=(150, 70, 220, 26))
+
+    wrapped(draw_spill, spill)
+    road = over(road, wrap_blur(spill, 28.0))
+
     # faint dark seams between rows plus staggered panel joints (stage deck boards)
     seams = Image.new("RGBA", (W, ROAD_H), (0, 0, 0, 0))
 
@@ -140,13 +154,14 @@ def lamp_heads(d, dx):
         d.rectangle([x - 12, y + 10, x + 12, y + 30], fill=(30, 30, 38, 255))
         d.rectangle([x - 12, y + 10, x + 12, y + 12], fill=(70, 70, 88, 255))
         lens = col if i in LIT else (40, 40, 48)
-        d.ellipse([x - 8, y + 26, x + 8, y + 34], fill=lens + (255,))
+        d.ellipse([x - 11, y + 26, x + 11, y + 36], fill=(lerp(lens, (255, 255, 255), 0.35) if i in LIT else lens) + (255,))
 
 
 def lamp_glow(d, dx):
     for i, (x, col, s) in enumerate(LAMPS):
         if i in LIT:
-            d.ellipse([x + dx - 34, TRUSS_Y + 18, x + dx + 34, TRUSS_Y + 56], fill=col + (int(120 * s),))
+            d.ellipse([x + dx - 60, TRUSS_Y + 4, x + dx + 60, TRUSS_Y + 76], fill=col + (int(110 * s),))
+            d.ellipse([x + dx - 22, TRUSS_Y + 24, x + dx + 22, TRUSS_Y + 48], fill=lerp(col, (255, 255, 255), 0.5) + (200,))
 
 
 def beams(d, dx):
@@ -156,7 +171,7 @@ def beams(d, dx):
             tilt = (i % 3 - 1) * 60
             d.polygon([(x + dx - 6, TRUSS_Y + 50), (x + dx + 6, TRUSS_Y + 50),
                        (x + dx + tilt + 70, 300), (x + dx + tilt - 70, 300)],
-                      fill=col + (int(22 * s),))
+                      fill=col + (int(34 * s),))
 
 
 def speaker_stack(d, dx, x0, w, tiers, base_y):
@@ -187,13 +202,13 @@ def led_wall(img):
     for i in range(n):
         x = x0 + 4 + i * (bw + gap)
         t = i / (n - 1)
-        col = lerp(CYAN, MAGENTA, t)
+        col = lerp((70, 230, 255), (255, 60, 200), t)
         env = 0.35 + 0.65 * math.sin(math.pi * t) ** 1.5      # louder in the middle
         h = int((y1 - y0 - 16) * env * r.uniform(0.45, 1.0))
         for k in range(0, h, 7):                                # LED segments
             y = y1 - 6 - k
             dim = 0.55 + 0.45 * (1 - k / max(h, 1))
-            d.rectangle([x, y - 5, x + bw, y], fill=lerp((6, 6, 12), col, 0.7 * dim) + (255,))
+            d.rectangle([x, y - 5, x + bw, y], fill=lerp((6, 6, 12), col, 1.0 * dim) + (255,))
         d.rectangle([x, y1 - 6 - h - 6, x + bw, y1 - 6 - h - 3], fill=col + (255,))  # peak cap
     for y in range(y0, y1, 4):                                  # pixel-grid scanlines
         d.line([(x0, y), (x1, y)], fill=(0, 0, 0, 70))
@@ -208,7 +223,7 @@ def haze(d, dx):
                   fill=r.choice(((70, 40, 110), (40, 60, 100), (90, 40, 90))) + (r.randrange(10, 22),))
 
 
-def crowd(d, dx):
+def crowd(d, dx, color=CROWD, dy=0):
     """Head-and-shoulders silhouettes, two ranks; some with raised arms."""
     for rank, (base, hr, seed, a) in enumerate(((BG_H + 12, 13, 6404, 255), (BG_H + 30, 17, 6405, 255))):
         r = random.Random(seed)
@@ -216,17 +231,17 @@ def crowd(d, dx):
         for k in range(n):  # evenly spread slots, so the pattern closes on the tile seam
             cx = int((k + r.uniform(-0.2, 0.2)) * W / n) + dx
             top = base - r.randrange(46, 74) - (16 if rank == 0 else 0)
-            d.ellipse([cx - hr, top - hr, cx + hr, top + hr], fill=CROWD + (a,))
+            d.ellipse([cx - hr, top - hr + dy, cx + hr, top + hr + dy], fill=color + (a,))
             d.polygon([(cx - hr * 2.2, base), (cx - hr * 1.5, top + hr + 6), (cx - hr * 0.6, top + hr - 2),
                        (cx + hr * 0.6, top + hr - 2), (cx + hr * 1.5, top + hr + 6), (cx + hr * 2.2, base)],
-                      fill=CROWD + (a,))
+                      fill=color + (a,))
             if r.random() < 0.28:  # raised arm(s)
                 for side in ((-1,), (1,), (-1, 1))[r.randrange(3)]:
                     sx = cx + side * hr * 1.6
                     tip = (sx + side * r.randrange(4, 18), top - r.randrange(26, 52))
                     d.line([(cx + side * hr * 1.3, top + hr + 4), (sx, top + hr - 10), tip],
-                           fill=CROWD + (a,), width=7)
-                    d.ellipse([tip[0] - 6, tip[1] - 6, tip[0] + 6, tip[1] + 6], fill=CROWD + (a,))
+                           fill=color + (a,), width=7)
+                    d.ellipse([tip[0] - 6, tip[1] - 6, tip[0] + 6, tip[1] + 6], fill=color + (a,))
 
 
 def make_bg():
@@ -261,8 +276,14 @@ def make_bg():
     led_wall(led)
     bg = over(bg, led)
     screen_glow = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
-    ImageDraw.Draw(screen_glow).rectangle([560, 96, 1040, 246], fill=(150, 60, 200, 34))
+    ImageDraw.Draw(screen_glow).rectangle([560, 96, 1040, 246], fill=(170, 70, 220, 70))
     bg = over(bg, wrap_blur(screen_glow, 26.0))
+    # wide soft bleed from the screen onto the truss and nearby speakers
+    bleed = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
+    bd = ImageDraw.Draw(bleed)
+    bd.ellipse([380, 20, 1220, 330], fill=(150, 60, 210, 46))
+    bd.ellipse([560, 90, 1040, 250], fill=(60, 200, 255, 26))
+    bg = over(bg, wrap_blur(bleed, 34.0))
 
     layer = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
     wrapped(lamp_heads, layer)
@@ -271,6 +292,12 @@ def make_bg():
 
     bg = over(bg, wrap_blur(glow(haze, 22.0), 8.0))
 
+    layer = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
+    rim = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))   # stage rim light: the silhouette shifted up, tinted
+    wrapped(lambda d, dx: crowd(d, dx, (110, 60, 170), -3), rim)
+    wrapped(lambda d, dx: crowd(d, dx, (50, 130, 170), -3), layer)
+    rim = Image.blend(rim, layer, 0.5)
+    bg = over(bg, wrap_blur(rim, 0.8))
     layer = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
     wrapped(crowd, layer)
     bg = over(bg, layer)
