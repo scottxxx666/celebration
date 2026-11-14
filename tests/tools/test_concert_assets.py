@@ -97,6 +97,73 @@ class ConcertCrowdTest(unittest.TestCase):
                     for dx in (-10, 0, 12):
                         self.assertGreater(glows[name].getpixel((x + 1 + dx, 92))[3], 200, (name, i, dx))
 
+    def test_relit_lens_reproduces_the_original_lit_lens(self):
+        P = mod.lamps_prep
+        lit = Image.open(P.LIT_PATCHES).convert('RGB')
+        glows = mod.make_glows()
+        worst = 0
+        for n, i in enumerate((0, 2, 3, 5, 7, 8)):
+            glow = glows['magenta' if i % 3 in (0, 1) else 'cyan']
+            x0, y0, _, _ = P.lens_box(P.LAMP_XS[n])
+            cx = P.LAMP_XS[n] + P.LENS_DX
+            for py in range(P.PATCH_H):
+                for pxx in range(P.PATCH_W):
+                    x, y = x0 + pxx, y0 + py
+                    if not P.in_lens(x, y, cx):
+                        continue
+                    base, gl = self.bg.getpixel((x, y)), glow.getpixel((x, y))
+                    got = tuple(min(255, b + g * gl[3] // 255) for b, g in zip(base, gl[:3]))
+                    want = lit.getpixel((n * P.PATCH_W + pxx, py))
+                    worst = max(worst, max(abs(a - b) for a, b in zip(got, want)))
+        self.assertLessEqual(worst, 30)   # only where the dimmed base is brighter than the lit pixel (clipped diff)
+
+    def test_glow_alpha_stays_within_lens_and_halo_radius(self):
+        P = mod.lamps_prep
+        lit_xs = [P.LAMP_XS[n] for n in range(6)]
+        for name, glow in mod.make_glows().items():
+            if name == 'wall':
+                continue
+            al = glow.getchannel('A')
+            for x in range(0, mod.W, 3):
+                near = any(min(abs(x - lx), mod.W - abs(x - lx)) <= 125 for lx in lit_xs)
+                if not near:
+                    self.assertEqual(al.crop((x, 0, x + 1, mod.BG_H)).getextrema()[1], 0, (name, x))
+
+    def test_haze_ring_matches_the_surround_tone(self):
+        P = mod.lamps_prep
+        px = self.bg.load()
+        for lx in P.LAMP_XS:
+            cx = lx + P.LENS_DX
+            tone = P.surround_tone(px, mod.W, cx)
+            dist = []
+            for y in range(P.LENS_CY - 24, P.LENS_CY + 25):
+                for x in range(cx - 28, cx + 29):
+                    d2 = ((x - cx) / 28) ** 2 + ((y - P.LENS_CY) / 24) ** 2
+                    if d2 < 1 and not P.in_lens(x, y, cx) and 0.1 < d2 and not (
+                            abs(x - cx) <= P.HAZE_BODY_HW and y < P.LENS_CY + 4):
+                        p = px[x, y]
+                        if max(p) < 60:           # the dark haze, not truss or hardware
+                            dist.append(max(abs(a - b) for a, b in zip(p, tone)))
+            self.assertLess(sum(dist) / len(dist), 9, lx)
+
+    def test_haze_step_touches_only_its_ellipse(self):
+        P = mod.lamps_prep
+        import random
+        r = random.Random(3)
+        im = Image.new('RGB', (mod.W, 160))
+        px = im.load()
+        for y in range(160):
+            for x in range(mod.W):
+                px[x, y] = (r.randrange(40), r.randrange(40), r.randrange(40))
+        before = im.copy()
+        P.neutralise_haze(im)
+        for y in range(160):
+            for x in range(mod.W):
+                inside = any(((x - (lx + P.LENS_DX)) / P.HAZE_RX) ** 2 + ((y - P.LENS_CY) / P.HAZE_RY) ** 2 < 1
+                             for lx in P.LAMP_XS)
+                if not inside:
+                    self.assertEqual(im.getpixel((x, y)), before.getpixel((x, y)))
+
     def test_prep_concert_lamps_is_idempotent(self):
         spec = importlib.util.spec_from_file_location(
             'prep_concert_lamps', os.path.join(ROOT, 'tools', 'prep-concert-lamps.py'))

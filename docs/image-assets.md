@@ -497,11 +497,10 @@ on a 1536x1024 canvas filled with its top-row colour (0x020305), then
 raw name) and
 `prep-scenery-image.py scenery raw.png --offset 0 --horizon 0x09090c`
 (offset 0 keeps the band where it was placed; it printed `sky` 0x000003), then
-`tools/prep-concert-lamps.py` (in place, deterministic, idempotent) on the result: it dims
+`tools/prep-concert-lamps.py --save-lit` (in place, deterministic, idempotent) on the result: it first saves the un-dimmed lens patches to `tools/ref/concert-lamps-lit.png` (committed, ~10 KB, so `gen-concert-assets.py` runs from a clean checkout), then dims
 the six LIT lamp lenses (heads 0, 2, 3, 5, 7, 8 at x = 60 + 160 i, lens ellipse centred
 (x + 1, 92)) to dark glass like the unlit heads, so the lamps read as off at the pulse
-trough and the additive glow images relight them on the beat (the glow images carry a
-solid lens ellipse + white core at exactly that spot, drawn by `make_glows`), and makes
+trough and the additive glow images relight them on the beat (the glow lens is the REAL AI lens light, `lit - dimmed` per channel from the saved patches and the shipped PNG, confined to the lens ellipse, so base + glow at full alpha reproduces the lit lens; a procedural soft halo sits around it), neutralises the AI's coloured haze around each lit lens (bounded 34x30 ellipse, tinted pixels of the lamp's hue pulled to the median tone of the ring just outside, lamp body and other hues untouched, smooth release at the edge), and makes
 the top row exactly `sky` 0x000103 with an 8-row fade below it, so the theme's `sky`
 equals the PNG with no tolerance. A re-prep of any new AI run must apply it too.
 Shipped prompt:

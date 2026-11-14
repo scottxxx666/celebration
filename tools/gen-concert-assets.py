@@ -57,6 +57,7 @@ def _load(name, file):
 
 night = _load("gen_night_assets", "gen-night-assets.py")
 day = _load("gen_suburb_day_assets", "gen-suburb-day-assets.py")
+lamps_prep = _load("prep_concert_lamps", "prep-concert-lamps.py")
 lerp, wrap_blur, wrapped = night.lerp, night.wrap_blur, night.wrapped
 vgradient, noise_gray = night.vgradient, night.noise_gray
 over = day.over
@@ -450,6 +451,32 @@ def make_bg():
     return bg
 
 
+def paste_real_lenses(glow_img, mods):
+    """Replace the glow under each lit lens ellipse with the REAL lens light of the AI art: lit - dimmed
+    per channel (additive, so shipped base + glow at full alpha reproduces the original lit lens). The
+    lit pixels come from tools/ref/concert-lamps-lit.png (saved by tools/prep-concert-lamps.py --save-lit),
+    the dimmed ones from the shipped scenery-concert.png."""
+    P = lamps_prep
+    lit = Image.open(P.LIT_PATCHES).convert("RGB")
+    dimmed = Image.open(os.path.join(OUT, "scenery-concert.png")).convert("RGB")
+    px = glow_img.load()
+    for n, i in enumerate((0, 2, 3, 5, 7, 8)):
+        if i % 3 not in mods:
+            continue
+        lx = P.LAMP_XS[n]
+        cx = lx + P.LENS_DX
+        patch = lit.crop((n * P.PATCH_W, 0, (n + 1) * P.PATCH_W, P.PATCH_H))
+        x0, y0, _, _ = P.lens_box(lx)
+        for py in range(P.PATCH_H):
+            for pxx in range(P.PATCH_W):
+                x, y = x0 + pxx, y0 + py
+                if not P.in_lens(x, y, cx):
+                    continue
+                diff = tuple(max(0, a - b) for a, b in zip(patch.getpixel((pxx, py)), dimmed.getpixel((x % W, y))))
+                px[x % W, y] = diff + (255,)
+    return glow_img
+
+
 GLOW_GROUPS = {"magenta": (MAGENTA, (0, 1)), "cyan": (CYAN, (2,))}  # group -> (layer colour, lamp i % 3 values)
 
 
@@ -462,15 +489,11 @@ def make_glows():
                 if i not in LIT or i % 3 not in mods:
                     continue
                 x += dx
-                d.ellipse([x - 80, TRUSS_Y - 6, x + 80, TRUSS_Y + 92], fill=lc + (150,))
-                d.ellipse([x - 40, TRUSS_Y + 14, x + 40, TRUSS_Y + 60], fill=lerp(lc, (255, 255, 255), 0.3) + (230,))
-                # the lit lens as it sits on the shipped AI art (centre x + 1, y 92; see tools/prep-concert-lamps.py,
-                # which dims the art's own lens to dark glass), solid so the relit lens at peak covers it fully
-                d.ellipse([x - 13, 92 - 10, x + 15, 92 + 10], fill=lerp(lc, (255, 255, 255), 0.5) + (255,))
-                d.ellipse([x - 6, 92 - 5, x + 8, 92 + 5], fill=(255, 255, 255, 255))
+                d.ellipse([x - 80, TRUSS_Y - 6, x + 80, TRUSS_Y + 92], fill=lc + (150,))          # wide soft halo
+                d.ellipse([x - 30, 92 - 20, x + 32, 92 + 20], fill=lerp(lc, (255, 255, 255), 0.3) + (120,))  # nearer, whiter
         layer = Image.new("RGBA", (W, BG_H), col + (0,))
         wrapped(draw, layer)
-        out[name] = wrap_blur(layer, 9.0)
+        out[name] = paste_real_lenses(wrap_blur(layer, 9.0), mods)
     wall = Image.new("RGBA", (W, BG_H), (190, 110, 255, 0))
     led_wall(wall, glow_only=True)
     halo = Image.new("RGBA", (W, BG_H), (190, 110, 255, 0))
