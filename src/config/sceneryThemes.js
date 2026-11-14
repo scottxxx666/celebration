@@ -48,7 +48,7 @@ export const SCENERY_THEMES = {
     // dark concert stage: AI-restyled scenery (layout drawing, road, glow and crowd layers from tools/gen-concert-assets.py)
     road: { key: 'road-concert', file: 'assets/bg/road-concert.png' },
     scenery: { key: 'scenery-concert', file: 'assets/bg/scenery-concert.png' },
-    sky: 0x000003,
+    sky: 0x000103,
     ground: 0x242427,
     // two-frame crowd silhouettes (arms down / arms up, neighbours opposite), swapped on the beat by src/crowdSway.js
     crowd: [

@@ -464,7 +464,10 @@ def make_glows():
                 x += dx
                 d.ellipse([x - 80, TRUSS_Y - 6, x + 80, TRUSS_Y + 92], fill=lc + (150,))
                 d.ellipse([x - 40, TRUSS_Y + 14, x + 40, TRUSS_Y + 60], fill=lerp(lc, (255, 255, 255), 0.3) + (230,))
-                d.ellipse([x - 12, TRUSS_Y + 26, x + 12, TRUSS_Y + 38], fill=(255, 255, 255, 255))
+                # the lit lens as it sits on the shipped AI art (centre x + 1, y 92; see tools/prep-concert-lamps.py,
+                # which dims the art's own lens to dark glass), solid so the relit lens at peak covers it fully
+                d.ellipse([x - 13, 92 - 10, x + 15, 92 + 10], fill=lerp(lc, (255, 255, 255), 0.5) + (255,))
+                d.ellipse([x - 6, 92 - 5, x + 8, 92 + 5], fill=(255, 255, 255, 255))
         layer = Image.new("RGBA", (W, BG_H), col + (0,))
         wrapped(draw, layer)
         out[name] = wrap_blur(layer, 9.0)

@@ -76,12 +76,35 @@ class ConcertCrowdTest(unittest.TestCase):
             for y in range(mod.CROWD_H):
                 self.assertLess(abs(al.getpixel((0, y)) - al.getpixel((mod.W - 1, y))), 130)
 
-    def test_shipped_scenery_size_and_sky(self):
+    def test_shipped_scenery_size_and_exact_sky(self):
         self.assertEqual(self.bg.size, (mod.W, mod.BG_H))
         want = theme_hex('sky')
-        got = mod.row_avg(self.bg, 0)
-        for g, w in zip(got, want):
-            self.assertLessEqual(abs(g - w), 1)
+        for x in range(mod.W):
+            self.assertEqual(self.bg.getpixel((x, 0)), want)
+
+    def test_lit_lamp_lenses_are_dark_glass(self):
+        for i in (0, 2, 3, 5, 7, 8):
+            x = 60 + 160 * i
+            for dx in (-8, 0, 8):
+                self.assertLess(max(self.bg.getpixel((x + 1 + dx, 92))), 60, (i, dx))
+
+    def test_glow_lens_covers_the_lens(self):
+        glows = mod.make_glows()
+        for name, mods in (('magenta', (0, 1)), ('cyan', (2,))):
+            for i in (0, 2, 3, 5, 7, 8):
+                if i % 3 in mods:
+                    x = 60 + 160 * i
+                    for dx in (-10, 0, 12):
+                        self.assertGreater(glows[name].getpixel((x + 1 + dx, 92))[3], 200, (name, i, dx))
+
+    def test_prep_concert_lamps_is_idempotent(self):
+        spec = importlib.util.spec_from_file_location(
+            'prep_concert_lamps', os.path.join(ROOT, 'tools', 'prep-concert-lamps.py'))
+        prep = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(prep)
+        once = prep.prep(self.bg)
+        self.assertEqual(list(once.getdata()), list(prep.prep(once).getdata()))
+        self.assertEqual(list(once.getdata()), list(self.bg.getdata()))
 
     def test_shipped_scenery_seam_and_horizon(self):
         for y in range(mod.BG_H):

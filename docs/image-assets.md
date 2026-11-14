@@ -488,7 +488,7 @@ writes the procedural road `road-concert.png` (1600x540), the three glow layers
 and the two crowd frames below, and keeps the procedural stage as a **layout
 drawing** (written only to `DIR/scenery-full.png`, never shipped; it no longer
 writes `scenery-concert.png`). The shipped `scenery-concert.png` (1600x360,
-2x-authored, seamless, top row `sky` 0x000003, bottom row 0x09090c) is that
+2x-authored, seamless, top row `sky` 0x000103, bottom row 0x09090c) is that
 drawing restyled by Codex's image model (variant v2 of three runs):
 `layout.png` is the layout drawing scaled to 1536x346 and centred vertically
 on a 1536x1024 canvas filled with its top-row colour (0x020305), then
@@ -496,7 +496,14 @@ on a 1536x1024 canvas filled with its top-row colour (0x020305), then
 (no style reference, so nothing of real people was uploaded; `OUTFILE` is the
 raw name) and
 `prep-scenery-image.py scenery raw.png --offset 0 --horizon 0x09090c`
-(offset 0 keeps the band where it was placed; it printed `sky` 0x000003).
+(offset 0 keeps the band where it was placed; it printed `sky` 0x000003), then
+`tools/prep-concert-lamps.py` (in place, deterministic, idempotent) on the result: it dims
+the six LIT lamp lenses (heads 0, 2, 3, 5, 7, 8 at x = 60 + 160 i, lens ellipse centred
+(x + 1, 92)) to dark glass like the unlit heads, so the lamps read as off at the pulse
+trough and the additive glow images relight them on the beat (the glow images carry a
+solid lens ellipse + white core at exactly that spot, drawn by `make_glows`), and makes
+the top row exactly `sky` 0x000103 with an 8-row fade below it, so the theme's `sky`
+equals the PNG with no tolerance. A re-prep of any new AI run must apply it too.
 Shipped prompt:
 
 > Restyle layout.png as a photorealistic, straight-on flat elevation photograph (orthographic, level horizon, no perspective, no vanishing point, no lens distortion) of a big dark concert stage seen from the audience.
@@ -516,7 +523,7 @@ crowd side: lighting truss with ten lamp heads (six lit in magenta / purple /
 cyan; no baked beam cones, DiscoLights supplies the beams), speaker columns in two mixed styles (a seeded, deterministic `speaker_columns()` assignment, no equal neighbours: concrete-look grey-black cabinets with two stacked woofers at ~60% of the cabinet width, taller ones adding a band of small drivers and a dim purple open box frame; and the older plain dark boxes with one round driver per tier, 2-4 tiers; no horns/tweeters; placed in the gaps between lamp heads, clear of the LED wall), a central LED wall with an equaliser
 pattern, drifting haze and two ranks of crowd silhouettes (some with raised
 arms, rim-lit from the stage) along the bottom. The LED wall is bright and bleeds a soft glow onto the truss and
-speakers; lit lamp heads have large halos. (Layout drawing top row 0x020305; the shipped AI stage has `sky` 0x000003.) The bottom rows ease
+speakers; lit lamp heads have large halos. (Layout drawing top row 0x020305; the shipped AI stage has `sky` 0x000103.) The bottom rows ease
 into 0x09090c. The road is dark stage-floor boards with very faint coloured
 reflections and broad magenta / cyan / purple light-spill pools under the lit heads; like the underground road it bakes only a faint dark seam at
 y = 180 / 360 (no bright lane lines), top row 0x09090c, bottom row 0x242427
