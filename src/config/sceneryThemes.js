@@ -50,6 +50,12 @@ export const SCENERY_THEMES = {
     scenery: { key: 'scenery-concert', file: 'assets/bg/scenery-concert.png' },
     sky: 0x020305,
     ground: 0x242427,
+    // additive glow strips (lamp halos per colour group + the LED wall), pulsed on the beat by src/beatPulse.js
+    pulse: [
+      { key: 'scenery-concert-glow-magenta', file: 'assets/bg/scenery-concert-glow-magenta.png', group: 'magenta' },
+      { key: 'scenery-concert-glow-cyan', file: 'assets/bg/scenery-concert-glow-cyan.png', group: 'cyan' },
+      { key: 'scenery-concert-glow-wall', file: 'assets/bg/scenery-concert-glow-wall.png', group: 'wall' },
+    ],
   },
 };
 

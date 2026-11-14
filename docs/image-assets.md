@@ -487,14 +487,21 @@ The `concert` theme (stage 5 from 63518 ms) is also fully procedural:
 writes `road-concert.png` and `scenery-concert.png` (same 1600x540 / 1600x360,
 2x-authored, horizontally seamless). The scenery is a dark stage seen from the
 crowd side: lighting truss with ten lamp heads (six lit in magenta / purple /
-cyan, faint haze cones), speaker stacks, a central LED wall with an equaliser
+cyan; no baked beam cones, DiscoLights supplies the beams), speaker stacks, a central LED wall with an equaliser
 pattern, drifting haze and two ranks of crowd silhouettes (some with raised
 arms, rim-lit from the stage) along the bottom. The LED wall is bright and bleeds a soft glow onto the truss and
 speakers; lit lamp heads have large halos. Top row is flat 0x020305 (`sky`), the bottom rows ease
 into 0x09090c. The road is dark stage-floor boards with very faint coloured
 reflections and broad magenta / cyan / purple light-spill pools under the lit heads; like the underground road it bakes only a faint dark seam at
 y = 180 / 360 (no bright lane lines), top row 0x09090c, bottom row 0x242427
-(`ground`). Accents are kept dim so the runner, obstacles and DiscoLights
+(`ground`). The generator also writes three RGBA **additive glow layers**,
+`scenery-concert-glow-{magenta,cyan,wall}.png` (same 1600x360, seamless; RGB =
+colour, alpha = intensity, transparent elsewhere, so they only add light): lamp
+halos + lenses per colour group (purple lamps share `magenta`) and the bright
+LED equaliser. The theme's `pulse` list preloads them and `Scenery` draws each
+as an ADD-blend tiling strip locked to the scenery's scroll, alpha driven per
+beat by `src/beatPulse.js` (see CLAUDE.md "Scenery"); covered by
+`tests/tools/test_concert_assets.py`. Accents are kept dim so the runner, obstacles and DiscoLights
 beams stay readable.
 
 **Handling the rotate section**: the `rotate` section zooms the camera out to

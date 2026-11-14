@@ -14,6 +14,11 @@ runner, obstacles and DiscoLights beams stay readable. The road is a dark
 stage-floor / barrier lane with faint reflections; like the underground road it
 bakes no bright lane lines, only a faint dark seam at y = 180 / 360.
 
+Also writes three RGBA additive glow layers (scenery-concert-glow-<group>.png, same size,
+seamless; RGB = colour, alpha = intensity, transparent elsewhere) that the game draws as
+tiling ADD-blend strips and pulses on the beat (src/beatPulse.js): `magenta` (magenta and
+purple lamp halos/lenses), `cyan` (cyan lamps) and `wall` (the bright LED equaliser).
+
 Prints the seam checks and the edge-row hexes: scenery top row -> `sky`,
 road bottom row -> `ground` in SCENERY_THEMES.concert. --preview also dumps an
 800x450 in-game mock and the swapped-halves seam checks to DIR.
@@ -164,16 +169,6 @@ def lamp_glow(d, dx):
             d.ellipse([x + dx - 22, TRUSS_Y + 24, x + dx + 22, TRUSS_Y + 48], fill=lerp(col, (255, 255, 255), 0.5) + (200,))
 
 
-def beams(d, dx):
-    """Very faint haze cones under the lit heads (static art; DiscoLights does the real beams)."""
-    for i, (x, col, s) in enumerate(LAMPS):
-        if i in LIT:
-            tilt = (i % 3 - 1) * 60
-            d.polygon([(x + dx - 6, TRUSS_Y + 50), (x + dx + 6, TRUSS_Y + 50),
-                       (x + dx + tilt + 70, 300), (x + dx + tilt - 70, 300)],
-                      fill=col + (int(34 * s),))
-
-
 def speaker_stack(d, dx, x0, w, tiers, base_y):
     th = 62
     for t in range(tiers):
@@ -191,11 +186,15 @@ def speaker_stack(d, dx, x0, w, tiers, base_y):
                 d.ellipse([sx - 7, cy - 7, sx + 7, cy + 7], fill=(10, 10, 14, 255), outline=(44, 44, 56, 255))
 
 
-def led_wall(img):
+WALL_BOX = (560, 1040, 96, 246)
+
+
+def led_wall(img, glow_only=False):
     d = ImageDraw.Draw(img, "RGBA")
-    x0, x1, y0, y1 = 560, 1040, 96, 246
-    d.rectangle([x0 - 8, y0 - 8, x1 + 8, y1 + 8], fill=(16, 16, 22, 255))
-    d.rectangle([x0, y0, x1, y1], fill=(6, 6, 12, 255))
+    x0, x1, y0, y1 = WALL_BOX
+    if not glow_only:
+        d.rectangle([x0 - 8, y0 - 8, x1 + 8, y1 + 8], fill=(16, 16, 22, 255))
+        d.rectangle([x0, y0, x1, y1], fill=(6, 6, 12, 255))
     bw, gap = 14, 6
     r = random.Random(6202)
     n = (x1 - x0) // (bw + gap)
@@ -208,8 +207,11 @@ def led_wall(img):
         for k in range(0, h, 7):                                # LED segments
             y = y1 - 6 - k
             dim = 0.55 + 0.45 * (1 - k / max(h, 1))
-            d.rectangle([x, y - 5, x + bw, y], fill=lerp((6, 6, 12), col, 1.0 * dim) + (255,))
+            d.rectangle([x, y - 5, x + bw, y], fill=(lerp((6, 6, 12), col, 1.0 * dim) + (255,)) if not glow_only
+                        else (lerp(col, (255, 255, 255), 0.25) + (int(255 * dim),)))
         d.rectangle([x, y1 - 6 - h - 6, x + bw, y1 - 6 - h - 3], fill=col + (255,))  # peak cap
+    if glow_only:
+        return
     for y in range(y0, y1, 4):                                  # pixel-grid scanlines
         d.line([(x0, y), (x1, y)], fill=(0, 0, 0, 70))
 
@@ -251,10 +253,6 @@ def make_bg():
     wd = ImageDraw.Draw(wash)
     wd.ellipse([440, 40, 1160, 360], fill=(90, 40, 140, 38))
     bg = over(bg, wrap_blur(wash, 40.0))
-
-    layer = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
-    wrapped(beams, layer)
-    bg = over(bg, wrap_blur(layer, 6.0))
 
     layer = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
     wrapped(truss, layer)
@@ -318,6 +316,33 @@ def make_bg():
     return bg
 
 
+GLOW_GROUPS = {"magenta": (MAGENTA, (0, 1)), "cyan": (CYAN, (2,))}  # group -> (layer colour, lamp i % 3 values)
+
+
+def make_glows():
+    """RGBA additive glow layers: lamp halos + lenses per colour group, and the LED wall."""
+    out = {}
+    for name, (col, mods) in GLOW_GROUPS.items():
+        def draw(d, dx, col=col, mods=mods):
+            for i, (x, lc, _s) in enumerate(LAMPS):
+                if i not in LIT or i % 3 not in mods:
+                    continue
+                x += dx
+                d.ellipse([x - 80, TRUSS_Y - 6, x + 80, TRUSS_Y + 92], fill=lc + (150,))
+                d.ellipse([x - 40, TRUSS_Y + 14, x + 40, TRUSS_Y + 60], fill=lerp(lc, (255, 255, 255), 0.3) + (230,))
+                d.ellipse([x - 12, TRUSS_Y + 26, x + 12, TRUSS_Y + 38], fill=(255, 255, 255, 255))
+        layer = Image.new("RGBA", (W, BG_H), col + (0,))
+        wrapped(draw, layer)
+        out[name] = wrap_blur(layer, 9.0)
+    wall = Image.new("RGBA", (W, BG_H), (190, 110, 255, 0))
+    led_wall(wall, glow_only=True)
+    halo = Image.new("RGBA", (W, BG_H), (190, 110, 255, 0))
+    x0, x1, y0, y1 = WALL_BOX
+    ImageDraw.Draw(halo).rectangle([x0 - 20, y0 - 20, x1 + 20, y1 + 20], fill=(190, 110, 255, 70))
+    out["wall"] = over(wrap_blur(halo, 28.0), wrap_blur(wall, 1.2))
+    return out
+
+
 def write_preview(road, bg, prev_dir):
     os.makedirs(prev_dir, exist_ok=True)
     day.write_preview(road, bg, prev_dir)
@@ -334,6 +359,9 @@ if __name__ == "__main__":
     bg = make_bg()
     road.save(os.path.join(OUT, "road-concert.png"))
     bg.save(os.path.join(OUT, "scenery-concert.png"))
+    for name, glow_img in make_glows().items():
+        glow_img.save(os.path.join(OUT, f"scenery-concert-glow-{name}.png"))
+        seam_check(glow_img.convert("RGB"), f"glow-{name}")
     seam_check(road, "road")
     seam_check(bg, "scenery")
     print("sky (scenery top row)", hex_of(row_avg(bg, 0)),

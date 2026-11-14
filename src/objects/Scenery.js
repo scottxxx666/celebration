@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import {
   GAME_WIDTH,
   GAME_HEIGHT,
@@ -8,6 +9,7 @@ import {
   DIM_ROW_LINE_THICKNESS,
   DIM_ROW_LINE_DASH,
   DIM_ROW_LINE_GAP,
+  PULSE_LIFT_COLOR,
 } from '../config/gameConfig.js';
 import { rowBoundaryYs } from '../rowLayout.js';
 import { SCENERY_THEMES, multiplyColor } from '../config/sceneryThemes.js';
@@ -56,6 +58,32 @@ export class Scenery {
       .setDepth(-9.95)
       .setVisible(false);
     this.applyGlowTheme(themeName);
+
+    // Beat-pulse layers: a brightness-lift wash and one additive tiling strip per theme `pulse`
+    // entry, locked to the base scenery strip's scroll so EVERY tile copy pulses (unlike the single
+    // flickering lamp). Same box as the scenery strip; between the base (-10) and overlay (-9.9).
+    this.pulseLevels = { lift: 0, groups: {} };
+    this.lift = scene.add
+      .rectangle(left, 0, width, WALK_ZONE_TOP, PULSE_LIFT_COLOR)
+      .setOrigin(0, 0)
+      .setDepth(-9.96)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setVisible(false);
+    this.pulseStrips = [];
+    for (const [name, theme] of Object.entries(SCENERY_THEMES)) {
+      for (const { key, group } of theme.pulse ?? []) {
+        if (!scene.textures.exists(key)) continue;
+        const strip = scene.add
+          .tileSprite(left, 0, width, WALK_ZONE_TOP, key)
+          .setOrigin(0, 0)
+          .setTileScale(SOURCE_SCALE, SOURCE_SCALE)
+          .setDepth(-9.95)
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setVisible(false);
+        if (theme.tint) strip.setTint(theme.tint);
+        this.pulseStrips.push({ strip, themeName: name, group });
+      }
+    }
 
     // Dashed lane-line row dividers for dim sections — over the road art's own lines,
     // above the disco dim (-6) so they stay readable, below the beat flash (-5)
@@ -174,6 +202,26 @@ export class Scenery {
     this.flickerLevel = level;
   }
 
+  // levels: { lift, groups } from beatPulse(), applied on the next scroll()
+  setPulse(levels) {
+    this.pulseLevels = levels;
+  }
+
+  // Pulse strips and the lift show only while their theme is the settled base theme: during a
+  // crossfade the base layers show `from` under the fading `to` overlay, so a glow keyed to one
+  // theme's art would sit on a half-faded mix (same reason updateGlow() switches off).
+  updatePulse() {
+    const { lift, groups } = this.pulseLevels;
+    const pulsing = !this.blending && SCENERY_THEMES[this.base.themeName].pulse;
+    const liftAlpha = pulsing ? lift : 0;
+    this.lift.setAlpha(liftAlpha).setVisible(liftAlpha > 0);
+    for (const { strip, themeName, group } of this.pulseStrips) {
+      const alpha = !this.blending && themeName === this.base.themeName ? groups[group] ?? 0 : 0;
+      strip.setAlpha(alpha).setVisible(alpha > 0);
+      strip.tilePositionX = this.scenery.tilePositionX;
+    }
+  }
+
   setOverlayVisible(visible) {
     const { scenery, road, sky, ground } = this.overlay;
     for (const layer of [scenery, road, sky, ground]) layer.setVisible(visible);
@@ -215,5 +263,6 @@ export class Scenery {
     // Row-line texture is at logical size, so it moves by world pixels directly
     for (const line of this.rowLines) line.tilePositionX += dxWorldPx;
     this.updateGlow();
+    this.updatePulse();
   }
 }

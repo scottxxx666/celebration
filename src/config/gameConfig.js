@@ -16,6 +16,23 @@ export const WALK_ZONE_TOP = GAME_HEIGHT * 0.4; // y=180; above is scenery
 // 0 = static backdrop, 1 = locked to the road
 export const SCENERY_PARALLAX = 0.2;
 
+// Beat-pulsing stage lighting (theme `pulse` glow strips + brightness lift, src/beatPulse.js).
+// Three independent layers, each off at strength 0. Glow groups are the theme's `pulse[].group`
+// names: a group pulses when its grid slot (`divisions` per beat) satisfies slot mod `every` ===
+// `offset`, peaking at the slot start and fading out over `decay` slots (quadratic ease-out); with
+// every 2 / decay 1 it lights for its slot and stays dark for the next. Strengths are peak alpha.
+export const PULSE_GLOW_STRENGTH = 0.85;
+export const PULSE_GROUPS = [
+  { name: 'magenta', divisions: 1, every: 2, offset: 0, decay: 1 },
+  { name: 'cyan', divisions: 1, every: 2, offset: 1, decay: 1 },
+  { name: 'wall', divisions: 2, every: 1, offset: 0, decay: 1 },
+];
+// Whole-strip brightness lift: an additive PULSE_LIFT_COLOR wash at peak alpha PULSE_LIFT_STRENGTH
+// on every beat, fading out over PULSE_LIFT_DECAY_BEATS beats, under the glow strips.
+export const PULSE_LIFT_STRENGTH = 0.07;
+export const PULSE_LIFT_DECAY_BEATS = 0.8;
+export const PULSE_LIFT_COLOR = 0x9068d8;
+
 // Flickering fluorescent lamp (theme `flicker` glow layer, src/lampFlicker.js):
 // time is cut into slots of 1/LAMP_FLICKER_SLOTS_PER_BEAT beat; a beat is a
 // burst beat with LAMP_FLICKER_BURST_CHANCE, where each slot is lit with
