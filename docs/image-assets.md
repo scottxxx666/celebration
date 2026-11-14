@@ -481,6 +481,21 @@ first lamp to scroll in from the right, `flicker.lampX`) and drives its alpha wi
 `lampFlicker()`, so only that one lamp flickers. Covered by
 `tests/tools/test_underground_assets.py`.
 
+The `concert` theme (stage 5 from 63518 ms) is also fully procedural:
+`tools/gen-concert-assets.py`
+(`uv run --with pillow python tools/gen-concert-assets.py [--preview DIR]`)
+writes `road-concert.png` and `scenery-concert.png` (same 1600x540 / 1600x360,
+2x-authored, horizontally seamless). The scenery is a dark stage seen from the
+crowd side: lighting truss with ten lamp heads (six lit in magenta / purple /
+cyan, faint haze cones), speaker stacks, a central LED wall with an equaliser
+pattern, drifting haze and two ranks of crowd silhouettes (some with raised
+arms) along the bottom. Top row is flat 0x020305 (`sky`), the bottom rows ease
+into 0x09090c. The road is dark stage-floor boards with very faint coloured
+reflections; like the underground road it bakes only a faint dark seam at
+y = 180 / 360 (no bright lane lines), top row 0x09090c, bottom row 0x242427
+(`ground`). Accents are kept dim so the runner, obstacles and DiscoLights
+beams stay readable.
+
 **Handling the rotate section**: the `rotate` section zooms the camera out to
 0.49 and spins it, which would otherwise reveal area outside the 800×450
 world. `Scenery` (`src/objects/Scenery.js`) handles this in code, not art: both

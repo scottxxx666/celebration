@@ -12,8 +12,9 @@ export const STAGES = [
   { name: 'stage2', startMs: 27251, theme: 'suburbDay' },
   { name: 'stage3', startMs: 53156, theme: 'desert' },
   { name: 'stage4', startMs: 59134, theme: 'underground', cut: true },
-  { name: 'stage5', startMs: 65511, theme: 'night' },
-  { name: 'stage6', startMs: 89822, theme: 'suburb' },
+  { name: 'stage5', startMs: 63518, theme: 'concert' },
+  // { name: 'stage5', startMs: 65511, theme: 'night' },
+  { name: 'stage6', startMs: 89822, theme: 'night' },
   // { name: 'stage7', startMs: 123697, theme: 'night' },
 ];
 

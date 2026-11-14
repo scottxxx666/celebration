@@ -44,6 +44,13 @@ export const SCENERY_THEMES = {
     sky: 0x070c0b,
     ground: 0x262b29,
   },
+  concert: {
+    // dark speaker-stack concert stage, procedural road + scenery (tools/gen-concert-assets.py)
+    road: { key: 'road-concert', file: 'assets/bg/road-concert.png' },
+    scenery: { key: 'scenery-concert', file: 'assets/bg/scenery-concert.png' },
+    sky: 0x020305,
+    ground: 0x242427,
+  },
 };
 
 // Per-channel multiply of two 0xRRGGBB colours (white tint = unchanged).
