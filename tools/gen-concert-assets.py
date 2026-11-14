@@ -176,21 +176,117 @@ def lamp_glow(d, dx):
             d.ellipse([x + dx - 22, TRUSS_Y + 24, x + dx + 22, TRUSS_Y + 48], fill=lerp(col, (255, 255, 255), 0.5) + (200,))
 
 
-def speaker_stack(d, dx, x0, w, tiers, base_y):
+# Column slots in the gaps between lamp heads (lamps every 160 px from x = 60) and clear of the LED wall;
+# the last one crosses the tile seam (wrapped() draws it on both sides).
+SPEAKER_SLOTS = ((100, 84), (250, 100), (400, 100), (1070, 90), (1200, 110), (1380, 84), (1514, 100))
+SPEAKER_OPTIONS = (("new", "WBF"), ("new", "WB"), ("new", "W"),
+                   ("plain", 2), ("plain", 3), ("plain", 4))
+
+
+def speaker_columns():
+    """Seeded, deterministic mix of the two speaker styles over the slots: no two adjacent columns
+    (including across the tile seam) share style+size, exactly two tall frame stacks that are not
+    adjacent, and both styles well represented. Returns (x0, w, style, spec, shade) per slot."""
+    n = len(SPEAKER_SLOTS)
+    for seed in range(1000):
+        r = random.Random(8800 + seed)
+        pick = [r.choice(SPEAKER_OPTIONS) for _ in range(n)]
+        frames = [i for i, c in enumerate(pick) if c == ("new", "WBF")]
+        plain = sum(1 for c in pick if c[0] == "plain")
+        if len(frames) != 2 or not 3 <= plain <= 4:
+            continue
+        if any(pick[i] == pick[(i + 1) % n] for i in range(n)):
+            continue
+        if any((a + 1) % n == b for a in frames for b in frames):
+            continue
+        return [(x0, w, style, spec, 0.9 if spec in ("W", 2) else 1.0)
+                for (x0, w), (style, spec) in zip(SPEAKER_SLOTS, pick)]
+    raise RuntimeError("no speaker assignment satisfies the constraints")
+
+
+def _shade(col, k):
+    return tuple(int(c * k) for c in col)
+
+
+def _cabinet(d, dx, x0, w, y0, y1, k, rnd):
+    """Heavy grey-black concrete-looking cabinet: speckle texture, edge highlights, corner screws."""
+    x0 += dx
+    d.rectangle([x0, y0, x0 + w, y1], fill=_shade((30, 31, 36), k) + (255,))
+    for _ in range(w * (y1 - y0) // 14):  # weathering speckle
+        px, py = rnd.randrange(x0 + 2, x0 + w - 1), rnd.randrange(y0 + 2, y1 - 1)
+        v = rnd.randrange(-9, 12)
+        d.point((px, py), fill=_shade((30 + v, 31 + v, 36 + v), k) + (255,))
+    d.rectangle([x0, y0, x0 + w, y0 + 2], fill=_shade((66, 66, 80), k) + (255,))     # top edge highlight
+    d.rectangle([x0, y0, x0 + 2, y1], fill=_shade((46, 46, 58), k) + (255,))         # left edge
+    d.rectangle([x0 + w - 2, y0, x0 + w, y1], fill=_shade((14, 14, 18), k) + (255,))  # right edge, in shadow
+    d.rectangle([x0, y1 - 2, x0 + w, y1], fill=_shade((10, 10, 13), k) + (255,))
+    for sx, sy in ((x0 + 7, y0 + 8), (x0 + w - 7, y0 + 8), (x0 + 7, y1 - 8), (x0 + w - 7, y1 - 8)):
+        d.ellipse([sx - 2, sy - 2, sx + 2, sy + 2], fill=_shade((74, 74, 88), k) + (255,), outline=(8, 8, 10, 255))
+
+
+def _woofer(d, cx, cy, r, k):
+    """Round woofer: surround ring, cone with a ridge, dust cap, highlight arc (all scale with r)."""
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=_shade((20, 20, 25), k) + (255,),
+              outline=_shade((78, 78, 94), k) + (255,), width=2)
+    rc = int(r * 0.80)
+    d.ellipse([cx - rc, cy - rc, cx + rc, cy + rc], fill=_shade((9, 9, 12), k) + (255,),
+              outline=_shade((38, 38, 48), k) + (255,))
+    rr = int(r * 0.55)
+    d.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], outline=_shade((30, 30, 40), k) + (255,))
+    rd = max(3, int(r * 0.28))
+    d.ellipse([cx - rd, cy - rd, cx + rd, cy + rd], fill=_shade((26, 26, 33), k) + (255,),
+              outline=_shade((52, 52, 66), k) + (255,))
+    d.arc([cx - r + 3, cy - r + 3, cx + r - 3, cy + r - 3], 200, 260, fill=_shade((96, 96, 114), k) + (255,), width=2)
+
+
+def plain_stack(d, dx, x0, w, tiers, base_y, k=1.0):
+    """Older, plainer style: dark boxes with one round driver per tier (second small drivers on wide ones)."""
     th = 62
     for t in range(tiers):
         y1 = base_y - t * th
         y0 = y1 - th + 3
-        d.rectangle([x0 + dx, y0, x0 + dx + w, y1], fill=(14, 14, 18, 255))
-        d.rectangle([x0 + dx, y0, x0 + dx + w, y0 + 2], fill=(54, 54, 68, 255))
-        d.rectangle([x0 + dx, y0, x0 + dx + 2, y1], fill=(34, 34, 44, 255))
+        d.rectangle([x0 + dx, y0, x0 + dx + w, y1], fill=_shade((22, 22, 27), k) + (255,))
+        d.rectangle([x0 + dx, y0, x0 + dx + w, y0 + 2], fill=_shade((58, 58, 72), k) + (255,))
+        d.rectangle([x0 + dx, y0, x0 + dx + 2, y1], fill=_shade((38, 38, 48), k) + (255,))
         cx, cy = x0 + dx + w // 2, (y0 + y1) // 2
-        for rad, col in ((22, (8, 8, 11)), (16, (22, 22, 28)), (8, (6, 6, 8))):
-            d.ellipse([cx - rad, cy - rad, cx + rad, cy + rad], fill=col + (255,),
-                      outline=(48, 48, 60, 255) if rad == 22 else None)
-        if w > 80:  # wide cabinets carry a second driver
+        for rad, col in ((22, (9, 9, 12)), (16, (24, 24, 30)), (8, (7, 7, 9))):
+            d.ellipse([cx - rad, cy - rad, cx + rad, cy + rad], fill=_shade(col, k) + (255,),
+                      outline=_shade((52, 52, 66), k) + (255,) if rad == 22 else None)
+        if w > 80:
             for sx in (x0 + dx + 18, x0 + dx + w - 18):
-                d.ellipse([sx - 7, cy - 7, sx + 7, cy + 7], fill=(10, 10, 14, 255), outline=(44, 44, 56, 255))
+                d.ellipse([sx - 7, cy - 7, sx + 7, cy + 7], fill=_shade((11, 11, 15), k) + (255,),
+                          outline=_shade((48, 48, 60), k) + (255,))
+
+
+def speaker_stack(d, dx, x0, w, layout, base_y, k=1.0):
+    """One column of concrete cabinets, bottom to top per `layout`: 'W' two stacked woofers (diameter
+    ~60% of the cabinet width, clear panel between and around them), 'B' a band of small round drivers,
+    'F' an open purple box frame. No horns or tweeters."""
+    rnd = random.Random(7700 + x0)
+    y = base_y
+    for part in layout:
+        if part == "W":
+            r = int(w * 0.30)               # woofer diameter ~60% of the cabinet width
+            gap, m = int(r * 0.45), int(r * 0.5)
+            h = 4 * r + gap + m + int(r * 1.3)   # the pair fills the lower ~2/3, panel above
+            _cabinet(d, dx, x0, w, y - h, y, k, rnd)
+            for cy in (y - m - r, y - m - 3 * r - gap):
+                _woofer(d, x0 + dx + w // 2, cy, r, k)
+        elif part == "B":
+            h = 34
+            _cabinet(d, dx, x0, w, y - h, y, k, rnd)
+            n = (w - 10) // 22
+            for i in range(n):
+                cx = x0 + dx + 5 + (w - 10) * (2 * i + 1) // (2 * n)
+                _woofer(d, cx, y - h // 2, 8, k)
+        else:  # 'F'
+            h = 44
+            fx = x0 + dx + 6
+            d.rectangle([fx, y - h, x0 + dx + w - 6, y], fill=(66, 30, 112, 255))
+            d.rectangle([fx, y - h, x0 + dx + w - 6, y - h + 2], fill=(120, 70, 180, 255))
+            d.rectangle([fx + 8, y - h + 8, x0 + dx + w - 14, y - 8], fill=(7, 6, 11, 255))
+            d.line([(fx + 8, y - h // 2), (x0 + dx + w - 14, y - h // 2)], fill=(52, 24, 92, 255), width=3)
+        y -= h
 
 
 WALL_BOX = (560, 1040, 96, 246)
@@ -306,8 +402,9 @@ def make_bg():
         deck.line([(x, 266), (x, 290)], fill=(18, 18, 24, 255), width=2)
 
     layer = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
-    for x0, w, tiers in ((120, 110, 4), (300, 80, 3), (1220, 80, 3), (1370, 110, 4), (40, 70, 2), (1520, 70, 2)):
-        wrapped(lambda d, dx, x0=x0, w=w, tiers=tiers: speaker_stack(d, dx, x0, w, tiers, 262), layer)
+    for x0, w, style, spec, k in speaker_columns():
+        fn = plain_stack if style == "plain" else speaker_stack
+        wrapped(lambda d, dx, x0=x0, w=w, spec=spec, k=k, fn=fn: fn(d, dx, x0, w, spec, 262, k), layer)
     bg = over(bg, layer)
 
     led = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))

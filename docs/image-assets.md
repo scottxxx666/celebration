@@ -487,7 +487,7 @@ The `concert` theme (stage 5 from 63518 ms) is also fully procedural:
 writes `road-concert.png` and `scenery-concert.png` (same 1600x540 / 1600x360,
 2x-authored, horizontally seamless). The scenery is a dark stage seen from the
 crowd side: lighting truss with ten lamp heads (six lit in magenta / purple /
-cyan; no baked beam cones, DiscoLights supplies the beams), speaker stacks, a central LED wall with an equaliser
+cyan; no baked beam cones, DiscoLights supplies the beams), speaker columns in two mixed styles (a seeded, deterministic `speaker_columns()` assignment, no equal neighbours: concrete-look grey-black cabinets with two stacked woofers at ~60% of the cabinet width, taller ones adding a band of small drivers and a dim purple open box frame; and the older plain dark boxes with one round driver per tier, 2-4 tiers; no horns/tweeters; placed in the gaps between lamp heads, clear of the LED wall), a central LED wall with an equaliser
 pattern, drifting haze and two ranks of crowd silhouettes (some with raised
 arms, rim-lit from the stage) along the bottom. The LED wall is bright and bleeds a soft glow onto the truss and
 speakers; lit lamp heads have large halos. Top row is flat 0x020305 (`sky`), the bottom rows ease
