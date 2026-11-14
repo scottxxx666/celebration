@@ -481,16 +481,42 @@ first lamp to scroll in from the right, `flicker.lampX`) and drives its alpha wi
 `lampFlicker()`, so only that one lamp flickers. Covered by
 `tests/tools/test_underground_assets.py`.
 
-The `concert` theme (stage 5 from 63518 ms) is also fully procedural:
-`tools/gen-concert-assets.py`
+The `concert` theme (stage 5 from 63518 ms) is made in two steps, like
+`desert`. `tools/gen-concert-assets.py`
 (`uv run --with pillow python tools/gen-concert-assets.py [--preview DIR]`)
-writes `road-concert.png` and `scenery-concert.png` (same 1600x540 / 1600x360,
-2x-authored, horizontally seamless). The scenery is a dark stage seen from the
+writes the procedural road `road-concert.png` (1600x540), the three glow layers
+and the two crowd frames below, and keeps the procedural stage as a **layout
+drawing** (written only to `DIR/scenery-full.png`, never shipped; it no longer
+writes `scenery-concert.png`). The shipped `scenery-concert.png` (1600x360,
+2x-authored, seamless, top row `sky` 0x000003, bottom row 0x09090c) is that
+drawing restyled by Codex's image model (variant v2 of three runs):
+`layout.png` is the layout drawing scaled to 1536x346 and centred vertically
+on a 1536x1024 canvas filled with its top-row colour (0x020305), then
+`codex exec --skip-git-repo-check --sandbox workspace-write -i layout.png < prompt.txt`
+(no style reference, so nothing of real people was uploaded; `OUTFILE` is the
+raw name) and
+`prep-scenery-image.py scenery raw.png --offset 0 --horizon 0x09090c`
+(offset 0 keeps the band where it was placed; it printed `sky` 0x000003).
+Shipped prompt:
+
+> Restyle layout.png as a photorealistic, straight-on flat elevation photograph (orthographic, level horizon, no perspective, no vanishing point, no lens distortion) of a big dark concert stage seen from the audience.
+>
+> LAYOUT: copy layout.png's composition EXACTLY. Keep the same position, size and shape of every element: the horizontal lighting truss across the top and the thinner second truss lower down, the ten lamp heads hanging from the truss (only the lit ones glow, in magenta, purple or cyan; the dark ones stay dead black housings), the speaker cabinets (heavy weathered grey-black concrete-like cabinets, several with a pair of large round woofers stacked one above the other, others plain stacked boxes with one round driver per cabinet, two taller stacks topped by a dim purple open box frame), and the big LED wall in the right-centre showing an equaliser bar display in cyan-to-magenta. Do not add, remove or move elements. The reference sits in the middle of a larger near-black 1536x1024 canvas; output the same 1536x1024 size with the same composition, and keep the near-black canvas above and below.
+>
+> LOOK: moody cinematic concert-film grade, near-black stage, faint drifting haze, subtle weathered texture and fine grain on the cabinets, restrained saturated purple, magenta and cyan accents. Keep everything dark enough that extra glow added later on top of the lamp heads and the LED wall will still stand out; nothing may be bright or blown out.
+>
+> STRICT: no beams or cones of light, no crowd, no people, no silhouettes, no text, no letters, no logos or brand marks, no floor spill or reflections. Keep the bottom band (below the speaker cabinets, about the lowest 25% of the reference picture's height) a plain empty dark stage deck with no objects, because a crowd layer is drawn over it. The level of detail must survive being downscaled to 1600x360.
+>
+> Save the final image as a PNG file named OUTFILE in the current directory.
+
+The glow images stay keyed to the layout drawing (lamp heads, LED wall), so any
+regenerated stage must keep lamps and wall in place, and the bottom band must
+stay a clear dark deck for the crowd layer. The layout drawing is a dark stage seen from the
 crowd side: lighting truss with ten lamp heads (six lit in magenta / purple /
 cyan; no baked beam cones, DiscoLights supplies the beams), speaker columns in two mixed styles (a seeded, deterministic `speaker_columns()` assignment, no equal neighbours: concrete-look grey-black cabinets with two stacked woofers at ~60% of the cabinet width, taller ones adding a band of small drivers and a dim purple open box frame; and the older plain dark boxes with one round driver per tier, 2-4 tiers; no horns/tweeters; placed in the gaps between lamp heads, clear of the LED wall), a central LED wall with an equaliser
 pattern, drifting haze and two ranks of crowd silhouettes (some with raised
 arms, rim-lit from the stage) along the bottom. The LED wall is bright and bleeds a soft glow onto the truss and
-speakers; lit lamp heads have large halos. Top row is flat 0x020305 (`sky`), the bottom rows ease
+speakers; lit lamp heads have large halos. (Layout drawing top row 0x020305; the shipped AI stage has `sky` 0x000003.) The bottom rows ease
 into 0x09090c. The road is dark stage-floor boards with very faint coloured
 reflections and broad magenta / cyan / purple light-spill pools under the lit heads; like the underground road it bakes only a faint dark seam at
 y = 180 / 360 (no bright lane lines), top row 0x09090c, bottom row 0x242427
@@ -508,10 +534,10 @@ two poses of head-and-shoulders silhouettes with the purple/cyan rim light
 (A arms down / heads low, B arms up / heads higher, neighbours in opposite
 poses, frame b the mirror assignment of a). The theme's `crowd` list preloads
 them and `Scenery` draws one tileSprite that swaps frame on the beat
-(`src/crowdSway.js`, `CROWD_SWAPS_PER_BEAT`). The stage art itself may be
-AI-restyled later, but the base scenery must keep its bottom band (the deck,
-below y ~ 262) clear and dark so no second crowd gets painted; the crowd
-frames always come from the gen script. Accents are kept dim so the runner, obstacles and DiscoLights
+(`src/crowdSway.js`, `CROWD_SWAPS_PER_BEAT`). The shipped stage art is the AI
+restyle above, whose bottom band (the deck, below y ~ 262) stays clear and
+dark so no second crowd gets painted; the crowd frames always come from the
+gen script. Accents are kept dim so the runner, obstacles and DiscoLights
 beams stay readable.
 
 **Handling the rotate section**: the `rotate` section zooms the camera out to

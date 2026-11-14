@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
-"""Generate the dark concert-stage road + scenery pair per docs/image-assets.md.
+"""Generate the concert road, glow and crowd layers and the stage LAYOUT drawing per docs/image-assets.md.
 
     uv run --with pillow python tools/gen-concert-assets.py [--preview DIR]
 
 Writes public/assets/bg/road-concert.png     1600x540  tiles left<->right, not vertically
-       public/assets/bg/scenery-concert.png  1600x360  tiles left<->right
+       public/assets/bg/scenery-concert-glow-{magenta,cyan,wall}.png   additive glow layers
+       public/assets/bg/scenery-concert-crowd-{a,b}.png               crowd frames
+It does NOT write public/assets/bg/scenery-concert.png (1600x360): the shipped stage is an AI restyle
+of the layout drawing below (like gen-desert-assets.py), made once with Codex's image model and
+prepped with tools/prep-scenery-image.py (docs/image-assets.md). The procedural stage is kept as the
+layout drawing, written only to --preview DIR/scenery-full.png. The glow images are keyed to that
+layout (lamp heads, LED wall), so any regenerated stage must keep lamps and wall in place.
 
-A big dark stage seen from the crowd side: lighting truss across the top with a
+The layout drawing is a big dark stage seen from the crowd side: lighting truss across the top with a
 few magenta / purple / cyan lamp heads, tall speaker stacks, an LED wall with an
-equaliser pattern, drifting haze, and a foreground of crowd silhouettes (some
-with raised arms). Near-black base with restrained saturated accents so the
+equaliser pattern, drifting haze, and the crowd band left
+as a clear dark deck. Near-black base with restrained saturated accents so the
 runner, obstacles and DiscoLights beams stay readable. The road is a dark
 stage-floor / barrier lane with faint reflections; like the underground road it
 bakes no bright lane lines, only a faint dark seam at y = 180 / 360.
@@ -479,24 +485,25 @@ def write_preview(road, bg, prev_dir):
         both.paste(bg, (k * W, 0))
         both.paste(road, (k * W, BG_H))
     both.save(os.path.join(prev_dir, "tiled-twice.png"))
+    bg.save(os.path.join(prev_dir, "scenery-full.png"))
 
 
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     road = make_road()
-    bg = make_bg()
+    layout = make_bg()
     road.save(os.path.join(OUT, "road-concert.png"))
-    bg.save(os.path.join(OUT, "scenery-concert.png"))
     for name, frame in (("a", make_crowd(0)), ("b", make_crowd(1))):
         frame.save(os.path.join(OUT, f"scenery-concert-crowd-{name}.png"))
     for name, glow_img in make_glows().items():
         glow_img.save(os.path.join(OUT, f"scenery-concert-glow-{name}.png"))
         seam_check(glow_img.convert("RGB"), f"glow-{name}")
     seam_check(road, "road")
-    seam_check(bg, "scenery")
-    print("sky (scenery top row)", hex_of(row_avg(bg, 0)),
+    shipped = Image.open(os.path.join(OUT, "scenery-concert.png")).convert("RGB")
+    seam_check(shipped, "shipped scenery")
+    print("sky (shipped scenery top row)", hex_of(row_avg(shipped, 0)),
           " ground (road bottom row)", hex_of(row_avg(road, ROAD_H - 1)))
-    print("horizon: scenery bottom row", hex_of(row_avg(bg, BG_H - 1)),
+    print("horizon: shipped scenery bottom row", hex_of(row_avg(shipped, BG_H - 1)),
           " road top row", hex_of(row_avg(road, 0)))
     if "--preview" in sys.argv:
-        write_preview(road, bg, sys.argv[sys.argv.index("--preview") + 1])
+        write_preview(road, layout, sys.argv[sys.argv.index("--preview") + 1])

@@ -1,5 +1,6 @@
 import importlib.util
 import os
+import re
 import unittest
 
 from PIL import Image
@@ -9,6 +10,14 @@ spec = importlib.util.spec_from_file_location(
     'gen_concert_assets', os.path.join(ROOT, 'tools', 'gen-concert-assets.py'))
 mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
+
+
+def theme_hex(field):
+    with open(os.path.join(ROOT, 'src', 'config', 'sceneryThemes.js')) as f:
+        src = f.read()
+    block = re.search(r'concert:\s*{(.*?)\n  },', src, re.S).group(1)
+    v = int(re.search(field + r':\s*0x([0-9a-fA-F]{6})', block).group(1), 16)
+    return (v >> 16, (v >> 8) & 255, v & 255)
 
 
 class ConcertGlowTest(unittest.TestCase):
@@ -41,7 +50,8 @@ class ConcertCrowdTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.frames = [mod.make_crowd(0), mod.make_crowd(1)]
-        cls.bg = mod.make_bg()
+        cls.bg = Image.open(os.path.join(ROOT, 'public', 'assets', 'bg', 'scenery-concert.png')).convert('RGB')
+        cls.road = Image.open(os.path.join(ROOT, 'public', 'assets', 'bg', 'road-concert.png')).convert('RGB')
 
     def test_size_and_mode(self):
         for im in self.frames:
@@ -66,13 +76,30 @@ class ConcertCrowdTest(unittest.TestCase):
             for y in range(mod.CROWD_H):
                 self.assertLess(abs(al.getpixel((0, y)) - al.getpixel((mod.W - 1, y))), 130)
 
-    def test_base_scenery_has_no_crowd_and_valid_edges(self):
-        band = self.bg.crop((0, 300, mod.W, mod.BG_H - 6))
-        self.assertLess(max(max(px) for px in band.getdata()), 45)
-        self.assertEqual(mod.row_avg(self.bg, 0), mod.SKY)
+    def test_shipped_scenery_size_and_sky(self):
+        self.assertEqual(self.bg.size, (mod.W, mod.BG_H))
+        want = theme_hex('sky')
+        got = mod.row_avg(self.bg, 0)
+        for g, w in zip(got, want):
+            self.assertLessEqual(abs(g - w), 1)
+
+    def test_shipped_scenery_seam_and_horizon(self):
+        for y in range(mod.BG_H):
+            a, b = self.bg.getpixel((0, y)), self.bg.getpixel((mod.W - 1, y))
+            self.assertLessEqual(max(abs(p - q) for p, q in zip(a, b)), 12)
         bottom = mod.row_avg(self.bg, mod.BG_H - 1)
-        for got, want in zip(bottom, mod.LIP):
-            self.assertLessEqual(abs(got - want), 2)
+        road_top = mod.row_avg(self.road, 0)
+        for g, w in zip(bottom, road_top):
+            self.assertLessEqual(abs(g - w), 2)
+
+    def test_shipped_scenery_bottom_band_is_clear_dark_deck(self):
+        band = self.bg.crop((0, 300, mod.W, mod.BG_H - 6))
+        self.assertLess(max(max(px) for px in band.getdata()), 60)
+
+    def test_road_ground_matches_theme(self):
+        want = theme_hex('ground')
+        for g, w in zip(mod.row_avg(self.road, mod.ROAD_H - 1), want):
+            self.assertLessEqual(abs(g - w), 1)
 
 
 if __name__ == '__main__':
