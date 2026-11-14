@@ -85,6 +85,26 @@ export class Scenery {
       }
     }
 
+    // Crowd: one tileSprite per theme with `crowd` frames, locked to the scenery's scroll. Depth -9.85:
+    // over the base (-10), the pulse glow (-9.95) and the crossfade overlay (-9.9), so people occlude
+    // the light behind them; under SpinBikes (-9.5), the dim (-6) and every row. The texture is
+    // authored at 2x and covers the bottom of the scenery strip.
+    this.crowdFrame = 0;
+    this.blendState = { from: themeName, to: themeName, t: 1 };
+    this.crowdStrips = [];
+    for (const [name, theme] of Object.entries(SCENERY_THEMES)) {
+      if (!theme.crowd || !scene.textures.exists(theme.crowd[0].key)) continue;
+      const heightPx = scene.textures.get(theme.crowd[0].key).getSourceImage().height * SOURCE_SCALE;
+      const strip = scene.add
+        .tileSprite(left, WALK_ZONE_TOP - heightPx, width, heightPx, theme.crowd[0].key)
+        .setOrigin(0, 0)
+        .setTileScale(SOURCE_SCALE, SOURCE_SCALE)
+        .setDepth(-9.85)
+        .setVisible(false);
+      if (theme.tint) strip.setTint(theme.tint);
+      this.crowdStrips.push({ strip, themeName: name, frames: theme.crowd, current: -1 });
+    }
+
     // Dashed lane-line row dividers for dim sections — over the road art's own lines,
     // above the disco dim (-6) so they stay readable, below the beat flash (-5)
     // and lights (-4). Hidden until setRowLines(); same x widening as the road.
@@ -222,6 +242,29 @@ export class Scenery {
     }
   }
 
+  // index: 0 | 1 from crowdFrame(), applied on the next scroll()
+  setCrowdFrame(index) {
+    this.crowdFrame = index;
+  }
+
+  // The crowd is part of its theme's look, so it follows the theme through a crossfade: fading in
+  // with alpha t when its theme is the incoming `to` (the overlay set), out with 1 - t when it is
+  // the outgoing `from`, full when it is the settled base theme, hidden otherwise.
+  updateCrowd() {
+    const { from, to, t } = this.blendState;
+    for (const c of this.crowdStrips) {
+      const alpha = this.blending
+        ? (c.themeName === to ? t : 0) + (c.themeName === from ? 1 - t : 0)
+        : c.themeName === this.base.themeName ? 1 : 0;
+      c.strip.setAlpha(alpha).setVisible(alpha > 0);
+      if (this.crowdFrame !== c.current) {
+        c.current = this.crowdFrame;
+        c.strip.setTexture(c.frames[this.crowdFrame].key);
+      }
+      c.strip.tilePositionX = this.scenery.tilePositionX;
+    }
+  }
+
   setOverlayVisible(visible) {
     const { scenery, road, sky, ground } = this.overlay;
     for (const layer of [scenery, road, sky, ground]) layer.setVisible(visible);
@@ -231,6 +274,7 @@ export class Scenery {
   // alpha t. Settled (t >= 1 or from === to): base shows `to`, overlay hidden.
   setBlend(from, to, t) {
     this.blending = t < 1 && from !== to;
+    this.blendState = { from, to, t };
     if (!this.blending) {
       this.applyTheme(this.base, to);
       this.setOverlayVisible(false);
@@ -264,5 +308,6 @@ export class Scenery {
     for (const line of this.rowLines) line.tilePositionX += dxWorldPx;
     this.updateGlow();
     this.updatePulse();
+    this.updateCrowd();
   }
 }

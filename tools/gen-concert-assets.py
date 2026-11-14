@@ -19,6 +19,13 @@ seamless; RGB = colour, alpha = intensity, transparent elsewhere) that the game 
 tiling ADD-blend strips and pulses on the beat (src/beatPulse.js): `magenta` (magenta and
 purple lamp halos/lenses), `cyan` (cyan lamps) and `wall` (the bright LED equaliser).
 
+Also writes two transparent crowd strips, scenery-concert-crowd-{a,b}.png (1600x160 RGBA,
+scenery rows 200..360, seamless): head-and-shoulders silhouettes with purple/cyan rim light in two
+poses (A arms down / heads low, B arms up / heads slightly higher), neighbours in opposite poses and
+frame b the mirror assignment of a, so swapping them on the beat ripples the crowd. The base
+scenery has NO crowd (its bottom band is a clear dark stage deck) so the stage art can be restyled
+without painting one; the game draws the crowd as a separate layer (src/crowdSway.js).
+
 Prints the seam checks and the edge-row hexes: scenery top row -> `sky`,
 road bottom row -> `ground` in SCENERY_THEMES.concert. --preview also dumps an
 800x450 in-game mock and the swapped-halves seam checks to DIR.
@@ -225,25 +232,58 @@ def haze(d, dx):
                   fill=r.choice(((70, 40, 110), (40, 60, 100), (90, 40, 90))) + (r.randrange(10, 22),))
 
 
-def crowd(d, dx, color=CROWD, dy=0):
-    """Head-and-shoulders silhouettes, two ranks; some with raised arms."""
+CROWD_TOP = 200                 # crowd strips cover scenery rows CROWD_TOP..BG_H (tallest raised hand ~y 225)
+CROWD_H = BG_H - CROWD_TOP
+HEAD_LIFT = 4                   # pose B heads sit this much higher than pose A
+
+
+def crowd(d, dx, color=CROWD, dy=0, flip=0):
+    """Head-and-shoulders silhouettes, two ranks. Neighbours alternate pose A (arms down, heads low)
+    and pose B (arms up, heads slightly higher); `flip` 1 swaps the assignment, so the frame pair
+    ripples when it alternates. Positions and sizes are identical in both frames."""
     for rank, (base, hr, seed, a) in enumerate(((BG_H + 12, 13, 6404, 255), (BG_H + 30, 17, 6405, 255))):
         r = random.Random(seed)
-        n = W // (hr * 5 // 2)
+        n = W // (hr * 5 // 2)      # even, so the A/B alternation also closes on the tile seam
         for k in range(n):  # evenly spread slots, so the pattern closes on the tile seam
             cx = int((k + r.uniform(-0.2, 0.2)) * W / n) + dx
             top = base - r.randrange(46, 74) - (16 if rank == 0 else 0)
-            d.ellipse([cx - hr, top - hr + dy, cx + hr, top + hr + dy], fill=color + (a,))
-            d.polygon([(cx - hr * 2.2, base), (cx - hr * 1.5, top + hr + 6), (cx - hr * 0.6, top + hr - 2),
-                       (cx + hr * 0.6, top + hr - 2), (cx + hr * 1.5, top + hr + 6), (cx + hr * 2.2, base)],
+            sides = ((-1,), (1,), (-1, 1))[r.randrange(3)]
+            arms = [(r.randrange(4, 18), r.randrange(26, 52)) for _ in sides]
+            up = (k + flip) % 2 == 1
+            hy = dy - (HEAD_LIFT if up else -HEAD_LIFT)
+            d.ellipse([cx - hr, top - hr + hy, cx + hr, top + hr + hy], fill=color + (a,))
+            d.polygon([(cx - hr * 2.2, base), (cx - hr * 1.5, top + hr + 6 + hy), (cx - hr * 0.6, top + hr - 2 + hy),
+                       (cx + hr * 0.6, top + hr - 2 + hy), (cx + hr * 1.5, top + hr + 6 + hy), (cx + hr * 2.2, base)],
                       fill=color + (a,))
-            if r.random() < 0.28:  # raised arm(s)
-                for side in ((-1,), (1,), (-1, 1))[r.randrange(3)]:
+            if up:  # raised arm(s)
+                for side, (ax, ay) in zip(sides, arms):
                     sx = cx + side * hr * 1.6
-                    tip = (sx + side * r.randrange(4, 18), top - r.randrange(26, 52))
-                    d.line([(cx + side * hr * 1.3, top + hr + 4), (sx, top + hr - 10), tip],
+                    tip = (sx + side * ax, top - ay + hy)
+                    d.line([(cx + side * hr * 1.3, top + hr + 4 + hy), (sx, top + hr - 10 + hy), tip],
                            fill=color + (a,), width=7)
                     d.ellipse([tip[0] - 6, tip[1] - 6, tip[0] + 6, tip[1] + 6], fill=color + (a,))
+
+
+def make_crowd(flip):
+    """Transparent RGBA crowd strip (W x CROWD_H, scenery rows CROWD_TOP..BG_H) with the purple/cyan
+    stage rim light on heads and hands. Drawn over the stage by the game; the base scenery has no crowd."""
+    layer = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
+    rim = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
+    cyan = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
+    wrapped(lambda d, dx: crowd(d, dx, (110, 60, 170), -3, flip), rim)
+    wrapped(lambda d, dx: crowd(d, dx, (50, 130, 170), -3, flip), cyan)
+    rim = wrap_blur(Image.blend(rim, cyan, 0.5), 0.8)
+    wrapped(lambda d, dx: crowd(d, dx, CROWD, 0, flip), layer)
+    out = over(rim, layer).crop((0, CROWD_TOP, W, BG_H))
+    # bottom rows ease into the road's top row (LIP), like the base scenery
+    px = out.load()
+    for i in range(EDGE_ROWS):
+        y = CROWD_H - EDGE_ROWS + i
+        t = (i + 1) / EDGE_ROWS
+        for x in range(W):
+            r_, g_, b_, a_ = px[x, y]
+            px[x, y] = lerp((r_, g_, b_), LIP, t) + (a_,)
+    return out
 
 
 def make_bg():
@@ -290,15 +330,6 @@ def make_bg():
 
     bg = over(bg, wrap_blur(glow(haze, 22.0), 8.0))
 
-    layer = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
-    rim = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))   # stage rim light: the silhouette shifted up, tinted
-    wrapped(lambda d, dx: crowd(d, dx, (110, 60, 170), -3), rim)
-    wrapped(lambda d, dx: crowd(d, dx, (50, 130, 170), -3), layer)
-    rim = Image.blend(rim, layer, 0.5)
-    bg = over(bg, wrap_blur(rim, 0.8))
-    layer = Image.new("RGBA", (W, BG_H), (0, 0, 0, 0))
-    wrapped(crowd, layer)
-    bg = over(bg, layer)
     bg = bg.convert("RGB")
     bg = wrap_blur(bg, 0.6)
 
@@ -359,6 +390,8 @@ if __name__ == "__main__":
     bg = make_bg()
     road.save(os.path.join(OUT, "road-concert.png"))
     bg.save(os.path.join(OUT, "scenery-concert.png"))
+    for name, frame in (("a", make_crowd(0)), ("b", make_crowd(1))):
+        frame.save(os.path.join(OUT, f"scenery-concert-crowd-{name}.png"))
     for name, glow_img in make_glows().items():
         glow_img.save(os.path.join(OUT, f"scenery-concert-glow-{name}.png"))
         seam_check(glow_img.convert("RGB"), f"glow-{name}")

@@ -33,6 +33,10 @@ export const PULSE_LIFT_STRENGTH = 0.07;
 export const PULSE_LIFT_DECAY_BEATS = 0.8;
 export const PULSE_LIFT_COLOR = 0x9068d8;
 
+// Concert crowd sway (theme `crowd` frames, src/crowdSway.js): the two crowd frames swap
+// CROWD_SWAPS_PER_BEAT times per beat; 0 pins frame 0 (animation off, crowd arms down).
+export const CROWD_SWAPS_PER_BEAT = 1;
+
 // Flickering fluorescent lamp (theme `flicker` glow layer, src/lampFlicker.js):
 // time is cut into slots of 1/LAMP_FLICKER_SLOTS_PER_BEAT beat; a beat is a
 // burst beat with LAMP_FLICKER_BURST_CHANCE, where each slot is lit with

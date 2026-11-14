@@ -19,6 +19,7 @@ import { jitterOffset } from '../cameraJitter.js';
 import { pushZoom } from '../cameraPush.js';
 import { lampFlicker } from '../lampFlicker.js';
 import { beatPulse } from '../beatPulse.js';
+import { crowdFrame } from '../crowdSway.js';
 import { rotateTurns, sectionAt, strobeRate, strobeScale } from '../config/sections.js';
 import { HUD_DEPTH } from '../config/ui.js';
 import { getStartMs, formatSongTime } from '../songTime.js';
@@ -67,6 +68,7 @@ import {
   WIN_MS,
   STAGE_FADE_BEATS,
   BEAT_MS,
+  CROWD_SWAPS_PER_BEAT,
   WALL_FLASH_ALPHA,
 } from '../config/gameConfig.js';
 
@@ -300,6 +302,7 @@ export class GameScene extends Phaser.Scene {
     const { from, to, t } = stageBlend(songMs, STAGE_FADE_BEATS * BEAT_MS);
     this.scenery.setFlicker(lampFlicker(songMs, BEAT_MS));
     this.scenery.setPulse(beatPulse(this.conductor.beatTimeMs, BEAT_MS));
+    this.scenery.setCrowdFrame(crowdFrame(this.conductor.beatTimeMs, BEAT_MS, CROWD_SWAPS_PER_BEAT));
     this.scenery.setBlend(from, to, t);
     this.scenery.scroll(worldDx);
     this.spinBikes.update(section, songMs, worldDx);

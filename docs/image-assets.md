@@ -501,7 +501,17 @@ halos + lenses per colour group (purple lamps share `magenta`) and the bright
 LED equaliser. The theme's `pulse` list preloads them and `Scenery` draws each
 as an ADD-blend tiling strip locked to the scenery's scroll, alpha driven per
 beat by `src/beatPulse.js` (see CLAUDE.md "Scenery"); covered by
-`tests/tools/test_concert_assets.py`. Accents are kept dim so the runner, obstacles and DiscoLights
+`tests/tools/test_concert_assets.py`. The crowd is **not** in
+`scenery-concert.png`: the generator writes two transparent strips,
+`scenery-concert-crowd-{a,b}.png` (1600x160, scenery rows 200..360, seamless),
+two poses of head-and-shoulders silhouettes with the purple/cyan rim light
+(A arms down / heads low, B arms up / heads higher, neighbours in opposite
+poses, frame b the mirror assignment of a). The theme's `crowd` list preloads
+them and `Scenery` draws one tileSprite that swaps frame on the beat
+(`src/crowdSway.js`, `CROWD_SWAPS_PER_BEAT`). The stage art itself may be
+AI-restyled later, but the base scenery must keep its bottom band (the deck,
+below y ~ 262) clear and dark so no second crowd gets painted; the crowd
+frames always come from the gen script. Accents are kept dim so the runner, obstacles and DiscoLights
 beams stay readable.
 
 **Handling the rotate section**: the `rotate` section zooms the camera out to

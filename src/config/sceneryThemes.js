@@ -50,6 +50,11 @@ export const SCENERY_THEMES = {
     scenery: { key: 'scenery-concert', file: 'assets/bg/scenery-concert.png' },
     sky: 0x020305,
     ground: 0x242427,
+    // two-frame crowd silhouettes (arms down / arms up, neighbours opposite), swapped on the beat by src/crowdSway.js
+    crowd: [
+      { key: 'scenery-concert-crowd-a', file: 'assets/bg/scenery-concert-crowd-a.png' },
+      { key: 'scenery-concert-crowd-b', file: 'assets/bg/scenery-concert-crowd-b.png' },
+    ],
     // additive glow strips (lamp halos per colour group + the LED wall), pulsed on the beat by src/beatPulse.js
     pulse: [
       { key: 'scenery-concert-glow-magenta', file: 'assets/bg/scenery-concert-glow-magenta.png', group: 'magenta' },
