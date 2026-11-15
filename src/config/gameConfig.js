@@ -406,3 +406,5 @@ export const STATION_DOOR_X = 150;           // stairwell opening, local x / wid
 export const STATION_DOOR_W = 150;
 export const STATION_DOOR_TOP = 218;
 export const STATION_CANOPY_OVERHANG = 28;   // canopy slab sticks out this far past the doorway on each side
+
+export const STAGE_DIM_ALPHA = 0.92;   // default peak black-overlay alpha of a stage with transition 'dim' (near-black so the theme swap is hidden)

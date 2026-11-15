@@ -5,7 +5,7 @@ import { Enemy } from '../objects/Enemy.js';
 import { DiscoLights } from '../objects/DiscoLights.js';
 import { Afterimages } from '../objects/Afterimages.js';
 import { Scenery } from '../objects/Scenery.js';
-import { stageAt, stageBlend } from '../config/stages.js';
+import { stageAt, stageBlend, stageDim } from '../config/stages.js';
 import { SpinBikes } from '../objects/SpinBikes.js';
 import { WallBreak } from '../objects/WallBreak.js';
 import { StationBuilding } from '../objects/StationBuilding.js';
@@ -47,10 +47,10 @@ import {
   ROTATE_BEATS_PER_TURN,
   ROTATE_ZOOM,
   DISCO_DIM_ALPHA,
+  DISCO_DIM_FADE_MS,
   DIM_ROW_LINE_COLOR,
   DISCO_ROW_LINE_COLOR,
   DIM_ROW_LINE_BLINK_BEATS,
-  DISCO_DIM_FADE_MS,
   DISCO_HUE_BEATS,
   DISCO_COLORS,
   STROBE_ALPHA,
@@ -230,14 +230,19 @@ export class GameScene extends Phaser.Scene {
       const edgeMs = Math.min(songMs - section.dimStartMs, section.dimEndMs - songMs);
       dimFade = Phaser.Math.Clamp(edgeMs / DISCO_DIM_FADE_MS, 0, 1);
     }
-    this.discoDim.setAlpha(DISCO_DIM_ALPHA * dimFade);
+    // A stage's own dim (transition 'dim') feeds the same overlay and row lines; the stronger source wins
+    const stageDimState = stageDim(songMs);
+    const sectionAlpha = DISCO_DIM_ALPHA * dimFade;
+    const stageAlpha = stageDimState.level * stageDimState.alpha;
+    const stageOwnsDim = stageAlpha > sectionAlpha;
+    this.discoDim.setAlpha(Math.max(sectionAlpha, stageAlpha));
     // Row lines: under `lights` they take their own fixed colour and blink on the
     // beat grid (shown on even cells, hidden on odd ones); in any other dimmed
     // section they stay on — the lights-out overlay covers them while dark
     this.scenery.setRowLines(
-      dimFade,
-      section.lights ? DISCO_ROW_LINE_COLOR : DIM_ROW_LINE_COLOR,
-      !section.lights || this.conductor.gridIndex(1 / DIM_ROW_LINE_BLINK_BEATS) % 2 === 0,
+      stageOwnsDim ? stageDimState.level : dimFade,
+      section.lights && !stageOwnsDim ? DISCO_ROW_LINE_COLOR : DIM_ROW_LINE_COLOR,
+      !section.lights || stageOwnsDim || this.conductor.gridIndex(1 / DIM_ROW_LINE_BLINK_BEATS) % 2 === 0,
     );
 
     // Strobe — flash white section.strobe times per beat during the section (may be
