@@ -1,7 +1,6 @@
 import { test } from 'node:test';
-import { DISCO_DIM_FADE_MS, STAGE_DIM_ALPHA, TRACK_BEAT_MS } from '../src/config/gameConfig.js';
 import assert from 'node:assert/strict';
-import { STAGES, stageAt, stageBlend, stageDim, stageThemeNames } from '../src/config/stages.js';
+import { STAGES, stageAt, stageBlend, stageThemeNames } from '../src/config/stages.js';
 import { SCENERY_THEMES } from '../src/config/sceneryThemes.js';
 
 test('stages are strictly ascending and start at 0', () => {
@@ -48,7 +47,7 @@ test('stageThemeNames dedupes themes', () => {
 });
 
 // First crossfading boundary whose theme differs from the previous stage's
-const changeIndex = STAGES.findIndex((s, i) => i > 0 && !s.transition && s.theme !== STAGES[i - 1].theme);
+const changeIndex = STAGES.findIndex((s, i) => i > 0 && !s.cut && s.theme !== STAGES[i - 1].theme);
 const FADE_MS = 1000;
 
 test('stageBlend: before a boundary is settled on the previous theme', () => {
@@ -85,12 +84,12 @@ test('stageBlend: fadeMs 0 is a hard cut', () => {
   assert.deepEqual(stageBlend(startMs, 0), { from: theme, to: theme, t: 1 });
 });
 
-const cutIndex = STAGES.findIndex((s, i) => i > 0 && s.transition === 'cut' && s.theme !== STAGES[i - 1].theme);
+const cutIndex = STAGES.findIndex((s, i) => i > 0 && s.cut && s.theme !== STAGES[i - 1].theme);
 
 test('stage4 hard-cuts on the wall break', async () => {
   const { WALL_BREAK_MS } = await import('../src/config/gameConfig.js');
   const stage4 = STAGES.find(s => s.name === 'stage4');
-  assert.equal(stage4.transition, 'cut');
+  assert.equal(stage4.cut, true);
   assert.equal(stage4.startMs, WALL_BREAK_MS);
 });
 
@@ -104,62 +103,4 @@ test('stageBlend: a cut stage is fully on its theme from startMs, never mid-fade
   for (const ms of [startMs, startMs + 1, startMs + FADE_MS / 2, startMs + FADE_MS]) {
     assert.deepEqual(stageBlend(ms, FADE_MS), { from: theme, to: theme, t: 1 }, `at ${ms}`);
   }
-});
-
-const FAKE = [
-  { name: 'a', startMs: 0, theme: 'x' },
-  { name: 'b', startMs: 10000, theme: 'y', transition: 'dim', dimInBeats: 2, dimOutBeats: 1, dimAlpha: 0.5 },
-  { name: 'c', startMs: 20000, theme: 'z' },
-];
-
-test('stage4 is a cut and stage5 (concert) is a dim stage with a 3-beat run-in and snap-off', () => {
-  assert.equal(STAGES.find(s => s.name === 'stage4').transition, 'cut');
-  const concert = STAGES.find(s => s.theme === 'concert');
-  assert.equal(concert.transition, 'dim');
-  assert.equal(concert.dimInBeats, 3);
-  assert.equal(concert.dimOutBeats, 0);
-  assert.equal(concert.startMs, 63518);
-  assert.ok(Math.abs(concert.startMs - 3 * TRACK_BEAT_MS - 62322) < 1);
-});
-
-test('stageBlend: a dim stage hard-swaps at startMs like a cut', () => {
-  assert.deepEqual(stageBlend(9999, 1000, FAKE), { from: 'x', to: 'x', t: 1 });
-  assert.deepEqual(stageBlend(10000, 1000, FAKE), { from: 'y', to: 'y', t: 1 });
-  assert.deepEqual(stageBlend(10100, 1000, FAKE), { from: 'y', to: 'y', t: 1 });
-});
-
-test('stageBlend: a default stage still crossfades', () => {
-  assert.deepEqual(stageBlend(20500, 1000, FAKE), { from: 'y', to: 'z', t: 0.5 });
-});
-
-test('stageDim: the concert run-in ramps over DISCO_DIM_FADE_MS, holds full, and snaps off at startMs', () => {
-  const concert = STAGES.find(s => s.theme === 'concert');
-  const start = concert.startMs - 3 * TRACK_BEAT_MS;
-  assert.equal(stageDim(start - 1).level, 0);
-  assert.equal(stageDim(start).level, 0);
-  assert.ok(Math.abs(stageDim(start + DISCO_DIM_FADE_MS / 2).level - 0.5) < 1e-9);
-  assert.equal(stageDim(start + DISCO_DIM_FADE_MS).level, 1);
-  assert.equal(stageDim(concert.startMs - 1).level, 1);
-  assert.equal(stageDim(concert.startMs - 1).alpha, STAGE_DIM_ALPHA);
-  assert.equal(stageDim(concert.startMs).level, 0);
-  assert.equal(stageDim(concert.startMs + 5000).level, 0);
-});
-
-test('stageDim: other stages and negative time have no dim', () => {
-  assert.equal(stageDim(-500).level, 0);
-  assert.equal(stageDim(30000).level, 0);
-  assert.equal(stageDim(59134 - 100).level, 0);
-  assert.equal(stageDim(59134 + 100).level, 0);
-});
-
-test('stageDim: a fake dim stage honours its alpha, run-in and a linear dim-out', () => {
-  const inMs = 2 * TRACK_BEAT_MS;
-  const outMs = TRACK_BEAT_MS;
-  assert.equal(stageDim(10000 - inMs - 1, FAKE).level, 0);
-  assert.equal(stageDim(10000 - 1, FAKE).level, 1);
-  assert.equal(stageDim(10000 - 1, FAKE).alpha, 0.5);
-  assert.equal(stageDim(10000, FAKE).level, 1);
-  assert.ok(Math.abs(stageDim(10000 + outMs / 2, FAKE).level - 0.5) < 1e-9);
-  assert.equal(stageDim(10000 + outMs, FAKE).level, 0);
-  assert.equal(stageDim(-1, FAKE).level, 0);
 });
