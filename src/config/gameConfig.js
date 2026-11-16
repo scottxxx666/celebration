@@ -152,6 +152,14 @@ export const FIRST_BEAT_OFFSET_MS = 2143;
 // (139498 ms). Its own knob: re-tune by hand if waves.js is regenerated. The
 // track's COMPLETE event still wins the run if this is set past the end.
 export const WIN_MS = 138653;
+// Win run-out: the world stops scrolling and the runner carries on across the
+// screen at this speed (px/s) until WIN_RUNOUT_PAD px past the right edge
+// (clears the sprite and its shadow), then the ending video starts
+export const WIN_RUNOUT_SPEED = 500;
+export const WIN_RUNOUT_PAD = 80;
+// Ending video: the bottom-right "To be continued..." line (and the skip input)
+// comes in this long after the message
+export const ENDING_CONTINUED_DELAY_MS = 2000;
 // Manual trim added on top of the auto-detected audio output latency (see
 // Conductor); positive = visuals later
 export const AUDIO_LATENCY_OFFSET_MS = 0;

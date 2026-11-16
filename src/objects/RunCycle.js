@@ -88,6 +88,13 @@ export class RunCycle {
     this._nextFrame();
   }
 
+  // Hand the cycle back to the free-running timer for good — the win run-out,
+  // where the beat clock is no longer read and taps no longer count.
+  freeRun() {
+    this._beatLocked = false;
+    this.tapIdleMs = 0;
+  }
+
   // True while the last step() is recent enough to own the frame.
   _tapHeld() {
     return this._sinceStepMs < this.tapIdleMs;

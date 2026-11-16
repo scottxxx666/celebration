@@ -23,6 +23,8 @@ export class BootScene extends Phaser.Scene {
     this.load.audio('music', 'assets/music.m4a');
     this.load.audio('breakwall', 'assets/sfx/breakwall.wav');
     this.load.video('intro', 'assets/intro.mp4');
+    // Placeholder: the ending cutscene reuses the intro file until ending.mp4 exists
+    this.load.video('ending', 'assets/intro.mp4');
 
     for (const name of stageThemeNames()) {
       const theme = SCENERY_THEMES[name];

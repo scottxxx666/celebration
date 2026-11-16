@@ -59,6 +59,19 @@ export class Player {
     this.runCycle.layout(this.x, this.y, this.scale, this.depth);
   }
 
+  // Win run-out: input is ignored and the runner moves across the screen
+  // itself (the world has stopped scrolling), still animating its run.
+  startRunOut() {
+    this.runCycle.freeRun();
+    this.setReveal(null);
+  }
+
+  runOut(x, delta) {
+    this.x = x;
+    this.runCycle.update(delta);
+    this.runCycle.layout(this.x, this.y, this.scale, this.depth);
+  }
+
   // Touch controls — tapping the left/right half of the screen is the
   // alternating accel (same path as the LEFT/RIGHT arrows and A/D); a vertical swipe
   // past SWIPE_THRESHOLD is a row change, one per pointer until release.

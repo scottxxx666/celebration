@@ -10,6 +10,7 @@ import { SpinBikes } from '../objects/SpinBikes.js';
 import { WallBreak } from '../objects/WallBreak.js';
 import { StationBuilding } from '../objects/StationBuilding.js';
 import { wallShake } from '../wallBreak.js';
+import { runOutX, runOutDone } from '../winRunOut.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { Conductor } from '../Conductor.js';
@@ -89,7 +90,9 @@ export class GameScene extends Phaser.Scene {
 
     // Song = level: the track plays once; reaching its end clears the run
     this.music = this.sound.add('music', { loop: false });
-    this.music.once(Phaser.Sound.Events.COMPLETE, () => this.endRun(true));
+    this.music.once(Phaser.Sound.Events.COMPLETE, () => this.startRunOut());
+    // ms into the win run-out; null while the run is still being played
+    this.runOutMs = null;
     // Dev/testing deep-link (?t=): seek the music and skip past already-passed
     // obstacles so a jump forward doesn't dump a pile of them on the first frame.
     const startMs = getStartMs();
@@ -176,6 +179,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (this.runOutMs !== null) {
+      this.updateRunOut(delta);
+      return;
+    }
     this.conductor.update();
     const songMs = this.conductor.songMs;
     // Original intro behavior until the beat-sync layer switches on
@@ -396,7 +403,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (songMs >= WIN_MS) {
-      this.endRun(true);
+      this.startRunOut();
       return;
     }
 
@@ -407,6 +414,25 @@ export class GameScene extends Phaser.Scene {
         `speed: ${Math.floor(this.player.speed)}   time: ${formatSongTime(songMs)}`
       );
     }
+  }
+
+  // The run is won: the world freezes where it is (no scroll, no song-time
+  // effects, the chaser gives up) while the runner carries on off the right
+  // edge; the music is left to play out. Then the ending video takes over.
+  // Also the track's COMPLETE handler, which may fire mid run-out — hence the guard.
+  startRunOut() {
+    if (this.runOutMs !== null) return;
+    this.runOutMs = 0;
+    this.player.startRunOut();
+    // Flashes caught mid-fade would otherwise stay frozen on screen
+    this.beatOverlay.setAlpha(0);
+    this.strobeOverlay.setAlpha(0);
+  }
+
+  updateRunOut(delta) {
+    this.runOutMs += delta;
+    this.player.runOut(runOutX(this.runOutMs), delta);
+    if (runOutDone(this.runOutMs)) this.endRun(true);
   }
 
   endRun(won) {
@@ -421,6 +447,7 @@ export class GameScene extends Phaser.Scene {
     this.spawner.destroyAll();
     this.disco.destroy();
     this.afterimages.destroy();
-    this.scene.start('GameOverScene', { won, score: Math.floor(songMs / 1000), progress });
+    // A win plays the ending video first; EndingScene hands the same data on
+    this.scene.start(won ? 'EndingScene' : 'GameOverScene', { won, score: Math.floor(songMs / 1000), progress });
   }
 }
