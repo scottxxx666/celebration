@@ -62,6 +62,15 @@ export const SCENERY_THEMES = {
       { key: 'scenery-concert-glow-wall', file: 'assets/bg/scenery-concert-glow-wall.png', group: 'wall' },
     ],
   },
+  // crowd silhouettes only: the concert's sky/road/ground and crowd over a fully transparent
+  // scenery strip (no stage art, glow or pulse); used for the windows around the concert stage
+  crowdOnly: {
+    road: { key: 'road-concert', file: 'assets/bg/road-concert.png' },
+    scenery: { key: 'scenery-blank', file: 'assets/bg/scenery-blank.png' },
+    sky: 0x000103,
+    ground: 0x242427,
+    get crowd() { return SCENERY_THEMES.concert.crowd; },
+  },
 };
 
 // Per-channel multiply of two 0xRRGGBB colours (white tint = unchanged).

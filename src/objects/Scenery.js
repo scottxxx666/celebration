@@ -252,8 +252,12 @@ export class Scenery {
   // the outgoing `from`, full when it is the settled base theme, hidden otherwise.
   updateCrowd() {
     const { from, to, t } = this.blendState;
+    // themes sharing one crowd array keep it fully visible through the fade (two partial copies would dip)
+    const sharedCrowd = this.blending && SCENERY_THEMES[from].crowd === SCENERY_THEMES[to].crowd;
     for (const c of this.crowdStrips) {
-      const alpha = this.blending
+      const alpha = sharedCrowd
+        ? (c.themeName === to ? 1 : 0)
+        : this.blending
         ? (c.themeName === to ? t : 0) + (c.themeName === from ? 1 - t : 0)
         : c.themeName === this.base.themeName ? 1 : 0;
       c.strip.setAlpha(alpha).setVisible(alpha > 0);

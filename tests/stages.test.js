@@ -100,7 +100,17 @@ test('stageBlend: a cut stage is settled on the previous theme until startMs', (
 
 test('stageBlend: a cut stage is fully on its theme from startMs, never mid-fade', () => {
   const { theme, startMs } = STAGES[cutIndex];
-  for (const ms of [startMs, startMs + 1, startMs + FADE_MS / 2, startMs + FADE_MS]) {
+  const nextMs = STAGES[cutIndex + 1].startMs;
+  for (const ms of [startMs, startMs + 1, startMs + FADE_MS / 2, startMs + FADE_MS].filter(m => m < nextMs)) {
     assert.deepEqual(stageBlend(ms, FADE_MS), { from: theme, to: theme, t: 1 }, `at ${ms}`);
   }
+});
+
+test('crowdOnly windows surround the concert stage', () => {
+  const names = STAGES.map(s => s.theme);
+  const i = names.indexOf('concert');
+  assert.deepEqual(names.slice(i - 2, i + 3), ['underground', 'crowdOnly', 'concert', 'crowdOnly', 'night']);
+  assert.equal(SCENERY_THEMES.crowdOnly.crowd, SCENERY_THEMES.concert.crowd);
+  assert.equal(SCENERY_THEMES.crowdOnly.road.key, SCENERY_THEMES.concert.road.key);
+  assert.equal(SCENERY_THEMES.crowdOnly.pulse, undefined);
 });

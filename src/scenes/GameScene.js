@@ -302,7 +302,9 @@ export class GameScene extends Phaser.Scene {
     const { from, to, t } = stageBlend(songMs, STAGE_FADE_BEATS * BEAT_MS);
     this.scenery.setFlicker(lampFlicker(songMs, BEAT_MS));
     this.scenery.setPulse(beatPulse(this.conductor.beatTimeMs, BEAT_MS));
-    this.scenery.setCrowdFrame(crowdFrame(this.conductor.beatTimeMs, BEAT_MS, CROWD_SWAPS_PER_BEAT));
+    // crowd-only windows hold the crowd still (frame 0); it sways again once the concert stage starts
+    const crowdSwaps = stageAt(songMs).theme === 'crowdOnly' ? 0 : CROWD_SWAPS_PER_BEAT;
+    this.scenery.setCrowdFrame(crowdFrame(this.conductor.beatTimeMs, BEAT_MS, crowdSwaps));
     this.scenery.setBlend(from, to, t);
     this.scenery.scroll(worldDx);
     this.spinBikes.update(section, songMs, worldDx);

@@ -5,6 +5,7 @@
 // Times must sit on a real track beat (yarn check:beats): 27251 = 3 beats
 // after highlight1b ends (26055), 53156 = the beat nearest 53 s, 59134 = the beat nearest 59 s =
 // WALL_BREAK_MS (the runner smashes through the wall at the end of desert; its white flash covers the cut),
+// 59931 / 86235 = crowd-only windows, 9 beats before the concert starts / ends (STAGE_FADE_BEATS fade + the rest held),
 // 65511 = just before highlight2 (65909), crossfades in,
 // 89822 = blackout start (change hidden in the dark), 123697 = final_highlight start.
 export const STAGES = [
@@ -12,8 +13,9 @@ export const STAGES = [
   { name: 'stage2', startMs: 27251, theme: 'suburbDay' },
   { name: 'stage3', startMs: 53156, theme: 'desert' },
   { name: 'stage4', startMs: 59134, theme: 'underground', cut: true },
-  { name: 'stage5', startMs: 63518, theme: 'concert' },
-  // { name: 'stage5', startMs: 65511, theme: 'night' },
+  { name: 'stage5a', startMs: 63518, theme: 'crowdOnly' },
+  { name: 'stage5', startMs: 65511, theme: 'concert' },
+  { name: 'stage5b', startMs: 78663, theme: 'crowdOnly', cut: true },
   { name: 'stage6', startMs: 89822, theme: 'night' },
   // { name: 'stage7', startMs: 123697, theme: 'night' },
 ];
