@@ -12,7 +12,7 @@ import {
   PULSE_LIFT_COLOR,
 } from '../config/gameConfig.js';
 import { rowBoundaryYs } from '../rowLayout.js';
-import { SCENERY_THEMES, multiplyColor } from '../config/sceneryThemes.js';
+import { SCENERY_THEMES, multiplyColor, themeDim, themeDimColor } from '../config/sceneryThemes.js';
 import { firstCopyFromRight, copyScreenX } from '../lampFlicker.js';
 
 // Both PNGs are authored at 2× logical size (docs/image-assets.md), so a
@@ -104,6 +104,15 @@ export class Scenery {
       if (theme.tint) strip.setTint(theme.tint);
       this.crowdStrips.push({ strip, themeName: name, frames: theme.crowd, current: -1 });
     }
+
+    // Theme dim mask: tinted (themeDimColor, default black) over the road, scenery and crowd (above the crowd at -9.85, below
+    // SpinBikes), its alpha following the stage blend via themeDim(). Covers the swept rotate circle.
+    this.dimMask = scene.add
+      .rectangle(left, GAME_HEIGHT / 2 - HALF_SPAN, width, 2 * HALF_SPAN, 0x000000)
+      .setOrigin(0, 0)
+      .setDepth(-9.84)
+      .setAlpha(0)
+      .setVisible(false);
 
     // Dashed lane-line row dividers for dim sections — over the road art's own lines,
     // above the disco dim (-6) so they stay readable, below the beat flash (-5)
@@ -279,6 +288,8 @@ export class Scenery {
   setBlend(from, to, t) {
     this.blending = t < 1 && from !== to;
     this.blendState = { from, to, t };
+    const dim = themeDim(from, to, t);
+    this.dimMask.setFillStyle(themeDimColor(from, to)).setAlpha(dim).setVisible(dim > 0);
     if (!this.blending) {
       this.applyTheme(this.base, to);
       this.setOverlayVisible(false);

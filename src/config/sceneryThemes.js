@@ -3,6 +3,8 @@
 // the single source of truth for the file paths, so no string is duplicated.
 // Optional `tint` (0xRRGGBB) is multiplied onto the whole theme — strips via
 // setTint, sky/ground fills via multiplyColor; omitted = 0xffffff = unchanged.
+// Optional `dim` (0-1): peak alpha of a black mask Scenery draws over the theme's road, scenery and
+// crowd (see themeDim); omitted = 0. Optional `dimColor` (0xRRGGBB, default black) is its colour.
 // Optional `flicker` ({ key, file, lampX }, preloaded like the strips): an RGBA glow
 // image the size of the scenery texture whose alpha Scenery drives with lampFlicker().
 // `lampX` is the lamp's x in texture pixels; only the first copy of the (tiling) strip
@@ -69,6 +71,8 @@ export const SCENERY_THEMES = {
     scenery: { key: 'scenery-blank', file: 'assets/bg/scenery-blank.png' },
     sky: 0x000103,
     ground: 0x242427,
+    dim: 0.4, // grey-green mask over road + scenery + crowd (peak alpha), so the purple road reads as a dark corridor
+    dimColor: 0x2c3430,
     get crowd() { return SCENERY_THEMES.concert.crowd; },
   },
 };
@@ -77,4 +81,16 @@ export const SCENERY_THEMES = {
 export function multiplyColor(color, tint) {
   const ch = shift => Math.round((((color >> shift) & 0xff) * ((tint >> shift) & 0xff)) / 255);
   return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+}
+
+// Mask alpha at a stage blend ({ from, to, t }): each theme's `dim` weighted by its share of the
+// crossfade, so the mask fades with the theme rather than popping.
+export function themeDim(from, to, t) {
+  if (from === to) return SCENERY_THEMES[to].dim ?? 0;
+  return (SCENERY_THEMES[from].dim ?? 0) * (1 - t) + (SCENERY_THEMES[to].dim ?? 0) * t;
+}
+
+// Mask colour at a stage blend: the incoming theme's `dimColor`, else the outgoing one's, else black.
+export function themeDimColor(from, to) {
+  return SCENERY_THEMES[to].dimColor ?? SCENERY_THEMES[from].dimColor ?? 0x000000;
 }

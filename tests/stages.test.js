@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { STAGES, stageAt, stageBlend, stageThemeNames } from '../src/config/stages.js';
-import { SCENERY_THEMES } from '../src/config/sceneryThemes.js';
+import { SCENERY_THEMES, themeDim, themeDimColor } from '../src/config/sceneryThemes.js';
 
 test('stages are strictly ascending and start at 0', () => {
   assert.equal(STAGES[0].startMs, 0);
@@ -113,4 +113,21 @@ test('crowdOnly windows surround the concert stage', () => {
   assert.equal(SCENERY_THEMES.crowdOnly.crowd, SCENERY_THEMES.concert.crowd);
   assert.equal(SCENERY_THEMES.crowdOnly.road.key, SCENERY_THEMES.concert.road.key);
   assert.equal(SCENERY_THEMES.crowdOnly.pulse, undefined);
+});
+
+test('themeDim: settled themes use their own dim, crossfades weight it by t', () => {
+  const dim = SCENERY_THEMES.crowdOnly.dim;
+  assert.ok(dim > 0 && dim < 1);
+  assert.equal(themeDim('concert', 'concert', 1), 0);
+  assert.equal(themeDim('crowdOnly', 'crowdOnly', 1), dim);
+  assert.equal(themeDim('underground', 'crowdOnly', 0), 0);
+  assert.ok(Math.abs(themeDim('underground', 'crowdOnly', 0.5) - dim / 2) < 1e-9);
+  assert.ok(Math.abs(themeDim('crowdOnly', 'concert', 0.25) - dim * 0.75) < 1e-9);
+});
+
+test('themeDimColor: the dimmed theme supplies the colour through a crossfade, black when none', () => {
+  const c = SCENERY_THEMES.crowdOnly.dimColor;
+  assert.equal(themeDimColor('underground', 'crowdOnly'), c);
+  assert.equal(themeDimColor('crowdOnly', 'concert'), c);
+  assert.equal(themeDimColor('concert', 'concert'), 0x000000);
 });
