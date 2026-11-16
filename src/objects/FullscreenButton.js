@@ -9,8 +9,10 @@ import {
   KEYCAP_LIGHT_CSS,
   hudPart,
   addKeycap,
+  textStyle,
   isDesktop,
 } from '../config/ui.js';
+import { t } from '../i18n.js';
 
 const ICON_SIZE = 18;    // full width/height of the expand-icon square (mobile only)
 const BRACKET_LEN = 7;   // length of each corner L-bracket arm
@@ -42,7 +44,7 @@ export function addFullscreenButton(scene) {
   if (isDesktop(scene)) {
     // Word right-aligned where the icon's right edge would sit, keycap to its left.
     const wordText = hudPart(
-      scene.add.text(cx + ICON_SIZE / 2, cy, 'fullscreen', { fontSize: '11px', color: KEYCAP_LIGHT_CSS })
+      scene.add.text(cx + ICON_SIZE / 2, cy, t('hud.fullscreen'), textStyle({ fontSize: '11px', color: KEYCAP_LIGHT_CSS }))
         .setOrigin(1, 0.5)
     );
     const keyCx = wordText.x - wordText.width - KEYCAP_GAP - KEYCAP_SIZE / 2;

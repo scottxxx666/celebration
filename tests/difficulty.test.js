@@ -1,19 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DIFFICULTIES, DEFAULT_DIFFICULTY, parseDifficulty, stepDifficulty } from '../src/difficulty.js';
+import { DIFFICULTY_IDS, DEFAULT_DIFFICULTY, parseDifficulty, stepDifficulty } from '../src/difficulty.js';
 
-const IDS = Object.keys(DIFFICULTIES);
+const IDS = DIFFICULTY_IDS;
 
 test('difficulties are ordered easy, normal, hard and default to normal', () => {
   assert.deepEqual(IDS, ['easy', 'normal', 'hard']);
   assert.equal(DEFAULT_DIFFICULTY, 'normal');
-});
-
-test('every difficulty has a label and a caption', () => {
-  for (const id of IDS) {
-    assert.ok(DIFFICULTIES[id].label, `${id} label`);
-    assert.ok(DIFFICULTIES[id].caption, `${id} caption`);
-  }
 });
 
 test('parseDifficulty keeps valid ids', () => {

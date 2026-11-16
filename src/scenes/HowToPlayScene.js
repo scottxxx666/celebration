@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
-import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, KEYCAP_DARK, KEYCAP_MID, addKeycap, isDesktop } from '../config/ui.js';
+import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, KEYCAP_DARK, KEYCAP_MID, addKeycap, textStyle, isDesktop } from '../config/ui.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { onDismiss } from '../input.js';
 import { getDifficulty } from '../difficulty.js';
 import { mobileDemoAction } from '../howToPlayDemo.js';
+import { t } from '../i18n.js';
 
 // Desktop layout: two keycap demo columns side by side
 const LEFT_X = 250;   // run-demo column center
@@ -28,7 +29,7 @@ export class HowToPlayScene extends Phaser.Scene {
     this.isDesktop = isDesktop(this);
     this.autoRun = getDifficulty() === 'easy';
 
-    this.add.text(cx, 40, 'HOW TO PLAY', { ...TITLE_STYLE, fontSize: '28px' }).setOrigin(0.5);
+    this.add.text(cx, 40, t('howTo.title'), textStyle({ ...TITLE_STYLE, fontSize: '28px' })).setOrigin(0.5);
 
     if (this.isDesktop) {
       this.createDesktop();
@@ -37,8 +38,8 @@ export class HowToPlayScene extends Phaser.Scene {
     }
 
     // "continue", not "play": the press leads to the intro video, not gameplay
-    const hint = this.isDesktop ? 'SPACE / tap to continue' : 'Tap to continue';
-    this.add.text(cx, GAME_HEIGHT - 30, hint, HINT_STYLE).setOrigin(0.5);
+    const hint = t(this.isDesktop ? 'continue.desktop' : 'continue.mobile');
+    this.add.text(cx, GAME_HEIGHT - 30, hint, textStyle(HINT_STYLE)).setOrigin(0.5);
 
     // ESC skips ahead like the other keys, matching IntroScene.
     // onDismiss's fresh-press guards matter here: the input that confirmed Start
@@ -50,7 +51,7 @@ export class HowToPlayScene extends Phaser.Scene {
   }
 
   caption(x, y, text) {
-    return this.add.text(x, y, text, { ...CAPTION_STYLE, align: 'center' }).setOrigin(0.5);
+    return this.add.text(x, y, text, textStyle({ ...CAPTION_STYLE, align: 'center' })).setOrigin(0.5);
   }
 
   // Expanding tap ripple inside `container` at (x, y)
@@ -88,19 +89,19 @@ export class HowToPlayScene extends Phaser.Scene {
     });
 
     // Two lines each: on one line the captions are wider than the column spacing and collide
-    this.caption(rowsX, DEMO_Y + 110, 'Press ↑ ↓ (W S)\nto change rows');
+    this.caption(rowsX, DEMO_Y + 110, t('howTo.rows'));
     if (this.autoRun) {
       // The run line joins the full-width captions, which close up to fit a third
-      this.caption(cx, 312, 'Easy mode: you run automatically');
-      this.caption(cx, 337, 'Dodge the obstacles');
-      this.caption(cx, 362, "Don't let the chaser catch you");
+      this.caption(cx, 312, t('howTo.easy'));
+      this.caption(cx, 337, t('howTo.dodge'));
+      this.caption(cx, 362, t('howTo.chaser'));
     } else {
-      this.caption(LEFT_X, DEMO_Y + 110, 'Alternate ← → (A D)\nto run faster');
-      this.caption(cx, 320, 'Dodge the obstacles');
-      this.caption(cx, 345, "Don't let the chaser catch you");
+      this.caption(LEFT_X, DEMO_Y + 110, t('howTo.run'));
+      this.caption(cx, 320, t('howTo.dodge'));
+      this.caption(cx, 345, t('howTo.chaser'));
     }
 
-    this.add.text(cx, 385, 'F — fullscreen', HINT_STYLE).setOrigin(0.5);
+    this.add.text(cx, 385, t('howTo.fullscreen'), textStyle(HINT_STYLE)).setOrigin(0.5);
 
     // Half-beat tap cadence (~350ms); rows keys press once per beat (~700ms)
     if (!this.autoRun) this.startPressLoop(350, this.runDemo, this.runPads);
@@ -150,10 +151,10 @@ export class HowToPlayScene extends Phaser.Scene {
     this.phone.add(this.chevron);
 
     // Captions stacked full-width so the long monospace lines can't collide
-    this.caption(cx, 272, this.autoRun ? 'Easy mode: you run automatically' : 'Tap left / right alternately to run faster');
-    this.caption(cx, 300, 'Swipe up / down to change rows');
-    this.caption(cx, 344, 'Dodge the obstacles');
-    this.caption(cx, 370, "Don't let the chaser catch you");
+    this.caption(cx, 272, t(this.autoRun ? 'howTo.easy' : 'howTo.tapRun'));
+    this.caption(cx, 300, t('howTo.swipeRows'));
+    this.caption(cx, 344, t('howTo.dodge'));
+    this.caption(cx, 370, t('howTo.chaser'));
 
     this.step = 0;
     this.swipeDir = 'down'; // first swipe flips it, so the demo leads with swipe-up

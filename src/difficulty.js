@@ -1,11 +1,9 @@
 const STORAGE_KEY = 'celebration.difficulty';
 
-export const DIFFICULTIES = {
-  easy: { label: 'Easy', caption: 'Auto-run — just dodge' },
-  normal: { label: 'Normal', caption: 'Tap to run and dodge' },
-  hard: { label: 'Hard', caption: 'More obstacles' },
-};
-const IDS = Object.keys(DIFFICULTIES);
+// Labels and captions are the `difficulty.<id>` / `difficulty.<id>.caption`
+// strings in src/config/strings.js.
+export const DIFFICULTY_IDS = ['easy', 'normal', 'hard'];
+const IDS = DIFFICULTY_IDS;
 
 export const DEFAULT_DIFFICULTY = 'normal';
 

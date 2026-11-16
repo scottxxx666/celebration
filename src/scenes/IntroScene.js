@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
-import { HINT_STYLE, isDesktop } from '../config/ui.js';
+import { HINT_STYLE, textStyle, isDesktop } from '../config/ui.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { addVolumeSlider } from '../objects/VolumeSlider.js';
 import { getUserVolume } from '../userVolume.js';
 import { onDismiss } from '../input.js';
+import { t } from '../i18n.js';
 
 export class IntroScene extends Phaser.Scene {
   constructor() {
@@ -43,8 +44,8 @@ export class IntroScene extends Phaser.Scene {
       this.sound.off(Phaser.Sound.Events.GLOBAL_VOLUME, applyVideoVolume);
     });
 
-    const skipHint = isDesktop(this) ? 'Press SPACE to skip' : 'Tap to skip';
-    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 24, skipHint, HINT_STYLE).setOrigin(0.5).setDepth(10);
+    const skipHint = t(isDesktop(this) ? 'intro.skipDesktop' : 'intro.skipMobile');
+    this.add.text(GAME_WIDTH / 2, GAME_HEIGHT - 24, skipHint, textStyle(HINT_STYLE)).setOrigin(0.5).setDepth(10);
 
     const skip = () => this.startGame();
     onDismiss(this, { keys: { SPACE: skip, ESC: skip }, tap: skip });

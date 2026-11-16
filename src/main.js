@@ -5,7 +5,13 @@ import { HowToPlayScene } from './scenes/HowToPlayScene.js';
 import { IntroScene } from './scenes/IntroScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
+import { LanguageScene } from './scenes/LanguageScene.js';
+import { WarningScene } from './scenes/WarningScene.js';
+import { syncDocument } from './i18n.js';
 import { GAME_WIDTH, GAME_HEIGHT } from './config/gameConfig.js';
+
+// <html lang> and the rotate overlay, before the first frame
+syncDocument();
 
 const game = new Phaser.Game({
   type: Phaser.AUTO,
@@ -22,7 +28,7 @@ const game = new Phaser.Game({
     default: 'arcade',
     arcade: { gravity: { y: 0 }, debug: false },
   },
-  scene: [BootScene, MenuScene, HowToPlayScene, IntroScene, GameScene, GameOverScene],
+  scene: [BootScene, LanguageScene, WarningScene, MenuScene, HowToPlayScene, IntroScene, GameScene, GameOverScene],
 });
 
 // Fullscreen is game-global, so its hooks live here rather than per scene.

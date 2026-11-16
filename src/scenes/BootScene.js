@@ -5,6 +5,8 @@ import { stageThemeNames } from '../config/stages.js';
 import { OBSTACLE_SPRITES } from '../config/obstacleSprites.js';
 import { PLAYER_FRAMES, ENEMY_FRAMES } from '../config/runFrames.js';
 import { STATION_IMAGE } from '../config/gameConfig.js';
+import { hasChosenLanguage } from '../i18n.js';
+import { getStartMs } from '../songTime.js';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -40,6 +42,17 @@ export class BootScene extends Phaser.Scene {
 
   create() {
     this.sound.setVolume(getUserVolume());
-    this.scene.start('MenuScene');
+    // Dev/testing deep-link (?t=): straight to the menu, like MenuScene's own skip.
+    if (getStartMs() > 0) {
+      this.scene.start('MenuScene');
+      return;
+    }
+    // The picker only on the first visit; the flashing-lights warning every load.
+    // `next` is always passed: a scene started without data keeps its previous one.
+    if (hasChosenLanguage()) {
+      this.scene.start('WarningScene');
+    } else {
+      this.scene.start('LanguageScene', { next: 'WarningScene' });
+    }
   }
 }

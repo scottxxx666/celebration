@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
-import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, isDesktop } from '../config/ui.js';
+import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, textStyle, isDesktop } from '../config/ui.js';
 import { Confetti } from '../objects/Confetti.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { onDismiss, onDirectionKey } from '../input.js';
-import { DIFFICULTIES, getDifficulty } from '../difficulty.js';
+import { getDifficulty } from '../difficulty.js';
+import { t } from '../i18n.js';
 
 const BUTTON_PADDING = { x: 28, y: 8 }; // widens the touch target beyond the glyphs
 // ↑/↓ are gameplay keys, so a dodge mashed at the moment of death would otherwise
@@ -27,28 +28,26 @@ export class GameOverScene extends Phaser.Scene {
     const cx = this.scale.width / 2;
     const cy = this.scale.height / 2;
 
-    this.add.text(cx, cy - 50, this.won ? 'CLEAR!' : 'GAME OVER', {
+    this.add.text(cx, cy - 50, t(this.won ? 'gameOver.clear' : 'gameOver.over'), textStyle({
       ...TITLE_STYLE,
       color: this.won ? '#66ff88' : '#ffffff',
-    }).setOrigin(0.5);
+    })).setOrigin(0.5);
 
     const pct = Math.floor(this.progress * 100);
-    this.add.text(cx, cy + 10, `Song progress: ${pct}% · ${this.score}s · ${DIFFICULTIES[getDifficulty()].label}`, {
-      ...CAPTION_STYLE,
-      fontSize: '22px',
-    }).setOrigin(0.5);
+    const stats = t('gameOver.stats', { pct, score: this.score, difficulty: t(`difficulty.${getDifficulty()}`) });
+    this.add.text(cx, cy + 10, stats, textStyle({ ...CAPTION_STYLE, fontSize: '22px' })).setOrigin(0.5);
 
     const restart = () => this.scene.start('GameScene');
     const toMenu = () => this.scene.start('MenuScene');
     this.isDesktop = isDesktop(this);
     this.selected = 0;
     this.buttons = [];
-    this.addButton(cx, cy + 65, 'Restart', { fontSize: '28px', color: '#ffffff' }, restart);
-    this.addButton(cx, cy + 115, 'Menu', { fontSize: '22px', color: '#aaaaaa' }, toMenu);
+    this.addButton(cx, cy + 65, t('gameOver.restart'), { fontSize: '28px', color: '#ffffff' }, restart);
+    this.addButton(cx, cy + 115, t('gameOver.menu'), { fontSize: '22px', color: '#aaaaaa' }, toMenu);
     this.highlight();
 
     if (this.isDesktop) {
-      this.add.text(cx, this.scale.height - 30, '↑/↓ select · SPACE confirm · ESC menu', HINT_STYLE)
+      this.add.text(cx, this.scale.height - 30, t('gameOver.hint'), textStyle(HINT_STYLE))
         .setOrigin(0.5);
 
       let canSelect = false;
@@ -78,7 +77,7 @@ export class GameOverScene extends Phaser.Scene {
   // Tappable label. It fires only when the press began on the label itself: a
   // finger still held from the death tap and released over it must not spend it.
   addButton(x, y, label, style, onTap) {
-    const text = this.add.text(x, y, label, { ...style, padding: BUTTON_PADDING })
+    const text = this.add.text(x, y, label, textStyle({ ...style, padding: BUTTON_PADDING }))
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 

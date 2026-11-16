@@ -1,4 +1,5 @@
 import { GAME_WIDTH } from './gameConfig.js';
+import { fontFor } from '../i18n.js';
 
 // Shared look for the HUD widgets (FullscreenButton, VolumeSlider) and the
 // keycap demos (HowToPlayScene), plus the text styles every scene draws with.
@@ -33,6 +34,13 @@ export function addKeycap(scene, label, { size, fontSize, stroke }) {
 export const TITLE_STYLE = { fontSize: '48px', color: '#ffffff', fontStyle: 'bold' };
 export const CAPTION_STYLE = { fontSize: '18px', color: '#aaaaaa' };
 export const HINT_STYLE = { fontSize: '14px', color: '#666666' };
+
+// A text style in `lang`'s font stack (default: the current language). Every
+// translated text goes through this: Phaser's default Courier has no CJK glyphs,
+// and the per-language stack picks the right regional forms (see LANGUAGES).
+export function textStyle(style, lang) {
+  return { fontFamily: fontFor(lang), ...style };
+}
 
 export function isDesktop(scene) {
   return scene.sys.game.device.os.desktop;

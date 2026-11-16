@@ -1,14 +1,17 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config/gameConfig.js';
-import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, isDesktop } from '../config/ui.js';
+import { TITLE_STYLE, CAPTION_STYLE, HINT_STYLE, textStyle, isDesktop } from '../config/ui.js';
 import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { getStartMs } from '../songTime.js';
 import { onDirectionKey } from '../input.js';
-import { DIFFICULTIES, getDifficulty, setDifficulty, stepDifficulty } from '../difficulty.js';
+import { getDifficulty, setDifficulty, stepDifficulty } from '../difficulty.js';
+import { t } from '../i18n.js';
 import { menuRowLayout, MENU_CAPTION_OFFSET, MENU_TOUCH_WIDTH } from '../menuLayout.js';
 
-const OPTIONS = ['Start', ''];
+const START_ROW = 0;
 const DIFFICULTY_ROW = 1; // label is set by refreshDifficulty()
+const LANGUAGE_ROW = 2;
+const ROW_COUNT = 3;
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -24,12 +27,13 @@ export class MenuScene extends Phaser.Scene {
 
     this.add.text(cx, cy - 110, 'CELEBRATION', { ...TITLE_STYLE, fontSize: '56px' }).setOrigin(0.5);
 
-    this.optionTexts = OPTIONS.map((label, i) => {
+    const labels = [t('menu.start'), '', t('menu.language')];
+    this.optionTexts = labels.map((label, i) => {
       const { y, zoneY, zoneHeight } = menuRowLayout(i, DIFFICULTY_ROW);
-      const text = this.add.text(cx, y, label, {
+      const text = this.add.text(cx, y, label, textStyle({
         fontSize: '26px',
         color: this.isDesktop ? '#666666' : '#ffffff',
-      }).setOrigin(0.5);
+      })).setOrigin(0.5);
 
       // Mobile taps land on an invisible zone much larger than the glyphs (the
       // text alone is under a fingertip tall once the canvas is scaled down);
@@ -59,7 +63,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     this.difficultyCaption = this.add
-      .text(cx, this.optionTexts[DIFFICULTY_ROW].y + MENU_CAPTION_OFFSET, '', { ...CAPTION_STYLE, fontSize: '14px' })
+      .text(cx, this.optionTexts[DIFFICULTY_ROW].y + MENU_CAPTION_OFFSET, '', textStyle({ ...CAPTION_STYLE, fontSize: '14px' }))
       .setOrigin(0.5);
     this.refreshDifficulty();
     this.highlight();
@@ -67,18 +71,26 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(
       cx,
       GAME_HEIGHT - 30,
-      this.isDesktop ? '↑/↓ select · ←/→ mode · SPACE start' : 'Tap an option',
-      HINT_STYLE
+      t(this.isDesktop ? 'menu.hintDesktop' : 'menu.hintMobile'),
+      textStyle(HINT_STYLE)
     ).setOrigin(0.5);
 
     onDirectionKey(this, 'up', () => this.move(-1));
     onDirectionKey(this, 'down', () => this.move(1));
     onDirectionKey(this, 'left', () => this.cycleDifficulty(-1));
     onDirectionKey(this, 'right', () => this.cycleDifficulty(1));
-    // Keys start from either row: ←/→ already cycle the difficulty, so SPACE on
-    // that row means "play this one". Only a click/tap on the row cycles.
-    this.input.keyboard.on('keydown-ENTER', () => this.startGame());
-    this.input.keyboard.on('keydown-SPACE', () => this.startGame());
+    // Keys start from the first two rows: ←/→ already cycle the difficulty, so
+    // SPACE on that row means "play this one" (only a click/tap on it cycles).
+    // On the language row they open the picker. Auto-repeat is ignored: SPACE
+    // still held from the scene before (warning, picker, game over) must not
+    // also start the game.
+    const confirmKey = (event) => {
+      if (event.repeat) return;
+      if (this.selected === LANGUAGE_ROW) this.openLanguage();
+      else this.startGame();
+    };
+    this.input.keyboard.on('keydown-ENTER', confirmKey);
+    this.input.keyboard.on('keydown-SPACE', confirmKey);
 
     addFullscreenButton(this);
   }
@@ -93,9 +105,9 @@ export class MenuScene extends Phaser.Scene {
 
   // Relabels the Difficulty row and its caption from the stored value.
   refreshDifficulty() {
-    const { label, caption } = DIFFICULTIES[getDifficulty()];
-    this.optionTexts[DIFFICULTY_ROW].setText(`◀ ${label} ▶`);
-    this.difficultyCaption.setText(caption);
+    const id = getDifficulty();
+    this.optionTexts[DIFFICULTY_ROW].setText(`◀ ${t(`difficulty.${id}`)} ▶`);
+    this.difficultyCaption.setText(t(`difficulty.${id}.caption`));
   }
 
   cycleDifficulty(dir) {
@@ -104,16 +116,23 @@ export class MenuScene extends Phaser.Scene {
   }
 
   move(dir) {
-    this.selected = Phaser.Math.Wrap(this.selected + dir, 0, OPTIONS.length);
+    this.selected = Phaser.Math.Wrap(this.selected + dir, 0, ROW_COUNT);
     this.highlight();
   }
 
   confirm() {
-    if (this.selected === 0) {
+    if (this.selected === START_ROW) {
       this.startGame();
-    } else {
+    } else if (this.selected === DIFFICULTY_ROW) {
       this.cycleDifficulty(1);
+    } else {
+      this.openLanguage();
     }
+  }
+
+  // The picker comes back here; texts are rebuilt in the new language on create().
+  openLanguage() {
+    this.scene.start('LanguageScene', { next: 'MenuScene' });
   }
 
   startGame() {
