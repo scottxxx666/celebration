@@ -29,21 +29,26 @@ export function openShare(platform, text) {
   window.open(shareLink(platform, text), '_blank', 'noopener');
 }
 
-// Instagram has no web share URL: hand the PNG to the system share sheet where
-// files can be shared (phones), else save it for the player to post by hand.
-// Resolves to 'shared' | 'saved'.
-export async function shareImage(blob, text, { preferSheet }) {
+// The PNG as a File the system share sheet will take, or null where files can't
+// be shared. canShare is also false when an embedding iframe (itch.io) withholds
+// the web-share permission, so the caller can still fall back inside the tap.
+export function sheetFile(blob) {
   const file = new File([blob], 'celebration.png', { type: 'image/png' });
-  if (preferSheet && navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], text });
-      return 'shared';
-    } catch (err) {
-      // The player closing the sheet is an answer; any other refusal (e.g. the
-      // tap's activation expired) falls through to the download.
-      if (err?.name === 'AbortError') return 'shared';
-    }
+  return navigator.canShare?.({ files: [file] }) ? file : null;
+}
+
+// Screenshot + text to the system share sheet. False when the browser refused
+// (e.g. the tap's activation expired); the player closing the sheet is an answer.
+export async function shareSheet(file, text) {
+  try {
+    await navigator.share({ files: [file], text });
+    return true;
+  } catch (err) {
+    return err?.name === 'AbortError';
   }
+}
+
+export function saveImage(blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -52,7 +57,6 @@ export async function shareImage(blob, text, { preferSheet }) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return 'saved';
 }
 
 // Screenshot of the current frame as a PNG Blob (null on failure).

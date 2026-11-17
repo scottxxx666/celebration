@@ -5,13 +5,13 @@ import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { onDismiss, onDirectionKey } from '../input.js';
 import { getDifficulty } from '../difficulty.js';
 import { t } from '../i18n.js';
-import { shareText, openShare, shareImage, captureCanvas } from '../share.js';
+import { shareText, openShare, sheetFile, shareSheet, saveImage, captureCanvas } from '../share.js';
 
 const BUTTON_PADDING = { x: 28, y: 8 }; // widens the touch target beyond the glyphs
 // ↑/↓ are gameplay keys, so a dodge mashed at the moment of death would otherwise
 // move the selection off Restart before the player has even seen the screen.
 const SELECT_GRACE_MS = 400;
-// The IG screenshot is taken once the texts (and a win's confetti) are in the
+// The shared screenshot is taken once the texts (and a win's confetti) are in the
 // frame, ahead of any tap: navigator.share needs the tap's user activation, which
 // would be gone if the capture were awaited after it.
 const SNAPSHOT_DELAY_MS = 700;
@@ -103,7 +103,7 @@ export class GameOverScene extends Phaser.Scene {
       .setVisible(false);
 
     SHARE_ICONS.forEach(({ platform, key }, i) => {
-      const onTap = platform === 'ig' ? () => this.shareStory(text) : () => openShare(platform, text);
+      const onTap = () => this.share(platform, text);
       const icon = this.add.image(cx + (i - (SHARE_ICONS.length - 1) / 2) * SHARE_ICON_GAP, y, key)
         .setDisplaySize(SHARE_ICON_PX, SHARE_ICON_PX)
         .setTint(SHARE_ICON_TINT);
@@ -134,14 +134,23 @@ export class GameOverScene extends Phaser.Scene {
     return this.snapshotPending;
   }
 
-  // Normally the stored blob is shared synchronously; if the tap beat the
-  // pre-capture, capture now (the share sheet may then refuse the lost
-  // activation, in which case the PNG is downloaded instead).
-  async shareStory(text) {
+  // Touch devices hand the pre-captured screenshot + text to the system share
+  // sheet for every icon — the only way a web page can attach an image — and the
+  // player picks the app there. Without it (desktop, no file sharing, snapshot
+  // not ready) X / Threads open their text-only composer and Instagram, which
+  // has no web composer, saves the PNG to post by hand.
+  async share(platform, text) {
+    const file = !this.isDesktop && this.snapshot ? sheetFile(this.snapshot) : null;
+    if (file && await shareSheet(file, text)) return;
+
+    if (platform !== 'ig') {
+      openShare(platform, text);
+      return;
+    }
     const blob = this.snapshot ?? await this.capture();
     if (!blob) return;
-    const result = await shareImage(blob, text, { preferSheet: !this.isDesktop });
-    if (result === 'saved' && this.notice?.active) this.notice.setVisible(true);
+    saveImage(blob);
+    if (this.notice?.active) this.notice.setVisible(true);
   }
 
   // Tappable label, selectable with ↑/↓ on desktop.
