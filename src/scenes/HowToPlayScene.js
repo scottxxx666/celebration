@@ -23,7 +23,7 @@ export class HowToPlayScene extends Phaser.Scene {
   }
 
   // The gate MenuScene inserts between Start and the intro video on every Start;
-  // there is no other way in, and every exit goes on to IntroScene.
+  // there is no other way in, and every exit goes on to VolumeScene.
   create() {
     const cx = GAME_WIDTH / 2;
     this.isDesktop = isDesktop(this);
@@ -44,7 +44,7 @@ export class HowToPlayScene extends Phaser.Scene {
     // ESC skips ahead like the other keys, matching IntroScene.
     // onDismiss's fresh-press guards matter here: the input that confirmed Start
     // must not also dismiss the gate before it can be read.
-    const leave = () => this.scene.start('IntroScene');
+    const leave = () => this.scene.start('VolumeScene');
     onDismiss(this, { keys: { ESC: leave, ENTER: leave, SPACE: leave }, tap: leave });
 
     addFullscreenButton(this);

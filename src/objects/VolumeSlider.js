@@ -13,20 +13,20 @@ import {
 } from '../config/ui.js';
 import { getUserVolume, setUserVolume, saveUserVolume } from '../userVolume.js';
 import { bindPointer } from '../input.js';
+import { stepVolume } from '../volumeStep.js';
 
-const SLIDER_Y = HUD_MARGIN; // same top row as the fullscreen button
-const TRACK_W = 80;
-const TRACK_H = 6;
-const TRACK_RADIUS = 3;    // rounded track corners; fill skipped below the corner diameter
-const KNOB_RADIUS = 8;
-const ICON_W = 14;         // speaker body + cone footprint
-const ICON_H = 18;         // matches the fullscreen button's ICON_SIZE
-const ICON_BODY_W = 5;     // speaker body rectangle width
-const ICON_BODY_H = 8;     // speaker body rectangle height
-const ARC_RADII = [5, 9, 13];        // concentric wave arcs at the cone mouth, ~4px apart
+const TRACK_W_BASE = 80;
+const TRACK_H_BASE = 6;
+const TRACK_RADIUS_BASE = 3;    // rounded track corners; fill skipped below the corner diameter
+const KNOB_RADIUS_BASE = 8;
+const ICON_W_BASE = 14;         // speaker body + cone footprint
+const ICON_H_BASE = 18;         // matches the fullscreen button's ICON_SIZE
+const ICON_BODY_W_BASE = 5;     // speaker body rectangle width
+const ICON_BODY_H_BASE = 8;     // speaker body rectangle height
+const ARC_RADII_BASE = [5, 9, 13];        // concentric wave arcs at the cone mouth, ~4px apart
 const ARC_THRESHOLDS = [0.05, 0.4, 0.75]; // value at which each arc lights up (0 arcs below the first)
 const ARC_SPAN_DEG = 55;   // arcs sweep -55°..55° around the cone's axis
-const ARC_GAP = 8;         // gap between the outermost arc and the track
+const ARC_GAP_BASE = 8;         // gap between the outermost arc and the track
 
 // Horizontal volume slider, top-right in every scene except the transient BootScene,
 // on the same row as and immediately left of the fullscreen button. Drives the
@@ -39,8 +39,32 @@ const ARC_GAP = 8;         // gap between the outermost arc and the track
 // `rightEdge` is the right boundary of the whole widget *including* the knob's
 // overhang at value 1 — pass what addFullscreenButton returned so the row packs
 // right-to-left; the default is the bare corner anchor.
-export function addVolumeSlider(scene, rightEdge = HUD_CORNER_X) {
+//
+// Options (defaults keep the HUD look): `y` row centre; `scale` multiplies every
+// dimension (the big slider in VolumeScene); `centerX` centres the whole widget
+// there instead of using `rightEdge`; `bright` keeps it fully lit at rest; `onCommit` fires when a change is finished
+// (drag end, or a `nudge`). Returns `{ nudge(dir) }` — one keyboard step, applied
+// and saved like a drag.
+export function addVolumeSlider(scene, rightEdge = HUD_CORNER_X, options = {}) {
+  const { y: SLIDER_Y = HUD_MARGIN, scale: k = 1, centerX = null, onCommit = null, bright = false } = options;
+  const restAlpha = bright ? HUD_ALPHA_BRIGHT : HUD_ALPHA_DIM;
+  const TRACK_W = TRACK_W_BASE * k;
+  const TRACK_H = TRACK_H_BASE * k;
+  const TRACK_RADIUS = TRACK_RADIUS_BASE * k;
+  const KNOB_RADIUS = KNOB_RADIUS_BASE * k;
+  const ICON_W = ICON_W_BASE * k;
+  const ICON_H = ICON_H_BASE * k;
+  const ICON_BODY_W = ICON_BODY_W_BASE * k;
+  const ICON_BODY_H = ICON_BODY_H_BASE * k;
+  const ARC_RADII = ARC_RADII_BASE.map((rad) => rad * k);
+  const ARC_GAP = ARC_GAP_BASE * k;
+  const LINE = 2 * k;
+
   // Layout, right-aligned at rightEdge: icon, arcs, gap, track, knob overhang
+  if (centerX !== null) {
+    const width = KNOB_RADIUS + TRACK_W + ARC_GAP + ARC_RADII[ARC_RADII.length - 1] + ICON_W;
+    rightEdge = centerX + width / 2;
+  }
   const trackRight = rightEdge - KNOB_RADIUS;
   const trackLeft = trackRight - TRACK_W;
   const coneMouthX = trackLeft - ARC_GAP - ARC_RADII[ARC_RADII.length - 1];
@@ -67,7 +91,7 @@ export function addVolumeSlider(scene, rightEdge = HUD_CORNER_X) {
   const arcs = hudPart(scene.add.graphics());
   const drawArcs = () => {
     arcs.clear();
-    arcs.lineStyle(2, COLOR_LIGHT, 1);
+    arcs.lineStyle(LINE, COLOR_LIGHT, 1);
     for (let i = 0; i < ARC_RADII.length; i++) {
       if (value < ARC_THRESHOLDS[i]) break;
       arcs.beginPath();
@@ -85,7 +109,7 @@ export function addVolumeSlider(scene, rightEdge = HUD_CORNER_X) {
     track.clear();
     track.fillStyle(COLOR_DARK, 1);
     track.fillRoundedRect(trackLeft, SLIDER_Y - TRACK_H / 2, TRACK_W, TRACK_H, TRACK_RADIUS);
-    track.lineStyle(1, COLOR_MID, 1);
+    track.lineStyle(Math.max(1, k), COLOR_MID, 1);
     track.strokeRoundedRect(trackLeft, SLIDER_Y - TRACK_H / 2, TRACK_W, TRACK_H, TRACK_RADIUS);
     const fillW = value * TRACK_W;
     // A rounded rect narrower than its corner diameter draws artifacts — skip the sliver
@@ -96,13 +120,14 @@ export function addVolumeSlider(scene, rightEdge = HUD_CORNER_X) {
   };
 
   const knob = hudPart(
-    scene.add.circle(trackLeft + value * TRACK_W, SLIDER_Y, KNOB_RADIUS, COLOR_LIGHT).setStrokeStyle(2, COLOR_DARK)
+    scene.add.circle(trackLeft + value * TRACK_W, SLIDER_Y, KNOB_RADIUS, COLOR_LIGHT).setStrokeStyle(LINE, COLOR_DARK)
   );
 
   drawArcs();
   drawTrack();
 
   const parts = [icon, arcs, track, knob];
+  if (bright) parts.forEach((part) => part.setAlpha(restAlpha));
 
   const apply = () => {
     scene.sound.setVolume(value); // also emits GLOBAL_VOLUME, which IntroScene uses for the video
@@ -124,7 +149,7 @@ export function addVolumeSlider(scene, rightEdge = HUD_CORNER_X) {
   const zoneRight = trackRight + KNOB_RADIUS; // cover the knob's overhang at value 1
   const zoneX = (iconLeft + zoneRight) / 2;
   const zoneWidth = zoneRight - iconLeft;
-  const zone = scene.add.zone(zoneX, SLIDER_Y, zoneWidth, HUD_HIT)
+  const zone = scene.add.zone(zoneX, SLIDER_Y, zoneWidth, HUD_HIT * k)
     .setDepth(HUD_DEPTH)
     .setScrollFactor(0)
     .setInteractive({ useHandCursor: true });
@@ -135,14 +160,15 @@ export function addVolumeSlider(scene, rightEdge = HUD_CORNER_X) {
   });
   zone.on('pointerout', () => {
     hovering = false;
-    if (dragId === null) parts.forEach((part) => part.setAlpha(HUD_ALPHA_DIM)); // stay bright mid-drag
+    if (dragId === null) parts.forEach((part) => part.setAlpha(restAlpha)); // stay bright mid-drag
   });
 
   const endDrag = (pointer) => {
     if (pointer.id !== dragId) return;
     dragId = null;
     saveUserVolume();
-    if (!hovering) parts.forEach((part) => part.setAlpha(HUD_ALPHA_DIM));
+    if (onCommit) onCommit();
+    if (!hovering) parts.forEach((part) => part.setAlpha(restAlpha));
   };
 
   // stopPropagation is mandatory on both handlers: without it a tap here also
@@ -182,4 +208,13 @@ export function addVolumeSlider(scene, rightEdge = HUD_CORNER_X) {
     // Scene torn down mid-drag (e.g. the song COMPLETE fires while dragging) — save anyway
     if (dragId !== null) saveUserVolume();
   });
+
+  return {
+    nudge(dir) {
+      value = stepVolume(value, dir);
+      apply();
+      saveUserVolume();
+      if (onCommit) onCommit();
+    },
+  };
 }
