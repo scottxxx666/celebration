@@ -5,7 +5,7 @@ import { addFullscreenButton } from '../objects/FullscreenButton.js';
 import { onDismiss, onDirectionKey } from '../input.js';
 import { getDifficulty } from '../difficulty.js';
 import { t } from '../i18n.js';
-import { shareText, openShare, sheetFile, shareSheet, saveImage, captureCanvas } from '../share.js';
+import { shareText, sharePlatforms, canShareFiles, openShare, shareSheet, saveImage, captureCanvas } from '../share.js';
 
 const BUTTON_PADDING = { x: 28, y: 8 }; // widens the touch target beyond the glyphs
 // ↑/↓ are gameplay keys, so a dodge mashed at the moment of death would otherwise
@@ -16,8 +16,11 @@ const SELECT_GRACE_MS = 400;
 // would be gone if the capture were awaited after it.
 const SNAPSHOT_DELAY_MS = 700;
 // Brand glyphs (Simple Icons) in brand colours — X and Threads are monochrome
-// brands, so white on this dark screen; Instagram carries its gradient. Loaded by BootScene.
+// brands, so white on this dark screen; Instagram carries its gradient — plus a
+// generic share glyph for the system share sheet. Loaded by BootScene; the row
+// shows the subset `sharePlatforms` picks.
 export const SHARE_ICONS = [
+  { platform: 'sheet', key: 'icon-share', file: 'assets/icons/share.svg' },
   { platform: 'x', key: 'icon-x', file: 'assets/icons/x.svg' },
   { platform: 'threads', key: 'icon-threads', file: 'assets/icons/threads.svg' },
   { platform: 'ig', key: 'icon-instagram', file: 'assets/icons/instagram.svg' },
@@ -102,9 +105,11 @@ export class GameOverScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setVisible(false);
 
-    SHARE_ICONS.forEach(({ platform, key }, i) => {
+    const platforms = sharePlatforms(!this.isDesktop && canShareFiles());
+    const icons = SHARE_ICONS.filter(({ platform }) => platforms.includes(platform));
+    icons.forEach(({ platform, key }, i) => {
       const onTap = () => this.share(platform, text);
-      const icon = this.add.image(cx + (i - (SHARE_ICONS.length - 1) / 2) * SHARE_ICON_GAP, y, key)
+      const icon = this.add.image(cx + (i - (icons.length - 1) / 2) * SHARE_ICON_GAP, y, key)
         .setDisplaySize(SHARE_ICON_PX, SHARE_ICON_PX)
         .setTint(SHARE_ICON_TINT);
       // The hit area is in texture pixels, centred on the glyph
@@ -134,15 +139,16 @@ export class GameOverScene extends Phaser.Scene {
     return this.snapshotPending;
   }
 
-  // Touch devices hand the pre-captured screenshot + text to the system share
-  // sheet for every icon — the only way a web page can attach an image — and the
-  // player picks the app there. Without it (desktop, no file sharing, snapshot
-  // not ready) X / Threads open their text-only composer and Instagram, which
-  // has no web composer, saves the PNG to post by hand.
+  // The generic icon (touch devices whose share sheet takes files) hands the
+  // pre-captured screenshot + text to the system share sheet — the only way a
+  // web page can attach an image — and the player picks the app there. The
+  // brand icons, shown everywhere else: X / Threads open their text-only
+  // composer and Instagram, which has no web composer, saves the PNG to post by hand.
   async share(platform, text) {
-    const file = !this.isDesktop && this.snapshot ? sheetFile(this.snapshot) : null;
-    if (file && await shareSheet(file, text)) return;
-
+    if (platform === 'sheet') {
+      await shareSheet(this.snapshot, text);
+      return;
+    }
     if (platform !== 'ig') {
       openShare(platform, text);
       return;

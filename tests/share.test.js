@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { shareText, shareLink } from '../src/share.js';
+import { shareText, shareLink, sharePlatforms } from '../src/share.js';
 import { LANGUAGES } from '../src/i18n.js';
 import { SHARE_URL } from '../src/config/gameConfig.js';
 
@@ -52,4 +52,9 @@ test('text round-trips through the link, including CJK, newline and reserved cha
 
 test('an unknown platform throws', () => {
   assert.throws(() => shareLink('myspace', 'hi'), /Unknown share platform/);
+});
+
+test('share row is one generic icon with the share sheet, brand icons without', () => {
+  assert.deepEqual(sharePlatforms(true), ['sheet']);
+  assert.deepEqual(sharePlatforms(false), ['x', 'threads', 'ig']);
 });

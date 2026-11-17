@@ -29,19 +29,31 @@ export function openShare(platform, text) {
   window.open(shareLink(platform, text), '_blank', 'noopener');
 }
 
-// The PNG as a File the system share sheet will take, or null where files can't
-// be shared. canShare is also false when an embedding iframe (itch.io) withholds
-// the web-share permission, so the caller can still fall back inside the tap.
-export function sheetFile(blob) {
-  const file = new File([blob], 'celebration.png', { type: 'image/png' });
-  return navigator.canShare?.({ files: [file] }) ? file : null;
+// Which icons the share row shows. Where the system share sheet takes files it
+// is the one path for every app, so a single generic icon stands for it; brand
+// icons appear only where each does something of its own.
+export function sharePlatforms(sheet) {
+  return sheet ? ['sheet'] : ['x', 'threads', 'ig'];
 }
 
-// Screenshot + text to the system share sheet. False when the browser refused
-// (e.g. the tap's activation expired); the player closing the sheet is an answer.
-export async function shareSheet(file, text) {
+function pngFile(blob) {
+  return new File([blob], 'celebration.png', { type: 'image/png' });
+}
+
+// Whether the system share sheet takes a PNG. Also false when an embedding
+// iframe (itch.io) withholds the web-share permission. Asked with an empty
+// file so the row can be laid out before the screenshot exists.
+export function canShareFiles() {
+  return !!navigator.canShare?.({ files: [pngFile(new Blob())] });
+}
+
+// Text to the system share sheet, with the screenshot when there is one (`blob`
+// may be null: tapped before the capture finished). False when the browser
+// refused (e.g. the tap's activation expired); the player closing the sheet is
+// an answer.
+export async function shareSheet(blob, text) {
   try {
-    await navigator.share({ files: [file], text });
+    await navigator.share(blob ? { files: [pngFile(blob)], text } : { text });
     return true;
   } catch (err) {
     return err?.name === 'AbortError';
