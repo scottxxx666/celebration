@@ -13,6 +13,8 @@ import {
   PLAYER_TAP_RUN_IDLE_MS,
   SWIPE_THRESHOLD,
   ENEMY_CRUISE_SPEED,
+  CAUGHT_TINT,
+  CAUGHT_TINT_ALPHA,
 } from '../config/gameConfig.js';
 import { PLAYER_FRAMES } from '../config/runFrames.js';
 import { rowLayout } from '../rowLayout.js';
@@ -134,6 +136,24 @@ export class Player {
 
   setReveal(reveal) {
     this.runCycle.reveal = reveal;
+  }
+
+  // Lost run: lay a translucent red copy of the runner over it, so the freeze
+  // reads as a hit while the art stays visible. The world is frozen, so one
+  // static copy is enough.
+  markCaught() {
+    const { sprite } = this.runCycle;
+    if (!sprite.setTintFill) {
+      sprite.setFillStyle(CAUGHT_TINT);
+      return;
+    }
+    sprite.scene.add
+      .image(sprite.x, sprite.y, sprite.texture.key, sprite.frame.name)
+      .setOrigin(sprite.originX, sprite.originY)
+      .setScale(sprite.scaleX, sprite.scaleY)
+      .setDepth(sprite.depth + 0.1)
+      .setTintFill(CAUGHT_TINT)
+      .setAlpha(CAUGHT_TINT_ALPHA);
   }
 
   // AABB overlap check against an obstacle { x, y, hw, hh }

@@ -444,6 +444,7 @@ export class GameScene extends Phaser.Scene {
   startCaught() {
     this.caught = true;
     this.player.frozen = true;
+    this.player.markCaught();
     // Read the song clock before the music stops and resets it
     const result = this.runResult(false);
     this.music.stop();

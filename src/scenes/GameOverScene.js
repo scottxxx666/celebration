@@ -32,11 +32,11 @@ const SHARE_ICON_HIT_PX = 56;  // touch target, larger than the glyph
 const SHARE_ICON_GAP = 72;
 const SHARE_ICON_TINT = 0xbbbbbb; // multiplied onto the art: slightly dimmed until hovered
 const CAUGHT_OUTLINE = { stroke: '#000000', strokeThickness: 6 }; // keeps text readable on the bright picture
-// Loss layout (800x450): title and welcome line on top, the group picture's faces
-// (y ~125-240) left clear, stats and buttons below them.
-const LOSS_Y = { title: 40, message: 95, stats: 315, restart: 355, menu: 395 };
+// Loss layout (800x450): the one-line title on top, the group picture's faces
+// (y ~125-240) left clear, buttons below them, the stats small and right-aligned
+// in the bottom-right corner just above the share row.
+const LOSS_Y = { title: 40, stats: 365, restart: 315, menu: 355 };
 const SHARE_MARGIN = 24;
-const CAUGHT_MESSAGE_STYLE = { fontSize: '30px', color: '#ffffff', fontStyle: 'bold', align: 'center', stroke: '#000000', strokeThickness: 5 };
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -67,19 +67,24 @@ export class GameOverScene extends Phaser.Scene {
     if (!this.won) {
       this.add.image(0, 0, CAUGHT_IMAGE.key).setOrigin(0, 0)
         .setDisplaySize(this.scale.width, this.scale.height).setDepth(-2);
-      this.add.text(cx, y.message, t('caught.message'), textStyle(CAUGHT_MESSAGE_STYLE))
-        .setOrigin(0.5);
     }
 
     this.add.text(cx, y.title, t(this.won ? 'gameOver.clear' : 'gameOver.over'), textStyle({
       ...TITLE_STYLE,
+      ...(this.won ? {} : { fontSize: '32px' }), // the loss title is a whole sentence
       ...this.outline,
       color: this.won ? '#66ff88' : '#ffdd44',
     })).setOrigin(0.5);
 
     const pct = Math.floor(this.progress * 100);
     const stats = t('gameOver.stats', { pct, score: this.score, difficulty: t(`difficulty.${getDifficulty()}`) });
-    this.add.text(cx, y.stats, stats, textStyle({ ...CAPTION_STYLE, fontSize: '22px', ...(this.won ? {} : { color: '#ffffff' }), ...this.outline })).setOrigin(0.5);
+    if (this.won) {
+      this.add.text(cx, y.stats, stats, textStyle({ ...CAPTION_STYLE, fontSize: '22px' })).setOrigin(0.5);
+    } else {
+      this.add.text(this.scale.width - SHARE_MARGIN, y.stats, stats, textStyle({
+        ...CAPTION_STYLE, fontSize: '16px', color: '#ffffff', ...this.outline,
+      })).setOrigin(1, 0.5);
+    }
 
     const restart = () => this.scene.start('GameScene');
     const toMenu = () => this.scene.start('MenuScene');

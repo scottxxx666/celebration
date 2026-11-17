@@ -163,7 +163,11 @@ export const ENDING_CONTINUED_DELAY_MS = 2000;
 // Losing: the world freezes on the collision frame for CAUGHT_FREEZE_MS so the
 // player sees what got them, then GameOverScene shows CAUGHT_IMAGE (authored at
 // 2x) as its background.
-export const CAUGHT_FREEZE_MS = 800;
+export const CAUGHT_FREEZE_MS = 500;
+// Red mask laid over the runner on a losing collision (alpha < 1 keeps the
+// art visible, like Mario's hit flash)
+export const CAUGHT_TINT = 0xff0000;
+export const CAUGHT_TINT_ALPHA = 0.5;
 export const CAUGHT_IMAGE = { key: 'caught', file: 'assets/caught.jpg' };
 // Manual trim added on top of the auto-detected audio output latency (see
 // Conductor); positive = visuals later
