@@ -422,3 +422,6 @@ export const STATION_DOOR_X = 150;           // stairwell opening, local x / wid
 export const STATION_DOOR_W = 150;
 export const STATION_DOOR_TOP = 218;
 export const STATION_CANOPY_OVERHANG = 28;   // canopy slab sticks out this far past the doorway on each side
+
+// Link appended to every shared score (placeholder until the game has its own page)
+export const SHARE_URL = 'https://github.com/scottxxx666/celebration';

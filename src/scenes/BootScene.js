@@ -7,6 +7,7 @@ import { PLAYER_FRAMES, ENEMY_FRAMES } from '../config/runFrames.js';
 import { STATION_IMAGE, CAUGHT_IMAGE } from '../config/gameConfig.js';
 import { hasChosenLanguage } from '../i18n.js';
 import { getStartMs } from '../songTime.js';
+import { SHARE_ICONS, SHARE_ICON_TEXTURE_PX } from './GameOverScene.js';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -37,6 +38,9 @@ export class BootScene extends Phaser.Scene {
 
     this.load.image(STATION_IMAGE.key, STATION_IMAGE.file);
     this.load.image(CAUGHT_IMAGE.key, CAUGHT_IMAGE.file);
+    for (const icon of SHARE_ICONS) {
+      this.load.svg(icon.key, icon.file, { width: SHARE_ICON_TEXTURE_PX, height: SHARE_ICON_TEXTURE_PX });
+    }
 
     OBSTACLE_SPRITES.forEach(sprite => this.load.image(sprite.key, sprite.file));
     PLAYER_FRAMES.forEach(frame => this.load.image(frame.key, frame.file));
