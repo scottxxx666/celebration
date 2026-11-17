@@ -5,6 +5,7 @@ import { stageThemeNames } from '../config/stages.js';
 import { OBSTACLE_SPRITES } from '../config/obstacleSprites.js';
 import { PLAYER_FRAMES, ENEMY_FRAMES } from '../config/runFrames.js';
 import { STATION_IMAGE, CAUGHT_IMAGE } from '../config/gameConfig.js';
+import { FONT_FACES, FONT_DIR } from '../config/fonts.js';
 import { hasChosenLanguage } from '../i18n.js';
 import { getStartMs } from '../songTime.js';
 import { SHARE_ICONS, SHARE_ICON_TEXTURE_PX } from './GameOverScene.js';
@@ -50,6 +51,21 @@ export class BootScene extends Phaser.Scene {
 
   create() {
     this.sound.setVolume(getUserVolume());
+    this.loadFonts().then(() => this.next());
+  }
+
+  // Phaser Text draws to a canvas, which only sees a web font that is already
+  // loaded, so every scene's first text needs the bundled fonts ready. A failure
+  // falls back to the system stacks (LANGUAGES), so it must not block the game.
+  loadFonts() {
+    const loads = FONT_FACES.map(async ({ family, weight, file }) => {
+      const face = new FontFace(family, `url(${FONT_DIR}/${file})`, { weight });
+      document.fonts.add(await face.load());
+    });
+    return Promise.all(loads).catch(err => console.warn('Bundled fonts failed to load, using system fonts', err));
+  }
+
+  next() {
     // Dev/testing deep-link (?t=): straight to the menu, like MenuScene's own skip.
     if (getStartMs() > 0) {
       this.scene.start('MenuScene');

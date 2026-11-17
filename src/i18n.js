@@ -1,29 +1,31 @@
 import { STRINGS } from './config/strings.js';
+import { fontFamilyFor } from './config/fonts.js';
 
 const STORAGE_KEY = 'celebration.language';
 
-// `label` is the language's own name (shown on the picker); `font` its system
-// font stack. Each CJK language lists its own fonts first: Han characters share
-// code points across Japanese and both Chinese scripts but are drawn differently,
-// so one shared stack would show the wrong regional glyphs. English keeps
+// `label` is the language's own name (shown on the picker); `font` its font
+// stack: the bundled Noto Sans subset (src/config/fonts.js, loaded by BootScene)
+// first, the system fonts as fallback. Each CJK language has its own stack: Han
+// characters share code points across Japanese and both Chinese scripts but are
+// drawn differently, so one shared stack would show the wrong regional glyphs. English keeps
 // Phaser's default Courier, so its layouts are unchanged.
 export const LANGUAGES = {
   en: { label: 'English', font: 'Courier' },
   ko: {
     label: '한국어',
-    font: '"Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", "Noto Sans KR", sans-serif',
+    font: `"${fontFamilyFor('ko')}", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR", "Noto Sans KR", sans-serif`,
   },
   ja: {
     label: '日本語',
-    font: '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, "Noto Sans CJK JP", "Noto Sans JP", sans-serif',
+    font: `"${fontFamilyFor('ja')}", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, "Noto Sans CJK JP", "Noto Sans JP", sans-serif`,
   },
   'zh-Hans': {
     label: '简体中文',
-    font: '"PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif',
+    font: `"${fontFamilyFor('zh-Hans')}", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif`,
   },
   'zh-Hant': {
     label: '繁體中文',
-    font: '"PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC", "Noto Sans TC", sans-serif',
+    font: `"${fontFamilyFor('zh-Hant')}", "PingFang TC", "Microsoft JhengHei", "Noto Sans CJK TC", "Noto Sans TC", sans-serif`,
   },
 };
 const IDS = Object.keys(LANGUAGES);
