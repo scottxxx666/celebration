@@ -4,7 +4,7 @@ import { SCENERY_THEMES } from '../config/sceneryThemes.js';
 import { stageThemeNames } from '../config/stages.js';
 import { OBSTACLE_SPRITES } from '../config/obstacleSprites.js';
 import { PLAYER_FRAMES, ENEMY_FRAMES } from '../config/runFrames.js';
-import { STATION_IMAGE } from '../config/gameConfig.js';
+import { STATION_IMAGE, CAUGHT_IMAGE } from '../config/gameConfig.js';
 import { hasChosenLanguage } from '../i18n.js';
 import { getStartMs } from '../songTime.js';
 
@@ -36,6 +36,7 @@ export class BootScene extends Phaser.Scene {
     }
 
     this.load.image(STATION_IMAGE.key, STATION_IMAGE.file);
+    this.load.image(CAUGHT_IMAGE.key, CAUGHT_IMAGE.file);
 
     OBSTACLE_SPRITES.forEach(sprite => this.load.image(sprite.key, sprite.file));
     PLAYER_FRAMES.forEach(frame => this.load.image(frame.key, frame.file));

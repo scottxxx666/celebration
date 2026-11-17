@@ -71,6 +71,7 @@ import {
   BEAT_MS,
   CROWD_SWAPS_PER_BEAT,
   WALL_FLASH_ALPHA,
+  CAUGHT_FREEZE_MS,
 } from '../config/gameConfig.js';
 
 const HUD_REFRESH_MS = 100; // debug readout re-renders a text texture, so throttle it
@@ -93,6 +94,8 @@ export class GameScene extends Phaser.Scene {
     this.music.once(Phaser.Sound.Events.COMPLETE, () => this.startRunOut());
     // ms into the win run-out; null while the run is still being played
     this.runOutMs = null;
+    // True from the losing collision on: the world stays frozen on that frame
+    this.caught = false;
     // Dev/testing deep-link (?t=): seek the music and skip past already-passed
     // obstacles so a jump forward doesn't dump a pile of them on the first frame.
     const startMs = getStartMs();
@@ -179,6 +182,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (this.caught) return;
     if (this.runOutMs !== null) {
       this.updateRunOut(delta);
       return;
@@ -391,13 +395,13 @@ export class GameScene extends Phaser.Scene {
 
     // Collision
     if (this.player.overlaps(this.enemy)) {
-      this.endRun(false);
+      this.startCaught();
       return;
     }
 
     for (const obs of this.spawner.obstacles) {
       if (this.player.overlaps(obs)) {
-        this.endRun(false);
+        this.startCaught();
         return;
       }
     }
@@ -421,7 +425,7 @@ export class GameScene extends Phaser.Scene {
   // edge; the music is left to play out. Then the ending video takes over.
   // Also the track's COMPLETE handler, which may fire mid run-out — hence the guard.
   startRunOut() {
-    if (this.runOutMs !== null) return;
+    if (this.caught || this.runOutMs !== null) return;
     this.runOutMs = 0;
     this.player.startRunOut();
     // Flashes caught mid-fade would otherwise stay frozen on screen
@@ -432,22 +436,42 @@ export class GameScene extends Phaser.Scene {
   updateRunOut(delta) {
     this.runOutMs += delta;
     this.player.runOut(runOutX(this.runOutMs), delta);
-    if (runOutDone(this.runOutMs)) this.endRun(true);
+    if (runOutDone(this.runOutMs)) this.endRun(this.runResult(true));
   }
 
-  endRun(won) {
+  // The run is lost: everything freezes on the collision frame (update() stops)
+  // and the music cuts, so the player can see what got them before CaughtScene.
+  startCaught() {
+    this.caught = true;
+    this.player.frozen = true;
+    // Read the song clock before the music stops and resets it
+    const result = this.runResult(false);
+    this.music.stop();
+    // Flashes caught mid-fade would otherwise stay frozen on screen, and the
+    // lights-out black (when it covers gameplay, depth 9) would hide the cause
+    this.beatOverlay.setAlpha(0);
+    this.strobeOverlay.setAlpha(0);
+    if (this.lightsOutOverlay.depth > 0) this.lightsOutOverlay.setAlpha(0);
+    this.time.delayedCall(CAUGHT_FREEZE_MS, () => this.endRun(result));
+  }
+
+  runResult(won) {
     const durationMs = this.music.duration * 1000;
     // A win is at WIN_MS, or at the track's end when WIN_MS lies past it (on
     // COMPLETE the sound's seek has already reset, so it can't be read back);
     // song time starts slightly negative (output latency), hence the clamp
     const songMs = won ? Math.min(durationMs, WIN_MS) : Math.max(0, this.conductor.songMs);
     const progress = won ? 1 : Math.min(1, durationMs > 0 ? songMs / durationMs : 0);
+    return { won, score: Math.floor(songMs / 1000), progress };
+  }
+
+  endRun(result) {
     this.music.stop();
     this.enemy.destroy();
     this.spawner.destroyAll();
     this.disco.destroy();
     this.afterimages.destroy();
-    // A win plays the ending video first; EndingScene hands the same data on
-    this.scene.start(won ? 'EndingScene' : 'GameOverScene', { won, score: Math.floor(songMs / 1000), progress });
+    // Both go on to GameOverScene, which is handed the same data
+    this.scene.start(result.won ? 'EndingScene' : 'CaughtScene', result);
   }
 }

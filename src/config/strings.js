@@ -20,6 +20,7 @@ export const STRINGS = {
       'This game contains flashing lights and rapidly changing visuals\n' +
       'that may trigger seizures in people with photosensitive epilepsy.\n\n' +
       'If you have a history of epilepsy or seizures, please do not play.\n' +
+      'Even people with no history of seizures may be affected.\n' +
       'Stop immediately if you feel dizzy, nauseous or unwell.',
     'continue.desktop': 'SPACE / tap to continue',
     'continue.mobile': 'Tap to continue',
@@ -36,6 +37,7 @@ export const STRINGS = {
     'intro.skipMobile': 'Tap to skip',
     'ending.message': 'The concert may end,\nbut our party never will',
     'ending.toBeContinued': 'To be continued...',
+    'caught.message': 'Welcome! You are one of us now',
     'gameOver.clear': 'CLEAR!',
     'gameOver.over': 'GAME OVER',
     'gameOver.stats': 'Song progress: {pct}% · {score}s · {difficulty}',
@@ -62,6 +64,7 @@ export const STRINGS = {
       '이 게임에는 번쩍이는 빛과 빠르게 변하는 화면이 포함되어 있어\n' +
       '광과민성 뇌전증이 있는 분에게 발작을 일으킬 수 있습니다.\n\n' +
       '뇌전증이나 발작 병력이 있다면 플레이하지 마세요.\n' +
+      '발작 병력이 없는 분에게도 증상이 나타날 수 있습니다.\n' +
       '어지러움, 메스꺼움 등 이상을 느끼면 즉시 중단하세요.',
     'continue.desktop': 'SPACE 또는 탭하여 계속',
     'continue.mobile': '탭하여 계속',
@@ -78,6 +81,7 @@ export const STRINGS = {
     'intro.skipMobile': '탭하여 건너뛰기',
     'ending.message': '콘서트는 끝나도,\n우리의 Party는 영원히 끝나지 않아',
     'ending.toBeContinued': 'To be continued...',
+    'caught.message': '환영해! 이제 너도 우리의 일원이야',
     'gameOver.clear': '클리어!',
     'gameOver.over': '게임 오버',
     'gameOver.stats': '곡 진행도: {pct}% · {score}초 · {difficulty}',
@@ -104,6 +108,7 @@ export const STRINGS = {
       'このゲームには、点滅する光や激しく変化する映像が含まれており、\n' +
       '光過敏性てんかんの発作を引き起こすおそれがあります。\n\n' +
       'てんかんや発作の経験がある方は、プレイをお控えください。\n' +
+      '発作の経験がない方にも、症状が起こることがあります。\n' +
       'めまい、吐き気などの不調を感じたら、すぐに中止してください。',
     'continue.desktop': 'SPACE / タップで次へ',
     'continue.mobile': 'タップで次へ',
@@ -120,6 +125,7 @@ export const STRINGS = {
     'intro.skipMobile': 'タップでスキップ',
     'ending.message': 'コンサートは終わっても、\n私たちのPartyは永遠に終わらない',
     'ending.toBeContinued': 'To be continued...',
+    'caught.message': 'ようこそ！あなたはもう私たちの仲間です',
     'gameOver.clear': 'クリア！',
     'gameOver.over': 'ゲームオーバー',
     'gameOver.stats': '曲の進行度：{pct}% · {score}秒 · {difficulty}',
@@ -146,6 +152,7 @@ export const STRINGS = {
       '本游戏包含闪光和快速变化的画面，\n' +
       '可能诱发光敏性癫痫发作。\n\n' +
       '如果您有癫痫或相关病史，请避免游玩。\n' +
+      '即使没有相关病史，也可能出现症状。\n' +
       '游玩时如感到头晕、恶心或任何不适，请立即停止。',
     'continue.desktop': '按 SPACE 或点击继续',
     'continue.mobile': '点一下继续',
@@ -162,6 +169,7 @@ export const STRINGS = {
     'intro.skipMobile': '点一下跳过',
     'ending.message': '虽然音乐会结束，\n但我们的Party永远不会结束',
     'ending.toBeContinued': 'To be continued...',
+    'caught.message': '欢迎！你是我们的一份子了',
     'gameOver.clear': '通关！',
     'gameOver.over': '游戏结束',
     'gameOver.stats': '歌曲进度：{pct}% · {score} 秒 · {difficulty}',
@@ -188,6 +196,7 @@ export const STRINGS = {
       '本遊戲包含閃光與快速變化的畫面，\n' +
       '可能誘發光敏性癲癇發作。\n\n' +
       '若您有癲癇或相關病史，請避免遊玩。\n' +
+      '即使沒有相關病史，也可能出現症狀。\n' +
       '遊玩時如感到頭暈、噁心或任何不適，請立即停止。',
     'continue.desktop': '按 SPACE 或點擊繼續',
     'continue.mobile': '點一下繼續',
@@ -204,6 +213,7 @@ export const STRINGS = {
     'intro.skipMobile': '點一下跳過',
     'ending.message': '雖然音樂會結束，\n但我們的Party永遠不會結束',
     'ending.toBeContinued': 'To be continued...',
+    'caught.message': '歡迎！你是我們的一份子了',
     'gameOver.clear': '過關！',
     'gameOver.over': '遊戲結束',
     'gameOver.stats': '歌曲進度：{pct}% · {score} 秒 · {difficulty}',

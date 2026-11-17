@@ -27,6 +27,7 @@ export class Player {
     this.autoRun = autoRun;
     this.speed = this.autoRun ? ENEMY_CRUISE_SPEED : MIN_SPEED; // world scroll speed (px/s)
     this.lastKey = null; // 'left' | 'right' — alternating-tap state
+    this.frozen = false; // lost run: touch taps must not step the frozen sprite
 
     this.runCycle = new RunCycle(scene, PLAYER_FRAMES, {
       spriteHh: PLAYER_SPRITE_HH,
@@ -102,7 +103,7 @@ export class Player {
   // advances the run cycle one frame; a repeat of the same side does nothing.
   // Shared by keyboard and touch input.
   tap(side) {
-    if (this.lastKey === side) return;
+    if (this.frozen || this.lastKey === side) return;
     if (!this.autoRun) this.speed = Math.min(this.speed + ACCEL_STEP, MAX_SPEED);
     this.lastKey = side;
     this.runCycle.step();
