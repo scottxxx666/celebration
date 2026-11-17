@@ -3,7 +3,6 @@ import {
   GAME_WIDTH,
   GAME_HEIGHT,
   CAUGHT_IMAGE,
-  CAUGHT_IMAGE_MS,
   CAUGHT_SKIP_ARM_MS,
 } from '../config/gameConfig.js';
 import { HINT_STYLE, textStyle, isDesktop } from '../config/ui.js';
@@ -17,7 +16,7 @@ const MARGIN = 24;
 
 // Shown after a lost run (GameScene's freeze) and before the GAME OVER screen:
 // the chasers' group picture with a welcome line — the player is one of them now.
-// Silent (the music stopped on the collision), moves on by itself.
+// Silent (the music stopped on the collision), waits for a key or tap.
 export class CaughtScene extends Phaser.Scene {
   constructor() {
     super('CaughtScene');
@@ -35,8 +34,6 @@ export class CaughtScene extends Phaser.Scene {
     this.add.text(GAME_WIDTH / 2, GAME_HEIGHT * 0.2, t('caught.message'), textStyle({
       fontSize: '30px', color: '#ffffff', fontStyle: 'bold', align: 'center', ...OUTLINE,
     })).setOrigin(0.5).setDepth(TEXT_DEPTH);
-
-    this.time.delayedCall(CAUGHT_IMAGE_MS, () => this.finish());
 
     // Skipping is armed late: keys and fingers still mashing from the run must
     // not skip the picture before it can be seen.
