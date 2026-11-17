@@ -19,9 +19,10 @@ export const STRINGS = {
     'warning.body':
       'This game contains flashing lights and rapidly changing visuals\n' +
       'that may trigger seizures in people with photosensitive epilepsy.\n\n' +
-      'If you have a history of epilepsy or seizures, please do not play.\n' +
+      'If you have ever had epilepsy or seizures, consult a doctor first.\n' +
       'Even people with no history of seizures may be affected.\n' +
-      'Stop immediately if you feel dizzy, nauseous or unwell.',
+      'Stop immediately if you feel dizzy, nauseous or unwell,\n' +
+      'and see a doctor if it persists.',
     'continue.desktop': 'SPACE / tap to continue',
     'continue.mobile': 'Tap to continue',
     'howTo.title': 'HOW TO PLAY',
@@ -62,13 +63,14 @@ export const STRINGS = {
     'difficulty.normal.caption': '탭해서 달리고 피하세요',
     'difficulty.hard': '어려움',
     'difficulty.hard.caption': '장애물이 더 많아요',
-    'warning.title': '광과민성 발작 경고',
+    'warning.title': '광감수성 발작 경고',
     'warning.body':
       '이 게임에는 번쩍이는 빛과 빠르게 변하는 화면이 포함되어 있어\n' +
-      '광과민성 뇌전증이 있는 분에게 발작을 일으킬 수 있습니다.\n\n' +
-      '뇌전증이나 발작 병력이 있다면 플레이하지 마세요.\n' +
+      '광감수성 뇌전증이 있는 분에게 발작을 일으킬 수 있습니다.\n\n' +
+      '뇌전증이나 발작 병력이 있다면 플레이하기 전에 의사와 상담하세요.\n' +
       '발작 병력이 없는 분에게도 증상이 나타날 수 있습니다.\n' +
-      '어지러움, 메스꺼움 등 이상을 느끼면 즉시 중단하세요.',
+      '어지러움, 메스꺼움 등 이상을 느끼면 즉시 중단하고,\n' +
+      '계속되면 의사와 상담하세요.',
     'continue.desktop': 'SPACE 또는 탭하여 계속',
     'continue.mobile': '탭하여 계속',
     'howTo.title': '플레이 방법',
@@ -109,13 +111,14 @@ export const STRINGS = {
     'difficulty.normal.caption': 'タップで走ってよける',
     'difficulty.hard': 'ハード',
     'difficulty.hard.caption': '障害物が増える',
-    'warning.title': '光過敏性発作に関する警告',
+    'warning.title': '光感受性発作に関する警告',
     'warning.body':
       'このゲームには、点滅する光や激しく変化する映像が含まれており、\n' +
-      '光過敏性てんかんの発作を引き起こすおそれがあります。\n\n' +
-      'てんかんや発作の経験がある方は、プレイをお控えください。\n' +
+      '光感受性発作を引き起こすおそれがあります。\n\n' +
+      'てんかんや発作の経験がある方は、プレイ前に必ず医師に相談してください。\n' +
       '発作の経験がない方にも、症状が起こることがあります。\n' +
-      'めまい、吐き気などの不調を感じたら、すぐに中止してください。',
+      'めまい、吐き気などの不調を感じたらすぐに中止し、\n' +
+      '治らないときは医師の診察を受けてください。',
     'continue.desktop': 'SPACE / タップで次へ',
     'continue.mobile': 'タップで次へ',
     'howTo.title': 'あそびかた',
@@ -160,9 +163,10 @@ export const STRINGS = {
     'warning.body':
       '本游戏包含闪光和快速变化的画面，\n' +
       '可能诱发光敏性癫痫发作。\n\n' +
-      '如果您有癫痫或相关病史，请避免游玩。\n' +
+      '如果您有癫痫或相关病史，游玩前请先咨询医生。\n' +
       '即使没有相关病史，也可能出现症状。\n' +
-      '游玩时如感到头晕、恶心或任何不适，请立即停止。',
+      '游玩时如感到头晕、恶心或任何不适，请立即停止，\n' +
+      '若症状持续，请就医。',
     'continue.desktop': '按 SPACE 或点击继续',
     'continue.mobile': '点一下继续',
     'howTo.title': '游戏说明',
@@ -207,9 +211,10 @@ export const STRINGS = {
     'warning.body':
       '本遊戲包含閃光與快速變化的畫面，\n' +
       '可能誘發光敏性癲癇發作。\n\n' +
-      '若您有癲癇或相關病史，請避免遊玩。\n' +
+      '若您有癲癇或相關病史，遊玩前請先諮詢醫師。\n' +
       '即使沒有相關病史，也可能出現症狀。\n' +
-      '遊玩時如感到頭暈、噁心或任何不適，請立即停止。',
+      '遊玩時如感到頭暈、噁心或任何不適，請立即停止，\n' +
+      '若症狀持續，請就醫。',
     'continue.desktop': '按 SPACE 或點擊繼續',
     'continue.mobile': '點一下繼續',
     'howTo.title': '遊戲說明',
