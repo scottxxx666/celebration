@@ -4,7 +4,6 @@ import { MenuScene } from './scenes/MenuScene.js';
 import { HowToPlayScene } from './scenes/HowToPlayScene.js';
 import { VolumeScene } from './scenes/VolumeScene.js';
 import { IntroScene } from './scenes/IntroScene.js';
-import { CaughtScene } from './scenes/CaughtScene.js';
 import { EndingScene } from './scenes/EndingScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
@@ -31,7 +30,7 @@ const game = new Phaser.Game({
     default: 'arcade',
     arcade: { gravity: { y: 0 }, debug: false },
   },
-  scene: [BootScene, LanguageScene, WarningScene, MenuScene, HowToPlayScene, VolumeScene, IntroScene, GameScene, EndingScene, CaughtScene, GameOverScene],
+  scene: [BootScene, LanguageScene, WarningScene, MenuScene, HowToPlayScene, VolumeScene, IntroScene, GameScene, EndingScene, GameOverScene],
 });
 
 // Fullscreen is game-global, so its hooks live here rather than per scene.

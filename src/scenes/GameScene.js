@@ -440,7 +440,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   // The run is lost: everything freezes on the collision frame (update() stops)
-  // and the music cuts, so the player can see what got them before CaughtScene.
+  // and the music cuts, so the player can see what got them before GameOverScene.
   startCaught() {
     this.caught = true;
     this.player.frozen = true;
@@ -472,6 +472,6 @@ export class GameScene extends Phaser.Scene {
     this.disco.destroy();
     this.afterimages.destroy();
     // Both go on to GameOverScene, which is handed the same data
-    this.scene.start(result.won ? 'EndingScene' : 'CaughtScene', result);
+    this.scene.start(result.won ? 'EndingScene' : 'GameOverScene', result);
   }
 }

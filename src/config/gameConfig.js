@@ -161,12 +161,10 @@ export const WIN_RUNOUT_PAD = 80;
 // comes in this long after the message
 export const ENDING_CONTINUED_DELAY_MS = 2000;
 // Losing: the world freezes on the collision frame for CAUGHT_FREEZE_MS so the
-// player sees what got them, then CaughtScene shows CAUGHT_IMAGE (authored at
-// 2x) until a key or tap moves on to the GAME OVER screen — never by itself.
-// Input is armed only from CAUGHT_SKIP_ARM_MS on so leftover run taps can't skip it.
+// player sees what got them, then GameOverScene shows CAUGHT_IMAGE (authored at
+// 2x) as its background.
 export const CAUGHT_FREEZE_MS = 800;
 export const CAUGHT_IMAGE = { key: 'caught', file: 'assets/caught.jpg' };
-export const CAUGHT_SKIP_ARM_MS = 500;
 // Manual trim added on top of the auto-detected audio output latency (see
 // Conductor); positive = visuals later
 export const AUDIO_LATENCY_OFFSET_MS = 0;
