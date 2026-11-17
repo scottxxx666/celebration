@@ -22,7 +22,7 @@ export class VolumeScene extends Phaser.Scene {
     const desktop = isDesktop(this);
 
     this.add.text(cx, 40, t('volume.title'), textStyle({ ...TITLE_STYLE, fontSize: '28px' })).setOrigin(0.5);
-    this.add.text(cx, 100, t('volume.headphones'), textStyle({ ...CAPTION_STYLE, align: 'center' })).setOrigin(0.5);
+    this.add.text(cx, 100, t('volume.sound'), textStyle({ ...CAPTION_STYLE, align: 'center' })).setOrigin(0.5);
 
     const slider = addVolumeSlider(this, undefined, {
       y: SLIDER_Y,
