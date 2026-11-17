@@ -148,7 +148,7 @@ export const STRINGS = {
     'ending.message': 'コンサートは終わっても、\n私たちのPartyは永遠に終わらない',
     'ending.toBeContinued': 'To be continued...',
     'gameOver.clear': 'クリア！',
-    'gameOver.over': 'ゲームオーバー、ようこそ私たちの仲間へ',
+    'gameOver.over': 'ゲームオーバー、ようこそ仲間へ',
     'gameOver.stats': '曲の進行度：{pct}% · {score}秒 · {difficulty}',
     'gameOver.restart': 'リトライ',
     'gameOver.menu': 'メニュー',
